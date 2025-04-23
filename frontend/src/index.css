@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #9c4d6e;
+  --primary-light: #b86a8a;
+  --primary-dark: #7a3a55;
+  --accent-color: #8bc34a;
+  --text-light: #ffffff;
+  --text-dark: #333333;
+  --bg-dark: #1e1e1e;
+  --bg-light: #f5f7fa;
+  --card-bg: rgba(255, 255, 255, 0.15);
+  --sidebar-width: 280px;
+  --canvas-width: 320px;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes ticker {
+  0% { 
+    transform: translateX(100%); 
+  }
+  100% { 
+    transform: translateX(-100%); 
+  }
+}
+
+@keyframes typingAnimation {
+  0%, 60%, 100% { 
+    transform: translateY(0); 
+  }
+  30% { 
+    transform: translateY(-5px); 
+  }
+}
