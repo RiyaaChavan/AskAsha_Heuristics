@@ -1,19 +1,26 @@
 import React, { useContext } from 'react';
 import { ThemeContext } from '../context/ThemeContext';
+import { Moon, Sun } from 'lucide-react';
 
 const ThemeToggle = () => {
-  const { darkMode, toggleDarkMode } = useContext(ThemeContext);
-
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  
   return (
-    <div
-      className={`w-12 h-6 bg-black/20 rounded-full relative cursor-pointer transition-all duration-300`}
-      onClick={toggleDarkMode}
+    <button
+      onClick={toggleTheme}
+      className={`
+        relative p-1.5 rounded-full transition-all duration-300
+        ${theme === 'dark' ? 'bg-gray-700' : 'bg-white/20'}
+        hover:bg-opacity-80
+      `}
+      aria-label="Toggle theme"
     >
-      <div
-        className={`w-5 h-5 bg-white rounded-full absolute top-[2px] transition-all duration-300
-          ${darkMode ? 'left-[27px]' : 'left-[2px]'}`}
-      ></div>
-    </div>
+      {theme === 'dark' ? (
+        <Moon size={18} className="text-white-300" />
+      ) : (
+        <Sun size={18} className="text-yellow-300" />
+      )}
+    </button>
   );
 };
 

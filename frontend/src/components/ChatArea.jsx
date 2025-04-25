@@ -1,126 +1,160 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { messages as initialMessages } from '../data';
-import { Paperclip, Search, SendIcon } from 'lucide-react';
-import PropTypes from 'prop-types';
-
+import React, { useRef, useState } from 'react';
+import { Send, Paperclip, Plus, Smile } from 'lucide-react';
 
 const ChatArea = () => {
-  const [messages, setMessages] = useState(initialMessages);
-  const [newMessage, setNewMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([
+    {
+      sender: 'bot',
+      content:
+        "Hello! I'm your Career Assistant. I can help you with job searches, resume reviews, interview preparation, and career advice. What would you like to discuss today?",
+    },
+    {
+      sender: 'user',
+      content: "I'm looking for job opportunities in tech. I have experience in web development.",
+    },
+    {
+      sender: 'bot',
+      content: `Great! I'd be happy to help you find tech job opportunities that match your web development experience. Could you tell me a bit more about:`,
+      list: [
+        'Your specific skills (languages, frameworks, etc.)',
+        'Years of experience',
+        'Location preferences (remote, specific cities)',
+        "Any particular companies or industries you're interested in",
+      ],
+    },
+    {
+      sender: 'user',
+      content:
+        "I have 3 years of experience with React, Node.js, and MongoDB. I'm looking for remote positions or jobs in Boston. I'm interested in fintech or healthtech companies.",
+    },
+    {
+      sender: 'bot',
+      content:
+        "Thanks for sharing those details! Based on your experience with React, Node.js, and MongoDB, along with your interest in remote or Boston-based positions in fintech or healthtech, I've found several opportunities that might be a good fit. Check out the job suggestions panel on the right for positions I've curated for you.",
+      time: '2:45 PM',
+    },
+  ]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
   };
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() === '') return;
-    
-    const userMessage = {
-      id: `user-${Date.now()}`,
-      text: newMessage,
-      sender: 'user',
-      timestamp: Date.now()
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setNewMessage('');
-    setIsTyping(true);
-    
-    // Simulate bot typing and response
-    setTimeout(() => {
-      const botMessage = {
-        id: `bot-${Date.now()}`,
-        text: "Thank you for your message. I'm processing your request and will get back to you shortly with more information.",
-        sender: 'bot',
-        timestamp: Date.now()
-      };
-      
-      setIsTyping(false);
-      setMessages(prev => [...prev, botMessage]);
-    }, 3000);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log('File selected:', file);
+    }
+  };
+
+  const handleSend = () => {
+    if (message.trim()) {
+      setMessages((prev) => [...prev, { sender: 'user', content: message }]);
+      setMessage('');
+    }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-70px)] relative transition-all duration-300">
-      <div className="flex-1 p-5 overflow-y-auto flex flex-col gap-5">
-        {messages.map(message => (
-          <Message key={message.id} message={message} />
-        ))}
-        
-        {isTyping && (
-          <div className="flex self-start bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-bl-sm gap-1">
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-[typingAnimation_1.4s_infinite_ease-in-out]"></div>
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-[typingAnimation_1.4s_infinite_ease-in-out_0.2s]"></div>
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-[typingAnimation_1.4s_infinite_ease-in-out_0.4s]"></div>
+    <div className="flex flex-col h-[calc(100vh-70px)] bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex mb-6 animate-fade-in ${
+              msg.sender === 'user' ? 'justify-end' : ''
+            }`}
+            style={{ animationDelay: `${index * 0.2}s` }}
+          >
+            {msg.sender !== 'user' && (
+              <div className="w-10 h-10 rounded-full bg-[var(--primary-color)] flex items-center justify-center text-white mr-4 flex-shrink-0 shadow-sm">
+                <span>CA</span>
+              </div>
+            )}
+            <div className="max-w-[85%] md:max-w-[70%]">
+              <div
+                className={`p-4 rounded-2xl shadow-sm ${
+                  msg.sender === 'user'
+                    ? 'rounded-tr-none text-white'
+                    : 'bg-white dark:bg-gray-800 rounded-tl-none text-gray-800 dark:text-gray-200'
+                }`}
+                style={
+                  msg.sender === 'user'
+                    ? {
+                        backgroundColor: '#b86a8a',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.2)',
+                      }
+                    : {}
+                }
+              >
+                <p>{msg.content}</p>
+                {msg.list && (
+                  <ol className="list-decimal pl-5 space-y-2 mt-2">
+                    {msg.list.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+              {msg.time && (
+                <div className="text-xs text-gray-500 mt-1 ml-1">{msg.time}</div>
+              )}
+            </div>
+            {msg.sender === 'user' && (
+              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-700 dark:text-gray-300 ml-4 flex-shrink-0 shadow-sm">
+                <span>R</span>
+              </div>
+            )}
           </div>
-        )}
-        
-        <div ref={messagesEndRef} />
+        ))}
       </div>
-      
-      <div className="p-4 border-t border-black/10 dark:border-white/10 flex items-center gap-3 bg-white dark:bg-[#252525]">
-        <div className="flex gap-3">
-          <button className="bg-transparent border-none text-lg text-gray-600 dark:text-gray-400 cursor-pointer transition-all hover:bg-black/5 dark:hover:bg-white/10 w-9 h-9 rounded-full flex items-center justify-center">
-            <Paperclip size={18} />
+
+      {/* Input area */}
+      <div className="border-t border-gray-200 dark:border-gray-800 p-4">
+        <div className="flex bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+          <button className="p-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+            <Plus size={20} />
           </button>
-          <button className="bg-transparent border-none text-lg text-gray-600 dark:text-gray-400 cursor-pointer transition-all hover:bg-black/5 dark:hover:bg-white/10 w-9 h-9 rounded-full flex items-center justify-center">
-            <Search size={18} />
+
+          <input
+            type="text"
+            placeholder="Type your message here..."
+            className="flex-1 py-3 px-2 bg-transparent border-none focus:ring-0 text-gray-800 dark:text-gray-200"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSend();
+            }}
+          />
+
+          <button
+            onClick={handleFileClick}
+            className="p-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            <Paperclip size={20} />
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          <button className="p-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+            <Smile size={20} />
+          </button>
+
+          <button
+            onClick={handleSend}
+            className="bg-[#8bc34a] text-white p-3 hover:bg-[#7daf43] transition-colors"
+          >
+            <Send size={20} />
           </button>
         </div>
-        
-        <input
-          type="text"
-          className="flex-1 py-3 px-4 rounded-3xl border border-gray-300 dark:border-gray-700 outline-none text-sm bg-gray-50 dark:bg-gray-800 transition-all focus:border-[var(--primary-color)] dark:focus:border-[var(--primary-light)] dark:text-white"
-          placeholder="Type your message here..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-        />
-        
-        <button 
-          className="bg-[var(--primary-color)] text-white border-none w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all hover:bg-[var(--primary-dark)]"
-          onClick={handleSendMessage}
-        >
-          <SendIcon size={18} />
-        </button>
       </div>
     </div>
   );
-};
-
-const Message = ({ message }) => {
-  const { text, sender } = message;
-  
-  return (
-    <div 
-      className={`max-w-[80%] p-3 rounded-2xl relative animate-[fadeIn_0.3s_ease] backdrop-blur-md border border-white/20 backdrop-filter
-        ${sender === 'user' 
-          ? 'self-end bg-[var(--primary-color)] text-white rounded-br-sm' 
-          : 'self-start bg-gray-100 dark:bg-gray-800 text-[var(--text-dark)] dark:text-[var(--text-light)] rounded-bl-sm'}`}
-    >
-      {text.split('\n').map((line, i) => (
-        <React.Fragment key={i}>
-          {line}
-          {i < text.split('\n').length - 1 && <br />}
-        </React.Fragment>
-      ))}
-    </div>
-  );
-};
-
-Message.propTypes = {
-  message: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    text: PropTypes.string.isRequired,
-    sender: PropTypes.oneOf(['user', 'bot']).isRequired,
-    timestamp: PropTypes.number.isRequired,
-  }).isRequired,
 };
 
 export default ChatArea;

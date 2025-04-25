@@ -12,7 +12,12 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
+    
+    /* JSX settings */
     "jsx": "react-jsx",
+
+    /* Allow .js and .jsx files to be imported and compiled */
+    "allowJs": true,
 
     /* Linting */
     "strict": true,
@@ -20,5 +25,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": [
+    "src",  // Include your source code and global.d.ts here
+    "src/**/*.d.ts"  // Ensure global.d.ts is included
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
