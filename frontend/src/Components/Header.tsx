@@ -1,7 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
+import { Link } from 'react-router-dom';
+  // Add Link from react-router-dom
 
-// Icon components - simplified SVG versions since we're not using Lucide now
+// Icon components (simplified)
 const BriefcaseIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -38,7 +40,6 @@ const MapIcon = () => (
     <line x1="16" y1="6" x2="16" y2="22"></line>
   </svg>
 );
-
 const BellIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -46,7 +47,8 @@ const BellIcon = () => (
   </svg>
 );
 
-// Styled components
+
+// Styled components (no change)
 const HeaderContainer = styled.header`
   background-color: #8a4a6f;
   color: white;
@@ -125,7 +127,16 @@ const Navigation = styled.nav`
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 8px;
-  background-color: #8a4a6f;  /* Changed navbar background color */
+  background-color: #8a4a6f;
+`;
+
+const NavLink = styled(Link)`
+  color: white; /* or any other color you prefer */
+  text-decoration: none; /* remove underline */
+
+  &:hover {
+    color: #ec4899; /* hover color */
+  }
 `;
 
 const NavItem = styled.div<{ active?: boolean }>`
@@ -136,6 +147,7 @@ const NavItem = styled.div<{ active?: boolean }>`
   border-radius: 9999px;
   background-color: ${props => props.active ? '#9c4dcc' : 'rgba(241, 241, 241, 0.1)'};
   cursor: pointer;
+  color: white;
   transition: background-color 0.2s;
   white-space: nowrap;
   
@@ -144,28 +156,20 @@ const NavItem = styled.div<{ active?: boolean }>`
   }
 
   svg {
-    background-color: rgba(255, 255, 255, 0.2); /* Very transparent white bg for icons */
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: 9999px;
     padding: 4px;
   }
 `;
 
-interface HeaderProps {
-  userName?: string;
-  notificationCount?: number;
-}
-
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-}
-
-const NavItemComponent: React.FC<NavItemProps> = ({ icon, label, active = false }) => {
+// NavItem Component with routing
+const NavItemComponent: React.FC<NavItemProps> = ({ icon, label, active = false, to }) => {
   return (
     <NavItem active={active}>
-      {icon}
-      <span>{label}</span>
+      <Link to={to} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+        {icon}
+        <span>{label}</span>
+      </Link>
     </NavItem>
   );
 };
@@ -176,9 +180,8 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
       <HeaderInner>
         <Logo>
           <h1>Ask Asha</h1>
-     
         </Logo>
-        
+
         <ProfileSection>
           <NotificationBell>
             <BellIcon />
@@ -188,19 +191,19 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
               </NotificationBadge>
             )}
           </NotificationBell>
-          
+
           <Avatar>
             {userName.charAt(0)}
           </Avatar>
         </ProfileSection>
       </HeaderInner>
-      
+
       <Navigation>
-        <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" />
-        <NavItemComponent icon={<CalendarIcon />} label="Events Hub" />
-        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" />
-        <NavItemComponent icon={<CompassIcon />} label="Career Coach" />
-        <NavItemComponent icon={<MapIcon />} label="My Roadmap" />
+        <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" />
+        <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/jobsearch" />
+        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/askasha" />
+        <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/askasha" />
+        <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/jobsearch" />
       </Navigation>
     </HeaderContainer>
   );
