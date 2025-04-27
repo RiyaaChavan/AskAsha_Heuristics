@@ -100,7 +100,8 @@ input[type="text"].input-interview {
 
 /* Button Styling */
 button.button-interview {
-    padding: 1rem 8rem;
+    width: 33.3%;
+    padding: 1rem ;
     border-radius: 0 rem;
     background-color: #57793e;
     color: white;
