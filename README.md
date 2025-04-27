@@ -1,70 +1,118 @@
-AskAsha - Career Empowerment Chatbot for HerKey.
-AskAsha is a conversational AI assistant built for the HerKey platform to empower women's careers.
-It provides career guidance, job discovery, interview practice, skill roadmaps, and more — through an accessible, ethical, and voice-enabled chatbot experience.
+# AskAsha Chatbot
+Empowering Women’s Careers on the HerKey Platform 🌟
 
-✨ Key Features
-Job Listings Search (real-time based on location/skills)
+# ![Architecture Diagram](https://github.com/user-attachments/assets/325b76f7-8f1a-4215-8023-d2bdca68e3cd)
 
-Events & Community Program Discovery
+---
 
-Interview Assistant with Mock Q&A
+**AskAsha** is a next-generation AI-powered virtual assistant, purpose-built to empower women at every stage of their career journey through the **HerKey** platform.  
+Designed with **empathy**, **inclusivity**, and **innovation**, AskAsha bridges the gaps women often face in accessing career growth resources, mentorship, and community support.
 
-Personalized Career Roadmap Generation
+---
 
-Resume Parsing & Skill Extraction
+## 📋 Table of Contents
+- [Project Overview](#project-overview)
+- [Key Features](#key-features)
+- [Technologies Used](#technologies-used)
+- [Setup Instructions](#setup-instructions)
 
-Voice Assistant (Indian English, Female Voice)
+---
 
-Bias Detection for Ethical AI Interactions
+## 🌟 Project Overview
 
-Multimodal File Uploads
+AskAsha is an AI-powered virtual assistant aimed at enhancing user engagement on the HerKey platform.  
+Its mission is to empower women by providing:
+- Career guidance (coaching, roadmaps, mock interviews)
+- Job & event discovery (real-time listings, community events)
+- Accessibility (voice interfaces, resume uploads)
+- Ethical AI (gender-bias detection, RAG for up-to-date information)
 
-Smooth Onboarding Experience
+---
 
-⚙️ Tech Stack
+## ✨ Key Features
 
-Frontend: React, TypeScript, TailwindCSS, lucide-react, framer-motion
+| Feature | Description |
+|:--------|:------------|
+| **Job Listings** | Searchable interface that fetches live, relevant job listings via HerKey API. |
+| **Events & Programs** | Curated discovery of women-focused events using RAG. |
+| **Interview Assistant** | Mock interview sessions with real-time Q&A and personalized feedback. |
+| **Roadmap Generator** | AI-driven progressive learning plans for career skills. |
+| **Career Coach** | Advisory chatbot for resumes, negotiation, and confidence building. |
+| **Voice Assistant** | Indian-English female voice interaction with speech-to-text and text-to-speech. |
+| **Resume Parsing** | Upload resumes to auto-extract skills and improve personalization. |
+| **Bias Detection** | Flagging and remediation of toxic or biased inputs via Ethical AI. |
+| **Multimodal Attachments** | Send/receive documents, images, resumes directly within chat. |
+| **User Onboarding** | Captures profile data for tailoring the entire user experience. |
 
-Speech: Web Speech API (Speech-to-Text, Text-to-Speech)
+---
 
-Backend: Node.js (Express) / Python (FastAPI)
+## 🛠 Technologies Used
 
-AI/NLP: LangChain, Cohere, OpenAI GPT-4o-mini, HuggingFace Transformers
+| Layer | Tools/Frameworks |
+|:------|:-----------------|
+| **Frontend** | React.js, TypeScript, TailwindCSS, lucide-react, framer-motion, Web Speech API |
+| **Backend/API** | Node.js (Express), Python (FastAPI) |
+| **AI & NLP** | LangChain, Cohere APIs, OpenAI GPT-4o-mini, HuggingFace Transformers |
+| **Database** | MongoDB Atlas |
+| **Resume Parsing** | pdfplumber, docx2txt, HuggingFace NER Models |
+| **Voice Assistant** | webkitSpeechRecognition, SpeechSynthesisUtterance |
+| **Bias Detection** | Toxic-BERT, FLAN-T5 |
 
-Database: MongoDB
+---
 
+## ⚙️ Setup Instructions
 
-🛠️ Local Setup Instructions
+### Frontend Setup
 
-Frontend
+```bash
+# Clone frontend repository
+git clone https://github.com/your-repo/askasha-frontend.git
+cd askasha-frontend
 
-cd frontend
-
+# Install dependencies
 npm install
 
+# Configure environment variables (.env)
+VITE_API_URL=http://localhost:8000/api
+
+# Start the development server
 npm run dev
+```
 
-Frontend will typically run on http://localhost:5173 (or similar).
+---
 
+### Backend Setup
 
-Backend
+```bash
+# Clone backend repository
+git clone https://github.com/your-repo/askasha-backend.git
+cd askasha-backend
 
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
 
-cd backend
-python app.py
-Backend will start the API services — make sure Python dependencies are installed (e.g., fastapi, uvicorn, langchain, openai, etc.).
+# Install Python dependencies
+pip install -r requirements.txt
 
-🏗️ System Architecture
+# Configure backend environment variables (.env)
+MONGODB_URI=mongodb+srv://your_username:your_password@cluster.mongodb.net/askasha
+OPENAI_API_KEY=your_openai_key
+COHERE_API_KEY=your_cohere_key
 
-Frontend (React) → API Layer (Node.js/Python) → AI Services (LLMs, RAG, NER, Bias Detection)
-Frontend sends user input (chat, uploads, voice) to backend.
+# Start services
+# Node.js server
+npm install
+npm start
 
-API Layer processes requests and interacts with AI/NLP services.
+# FastAPI server
+uvicorn main:app --reload
+```
 
-Responses are returned and rendered dynamically in the chat interface.
+---
 
-📁 Project Structure
+## 📄 License
 
-/frontend     # React app
+This project is licensed under the MIT License.
 
-/backend      # Python app (FastAPI/Node services)
+---
