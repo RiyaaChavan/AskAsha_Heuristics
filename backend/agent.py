@@ -162,42 +162,86 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
     """
     Generate a structured learning roadmap for the given topic.
     Returns a list of roadmap items.
-    The roadmap should address one of these three user personas:
-   
-    1. FRESHERS: Women just beginning their career, seeking guidance on entry-level positions and early career development
-    2. RISERS: Women with 3-8 years of experience looking to advance to leadership positions
-    3. REJOINERS: Women returning to the workforce after a career break (maternity, caregiving, etc.)
-   
     
     Args:
         topic (str): The topic to generate a roadmap for
         conversation_history (list, optional): Previous conversations in chronological order
     """
     system_prompt = """
-    Create a detailed learning roadmap for the given topic. The roadmap should have 
-    5-10 well-structured steps that progress from beginner to advanced level.
+    Create a detailed career guidance roadmap specifically tailored for women in professional settings. The roadmap should address one of these three user personas:
     
+    1. FRESHERS: Women just beginning their career, seeking guidance on entry-level positions and early career development
+    2. RISERS: Women with 3-8 years of experience looking to advance to leadership positions
+    3. REJOINERS: Women returning to the workforce after a career break (maternity, caregiving, etc.)
+    
+    Based on the user's query, determine which persona they best align with, and create a comprehensive roadmap with 5-8 well-structured steps that progress logically.
+
     For each step in the roadmap, provide:
-    1. A clear title
-    2. A short but meaningful description (1-2 sentences)
-    3. A fictional but plausible URL for resources (starting with https://)
-    
+    1. A clear, actionable title that communicates the specific goal of this career development phase
+    2. A detailed description (3-5 sentences) with specific advice tailored for women in the workforce that explains the WHY, HOW, and EXPECTED OUTCOME of this step
+    3. A real, functioning URL to relevant resources from recognized organizations like LinkedIn Learning, Coursera, Udemy, or women-focused career sites like HerKey, Lean In, or Women Who Code
+
+    Focus on addressing these key challenges women face in the workplace:
+    - Skill development relevant to the specified field or role, including both technical and soft skills
+    - Networking and mentorship opportunities specifically designed for women's advancement
+    - Work-life balance strategies and overcoming gender-specific workplace challenges like impostor syndrome
+    - Confidence building, assertiveness training, and leadership development paths
+    - Resume/CV enhancement, personal branding, and interview preparation with emphasis on salary negotiation
+    - Navigating workplace biases and creating allies across organizational hierarchies
+
+    For FRESHERS, emphasize:
+    - Building foundational skills and identifying strengths
+    - Creating a professional presence online and offline
+    - Finding entry-level positions that offer growth potential
+    - Establishing mentorship relationships early in career
+    - Understanding workplace dynamics and communication styles
+
+    For RISERS, emphasize:
+    - Strategic visibility and influence building
+    - Developing leadership capabilities and executive presence
+    - Creating a personal leadership brand and style
+    - Negotiation tactics for promotions and additional responsibilities
+    - Building networks that support advancement opportunities
+    - Work-life integration strategies for sustainable career growth
+
+    For REJOINERS, emphasize:
+    - Skills assessment and targeted upskilling opportunities
+    - Confidence rebuilding and addressing imposter syndrome 
+    - Explaining career gaps effectively in applications and interviews
+    - Flexible work arrangements and setting boundaries
+    - Leveraging past experience while demonstrating current relevance
+    - Accelerated reintegration strategies
+
     Format your response as a JSON array where each item has the keys:
-    - title: The name of the step
-    - description: A brief explanation
-    - link: A URL to learn more
+    - title: The name of the step (be specific and action-oriented)
+    - description: A comprehensive explanation with actionable advice
+    - link: A URL to learn more (use REAL, EXISTING resources from trusted sites)
     
-    Example:
+    Example for a FRESHER in technology:
     [
       {
-        "title": "Getting Started with Python",
-        "description": "Learn the basic syntax and concepts of Python programming",
-        "link": "https://example.com/python-basics"
+        "title": "Assess Your Technical and Soft Skill Foundation",
+        "description": "Begin by conducting a thorough self-assessment of your current skills, interests, and career aspirations within the technology field. Identify gaps between your current abilities and entry-level job requirements by analyzing job postings and speaking with professionals. Use structured assessment tools to understand your technical proficiencies, communication styles, and areas where targeted development would bring the greatest career benefits.",
+        "link": "https://www.herkey.com/resources/herkey-skill-assessment-tool"
       },
       {
-        "title": "Data Structures",
-        "description": "Master lists, dictionaries, sets, and tuples in Python",
-        "link": "https://example.com/python-data-structures"
+        "title": "Build a Technical Foundation Through Structured Learning",
+        "description": "Develop essential technical skills through structured courses focused specifically on women entering tech fields. Prioritize learning paths that combine theoretical knowledge with practical application opportunities to build your portfolio. Consider completing industry-recognized certifications that validate your skills to employers while providing structured learning objectives.",
+        "link": "https://www.coursera.org/collections/women-building-careers-tech"
+      }
+    ]
+    
+    Example for a REJOINER in finance:
+    [
+      {
+        "title": "Update Industry Knowledge and Technical Skills",
+        "description": "The financial industry evolves rapidly with new regulations, technologies, and practices emerging during even short career breaks. Identify specific knowledge gaps by researching current job descriptions and industry publications to understand what's changed since your departure. Take targeted courses focusing on the most critical updates in your finance specialty, particularly around financial technology and compliance changes that have occurred during your absence.",
+        "link": "https://www.linkedin.com/learning/paths/return-to-work-in-financial-services-after-a-career-break"
+      },
+      {
+        "title": "Leverage Return-to-Work Programs in Finance",
+        "description": "Many financial institutions now offer specialized returnship programs designed specifically for professionals returning after career breaks. These structured programs typically combine refresher training, mentorship, and project work to ease the transition back to full-time employment. Application processes are often less focused on recent work history and more on your entire career experience and transferable skills.",
+        "link": "https://www.jpmorgan.com/impact/people/returntoworkprogams"
       }
     ]
     
@@ -212,8 +256,8 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
     if conversation_history and len(conversation_history) > 0:
         context = "Previous messages (in chronological order):\n"
         # The history is already in chronological order from oldest to newest
-        # Include the last 2 messages for context
-        recent_history = conversation_history[-2:] if len(conversation_history) > 2 else conversation_history
+        # Include the last 3 messages for context
+        recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
         
         for convo in recent_history:
             user_message = convo.get("message", "")
@@ -240,8 +284,8 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
         return [
             {
                 "title": "Error Creating Roadmap",
-                "description": f"We couldn't create a roadmap for '{topic}'. Please try a different topic.",
-                "link": "https://example.com/error"
+                "description": f"We couldn't create a roadmap for '{topic}'. Please try a different topic or phrase your request differently to get personalized career guidance.",
+                "link": "https://www.herkey.com/resources"
             }
         ]
 

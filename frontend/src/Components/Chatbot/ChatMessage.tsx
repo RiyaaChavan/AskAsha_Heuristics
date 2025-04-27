@@ -29,6 +29,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       onClick={handleClick}
     >
       <p>{message.text}</p>
+      
       {isSelected && message.canvasType !== 'none' && (
         <button 
           className="minimize-button"

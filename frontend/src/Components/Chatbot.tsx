@@ -7,43 +7,6 @@ import CanvasArea from './Chatbot/CanvasArea';
 import ChatInput from './Chatbot/ChatInput';
 import { Message, Payload } from './Chatbot/types';
 
-// Type declarations for Speech Recognition
-declare global {
-  interface Window {
-    webkitSpeechRecognition: any;
-    SpeechRecognition: any;
-  }
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onend: () => void;
-  onerror: (event: any) => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onstart: () => void;
-  start: () => void;
-  stop: () => void;
-}
-
-interface SpeechRecognitionResult {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognitionAlternative {
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResultList {
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-}
-
 // Main Chatbot Component
 const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -51,85 +14,6 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isCanvasOpen, setIsCanvasOpen] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
-  // --- SPEECH RECOGNITION SETUP ---
-  const getSpeechRecognition = () => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return null;
-    return new SpeechRecognition();
-  };
-
-  const startListening = () => {
-    if (isRecording) return;
-    
-
-    const recognition = getSpeechRecognition();
-    if (!recognition) return;
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let transcript = '';
-      const resultsLength = Object.keys(event.results).length;
-      for (let i = 0; i < resultsLength; i++) {
-        const result = event.results[i][0];
-        transcript += result.transcript;
-      }
-      setInput(transcript);
-      setIsRecording(false);
-    };
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => setIsRecording(false);
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsRecording(true);
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  // --- TEXT TO SPEECH ---
-  const speak = (text: string) => {
-    console.log('Speak button pressed. Text to speak:', text);
-    if (!window.speechSynthesis) {
-      alert('Speech synthesis not supported in this browser.');
-      return;
-    }
-    if (typeof window.SpeechSynthesisUtterance === 'undefined') {
-      alert('SpeechSynthesisUtterance is not available in this browser.');
-      return;
-    }
-    stopSpeaking();
-    const utterance = new window.SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = (e) => {
-      setIsSpeaking(false);
-      alert('An error occurred during speech synthesis: ' + (e.error || 'unknown error'));
-    };
-    setIsSpeaking(true);
-    try {
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      setIsSpeaking(false);
-      alert('Speech synthesis failed to start: ' + err);
-    }
-  };
-
-  const stopSpeaking = () => {
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-  };
 
   // Load past conversations when component mounts or userId changes
   useEffect(() => {
@@ -190,9 +74,6 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
           const historyMessages: Message[] = [];
           
           data.conversations.forEach((convo: any) => {
-            
-
-
             if (convo.response) {
               historyMessages.push({
                 text: convo.response.text,
@@ -209,9 +90,6 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
               isHistory: true,
               isUserMessage: true
             });
-            
-          
-            
           });
           
           // Sort messages chronologically (oldest first)
@@ -287,26 +165,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
             selectMessage={selectMessage} 
             selectedMessageId={selectedMessageId} 
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <ChatInput input={input} setInput={setInput} sendMessage={sendMessage} />
-        <button
-          onClick={isRecording ? stopListening : startListening}
-          style={{ background: isRecording ? '#ffcccc' : undefined }}
-          title={isRecording ? 'Stop Recording' : 'Start Recording'}
-        >
-          {isRecording ? '🛑 Stop' : '🎤 Speak'}
-        </button>
-        <button
-          onClick={() => {
-            const lastBotMsg = [...messages].reverse().find(m => !m.isUserMessage && m.text);
-            if (lastBotMsg) speak(lastBotMsg.text);
-          }}
-          disabled={isSpeaking}
-          title="Listen to last bot response"
-        >
-          {isSpeaking ? '🔊 Speaking...' : '🔊 Listen'}
-        </button>
-      </div>
+          <ChatInput input={input} setInput={setInput} sendMessage={sendMessage} />
         </div>
         <CanvasArea 
           messages={messages} 

@@ -369,9 +369,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
                   )}
                   
                   <div className="session-categories">
-
-
-
                     {getCategoryLabels(session.post_content.categories).slice(0, 2).map((category, i) => (
                       <span key={i} className="category-tag">
                         {category}
@@ -387,16 +384,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
                   <div className="session-status">
                     Status: <span className={`status-${session.status?.toLowerCase()}`}>{session.status}</span>
                   </div>
-                  
-                  <button 
-                    className="session-register-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(getSessionUrl(session), '_blank');
-                    }}
-                  >
-                    Join now
-                  </button>
                 </div>
               </div>
             ))}

@@ -30,7 +30,20 @@ def chat():
         if not is_valid:
             return jsonify(format_response("error", error_message)), 400
         
-        # Process the query
+        # Check if this is a session-related query
+        query = data.get('query', '').lower()
+        if 'event' in query or 'workshop' in query or 'session' in query:
+            # Return the updated response text for session-related queries
+            return jsonify({
+                "status": "success",
+                "text": "Here are some recommendations for you.",
+                "canvasType": "session",
+                "canvasUtils": {
+                    "sessions": []  # This would be populated with actual session data
+                }
+            })
+        
+        # Process other types of queries
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         response = loop.run_until_complete(agent_service.process_query(data))
