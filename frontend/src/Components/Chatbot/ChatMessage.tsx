@@ -16,15 +16,28 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   isSelected,
   isUserMessage = false 
 }) => {
+  // Function to handle clicking on the message bubble
+  const handleClick = () => {
+    if (message.canvasType !== 'none') {
+      selectMessage(index);
+    }
+  };
+
   return (
-    <div className={`message-bubble ${message.canvasType !== 'none' ? 'with-canvas' : ''} ${isUserMessage ? 'user-message' : ''}`}>
+    <div 
+      className={`message-bubble ${message.canvasType !== 'none' ? 'with-canvas clickable' : ''} ${isUserMessage ? 'user-message' : ''} ${isSelected ? 'selected' : ''}`}
+      onClick={handleClick}
+    >
       <p>{message.text}</p>
-      {message.canvasType !== 'none' && (
+      {isSelected && message.canvasType !== 'none' && (
         <button 
-          className={`view-canvas-button ${isSelected ? 'active' : ''}`} 
-          onClick={() => selectMessage(index)}
+          className="minimize-button"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the parent div's onClick
+            selectMessage(index);
+          }}
         >
-          {isSelected ? '👁️' : '👁️ View'} 
+          <span role="img" aria-label="minimize">▼</span>
         </button>
       )}
     </div>

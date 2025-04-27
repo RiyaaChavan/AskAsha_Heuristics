@@ -1,11 +1,8 @@
-// Chatbot.tsx
-import React, { useState, useEffect, useRef } from 'react';
-// Import centralized CSS file
-import './Chatbot/styles/index.css';
-import ChatWindow from './Chatbot/ChatWindow';
-import CanvasArea from './Chatbot/CanvasArea';
-import ChatInput from './Chatbot/ChatInput';
-import { Message, Payload } from './Chatbot/types';
+import React, { useRef, useState, useEffect, ChangeEvent } from 'react';
+import ChatWindow from './ChatWindow';
+import ChatInput from './ChatInput';
+import CanvasArea from './CanvasArea';
+import { Message as AppMessage } from './types';
 
 // Type declarations for Speech Recognition
 declare global {
@@ -44,99 +41,18 @@ interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
 }
 
-// Main Chatbot Component
-const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+interface ChatbotAreaProps {
+  userId: string;
+}
+
+const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
+  const [messages, setMessages] = useState<AppMessage[]>([]);
+  const [input, setInput] = useState<string>('');
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [isCanvasOpen, setIsCanvasOpen] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+  const [isCanvasOpen, setIsCanvasOpen] = useState<boolean>(true);
+  const [isListening, setIsListening] = useState<boolean>(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
-  // --- SPEECH RECOGNITION SETUP ---
-  const getSpeechRecognition = () => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return null;
-    return new SpeechRecognition();
-  };
-
-  const startListening = () => {
-    if (isRecording) return;
-    
-
-    const recognition = getSpeechRecognition();
-    if (!recognition) return;
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let transcript = '';
-      const resultsLength = Object.keys(event.results).length;
-      for (let i = 0; i < resultsLength; i++) {
-        const result = event.results[i][0];
-        transcript += result.transcript;
-      }
-      setInput(transcript);
-      setIsRecording(false);
-    };
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => setIsRecording(false);
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsRecording(true);
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  // --- TEXT TO SPEECH ---
-  const speak = (text: string) => {
-    console.log('Speak button pressed. Text to speak:', text);
-    if (!window.speechSynthesis) {
-      alert('Speech synthesis not supported in this browser.');
-      return;
-    }
-    if (typeof window.SpeechSynthesisUtterance === 'undefined') {
-      alert('SpeechSynthesisUtterance is not available in this browser.');
-      return;
-    }
-    stopSpeaking();
-    const utterance = new window.SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = (e) => {
-      setIsSpeaking(false);
-      alert('An error occurred during speech synthesis: ' + (e.error || 'unknown error'));
-    };
-    setIsSpeaking(true);
-    try {
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      setIsSpeaking(false);
-      alert('Speech synthesis failed to start: ' + err);
-    }
-  };
-
-  const stopSpeaking = () => {
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-  };
-
-  // Load past conversations when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      loadConversationHistory();
-    }
-  }, [userId]);
 
   // Handle selecting a message to display its canvas
   const selectMessage = (index: number) => {
@@ -187,12 +103,9 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         const data = await res.json();
         if (data.status === 'success' && data.conversations) {
           // Transform conversations into messages format
-          const historyMessages: Message[] = [];
+          const historyMessages: AppMessage[] = [];
           
           data.conversations.forEach((convo: any) => {
-            
-
-
             if (convo.response) {
               historyMessages.push({
                 text: convo.response.text,
@@ -209,9 +122,6 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
               isHistory: true,
               isUserMessage: true
             });
-            
-          
-            
           });
           
           // Sort messages chronologically (oldest first)
@@ -227,11 +137,77 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     }
   };
 
+  useEffect(() => {
+    if (userId) {
+      loadConversationHistory();
+    }
+  }, [userId]);
+
+  // Speech recognition functions
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Speech Recognition not supported in your browser!');
+      return;
+    }
+
+    const SpeechRecognitionAPI = window.webkitSpeechRecognition || window.SpeechRecognition;
+    const recognition = new SpeechRecognitionAPI() as SpeechRecognition;
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event: any) => console.error('Speech recognition error:', event.error);
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => prev + ' ' + transcript);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+  };
+
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Wait for voices to load
+      if (speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          const voices = window.speechSynthesis.getVoices();
+          const selectedVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Samantha'))
+          ) || voices[0];
+          
+          utterance.voice = selectedVoice;
+          utterance.rate = 1.0;
+          window.speechSynthesis.speak(utterance);
+        };
+      } else {
+        const voices = window.speechSynthesis.getVoices();
+        const selectedVoice = voices.find(voice => 
+          voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Samantha'))
+        ) || voices[0];
+        
+        utterance.voice = selectedVoice;
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+      }
+    } else {
+      console.warn('Text-to-Speech not supported in this browser');
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim()) return;
     
     // Create user message object with all necessary properties
-    const userMessage: Message = { 
+    const userMessage: AppMessage = { 
       id: messages.length, 
       text: input, 
       isUser: true,
@@ -241,7 +217,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     
     setMessages(prev => [...prev, userMessage]);
 
-    const payload: Payload = { message: input, userId };
+    const payload = { message: input, userId };
     try {
       const res = await fetch('http://localhost:5000/chat', {
         method: 'POST',
@@ -253,7 +229,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       const data = await res.json();
       
       // Add bot response with all necessary properties
-      const botMessage: Message = {
+      const botMessage: AppMessage = {
         ...data,
         id: messages.length + 1,
         isUser: false,
@@ -261,6 +237,11 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       };
       
       setMessages(prev => [...prev, botMessage]);
+      
+      // Speak the bot's response if it's text
+      if (botMessage.text && !botMessage.text.includes('http')) {
+        speakText(botMessage.text);
+      }
     } catch (err) {
       console.error(err);
       
@@ -287,26 +268,26 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
             selectMessage={selectMessage} 
             selectedMessageId={selectedMessageId} 
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <ChatInput input={input} setInput={setInput} sendMessage={sendMessage} />
-        <button
-          onClick={isRecording ? stopListening : startListening}
-          style={{ background: isRecording ? '#ffcccc' : undefined }}
-          title={isRecording ? 'Stop Recording' : 'Start Recording'}
-        >
-          {isRecording ? '🛑 Stop' : '🎤 Speak'}
-        </button>
-        <button
-          onClick={() => {
-            const lastBotMsg = [...messages].reverse().find(m => !m.isUserMessage && m.text);
-            if (lastBotMsg) speak(lastBotMsg.text);
-          }}
-          disabled={isSpeaking}
-          title="Listen to last bot response"
-        >
-          {isSpeaking ? '🔊 Speaking...' : '🔊 Listen'}
-        </button>
-      </div>
+          <div className="input-area">
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              placeholder="Type your message..."
+            />
+            <button onClick={() => {
+              if (isListening) {
+                recognitionRef.current?.stop();
+                setIsListening(false);
+              } else {
+                startListening();
+              }
+            }} className={`mic-button ${isListening ? 'listening' : ''}`}>
+              {isListening ? '🎤 Listening...' : '🎤'}
+            </button>
+            <button onClick={sendMessage}>Send</button>
+          </div>
         </div>
         <CanvasArea 
           messages={messages} 
@@ -320,4 +301,4 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
   );
 };
 
-export default Chatbot;
+export default ChatbotArea;

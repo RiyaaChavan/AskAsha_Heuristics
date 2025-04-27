@@ -70,10 +70,7 @@ interface JobDetailResponse {
   }
 }
 
-// Define work mode filter type
-type WorkModeFilter = 'all' | 'work_from_home' | 'work_from_office' | 'hybrid';
-
-const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
+const JobSearchCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -83,7 +80,16 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
   const [jobUrl, setJobUrl] = useState<string>('');
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [workModeFilter, setWorkModeFilter] = useState<WorkModeFilter>('all');
+  const [selectedWorkMode, setSelectedWorkMode] = useState<string | null>(null);
+
+  // Work mode options for filtering
+  const workModeOptions = [
+    { value: "", label: "All Work Modes" },
+    { value: "work_from_office", label: "Work from Office" },
+    { value: "work_from_home", label: "Work from Home" },
+    { value: "hybrid", label: "Hybrid" },
+    { value: "freelance", label: "Freelance" }
+  ];
 
   useEffect(() => {
     // First check if we have job_results provided directly from backend
@@ -130,7 +136,19 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
           throw new Error(`API Error: ${jobData.message}`);
         }
         
-        setJobs(jobData.body);
+        // Filter out expired jobs
+        const currentDate = new Date();
+        const validJobs = jobData.body.filter(job => {
+          // If job has an expires_on field, check if it's still valid
+          if (job.expires_on) {
+            const expiryDate = new Date(job.expires_on);
+            return expiryDate > currentDate;
+          }
+          return true; // If no expiry date, include the job
+        });
+        
+        setJobs(validJobs);
+        setFilteredJobs(validJobs);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
       } finally {
@@ -141,32 +159,26 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     fetchJobs();
   }, [message.canvasUtils]);
 
-  // Apply filter whenever workModeFilter or jobs change
+  // Apply work mode filter when selectedWorkMode changes or jobs change
   useEffect(() => {
-    if (workModeFilter === 'all') {
-      setFilteredJobs(jobs);
-    } else {
+    if (selectedWorkMode) {
       const filtered = jobs.filter(job => {
-        // Handle both array and string work_mode types
-        if (!job.work_mode) return false;
-        
-        const workModes = Array.isArray(job.work_mode) 
-          ? job.work_mode 
-          : [job.work_mode];
-          
-        // Check if any of the work modes match the filter
-        return workModes.some(mode => {
-          if (workModeFilter === 'hybrid') {
-            return mode.toLowerCase().includes('hybrid');
-          } else {
-            return mode.toLowerCase() === workModeFilter.toLowerCase();
-          }
-        });
+        const workModes = ensureArray(job.work_mode);
+        return workModes.some(mode => 
+          mode.toLowerCase() === selectedWorkMode.toLowerCase()
+        );
       });
-      
       setFilteredJobs(filtered);
+    } else {
+      setFilteredJobs(jobs);
     }
-  }, [workModeFilter, jobs]);
+  }, [selectedWorkMode, jobs]);
+
+  // Handle filter selection
+  const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    setSelectedWorkMode(value === "" ? null : value);
+  };
 
   const fetchJobDetail = async (jobId: number) => {
     // Reset error and set loading state
@@ -310,50 +322,10 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     return type.replace(/_/g, ' ');
   };
   
-  // Helper to get a human-readable label from the filter value
-  const getWorkModeLabel = (mode: WorkModeFilter): string => {
-    switch (mode) {
-      case 'work_from_home': return 'Work from Home';
-      case 'work_from_office': return 'Work from Office';
-      case 'hybrid': return 'Hybrid';
-      default: return 'All';
-    }
-  };
-  
   return (
     <div className="canvas-panel job-search-canvas">
-      <div className="job-search-header">
+      <div className="canvas-header">
         <h3>Job Search Results</h3>
-        
-        <div className="job-filters">
-          <label>Filter by:</label>
-          <div className="work-mode-filters">
-            <button 
-              className={`filter-button ${workModeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setWorkModeFilter('all')}
-            >
-              All
-            </button>
-            <button 
-              className={`filter-button ${workModeFilter === 'work_from_office' ? 'active' : ''}`}
-              onClick={() => setWorkModeFilter('work_from_office')}
-            >
-              Work from Office
-            </button>
-            <button 
-              className={`filter-button ${workModeFilter === 'work_from_home' ? 'active' : ''}`}
-              onClick={() => setWorkModeFilter('work_from_home')}
-            >
-              Work from Home
-            </button>
-            <button 
-              className={`filter-button ${workModeFilter === 'hybrid' ? 'active' : ''}`}
-              onClick={() => setWorkModeFilter('hybrid')}
-            >
-              Hybrid
-            </button>
-          </div>
-        </div>
       </div>
       
       {loading && (
@@ -387,18 +359,6 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
           >
             Try viewing jobs directly
           </a>
-        </div>
-      )}
-
-      {!loading && !error && jobs.length > 0 && filteredJobs.length === 0 && (
-        <div className="no-results">
-          <p>No jobs match the selected filter: {getWorkModeLabel(workModeFilter)}</p>
-          <button 
-            className="reset-filter-button"
-            onClick={() => setWorkModeFilter('all')}
-          >
-            Show All Jobs
-          </button>
         </div>
       )}
       
@@ -452,7 +412,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
               </div>
               
               <div className="job-detail-experience">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="#7f8c8d"/>
                 </svg>
                 {renderExperience(jobDetail.min_year, jobDetail.max_year)} experience
@@ -550,95 +510,135 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
         </div>
       )}
       
-      {!selectedJobId && !loading && !error && filteredJobs.length > 0 && (
-        <div className="job-list">
-          {filteredJobs.map((job, index) => (
-            <div 
-              key={index} 
-              className="job-card" 
-              onClick={() => job.id && handleJobSelect(job.id)}
+      {!selectedJobId && !loading && !error && jobs.length > 0 && (
+        <>
+          <div className="filter-dropdown">
+            <label htmlFor="work-mode-filter">Filter by: </label>
+            <select 
+              id="work-mode-filter" 
+              value={selectedWorkMode || ""}
+              onChange={handleFilterChange}
+              className="filter-select"
             >
-              {job.company_logo && (
-                <div className="job-logo">
-                  <img 
-                    src={job.company_logo} 
-                    alt={`${job.company_name} logo`} 
-                    className="company-logo-img" 
-                  />
-                </div>
-              )}
-              
-              <h4 className="job-title">{job.title}</h4>
-              <div className="job-company">{job.company_name}</div>
-              <div className="job-location">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#7f8c8d"/>
-                </svg>
-                {job.location_name}
-              </div>
-
-              {job.min_year && job.max_year && (
-                <div className="job-experience"></div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="#7f8c8d"/>
-                  </svg>
-                  {renderExperience(job.min_year, job.max_year)}
-                </div>
-              )}
-              
-              {job.skills && (
-                <div className="job-skills">
-                  {ensureArray(job.skills).slice(0, 3).map((skill, i) => (
-                    <span key={i} className="skill-tag">
-                      {skill}
-                    </span>
-                  ))}
-                  {ensureArray(job.skills).length > 3 && (
-                    <span className="skill-tag more-skills">
-                      +{ensureArray(job.skills).length - 3}
-                    </span>
-                  )}
-                </div>
-              )}
-              
-              <div className="job-status">
-                {job.status}
-                {job.boosted && <span className="boosted-badge">Featured</span>}
-              </div>
-              
-              <div className="job-actions">
-                <button 
-                  className="job-view-button" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    job.id && handleJobSelect(job.id);
-                  }}
-                >
-                  View Details
-                </button>
-                
-                <button 
-                  className="job-apply-button" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (job.id) {
-                      // Format the job title for URL (lowercase, replace spaces with hyphens)
-                      const formattedTitle = job.title
-                        .toLowerCase()
-                        .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
-                        .replace(/\s+/g, '-'); // Replace spaces with hyphens
-                      
-                      // Use the correct URL format as shown in the example
-                      window.open(`https://www.herkey.com/jobs/${formattedTitle}/${job.id}`, '_blank');
-                    }
-                  }}
-                >
-                  Apply Now
-                </button>
-              </div>
+              {workModeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {filteredJobs.length === 0 && (
+            <div className="no-filter-results">
+              <p>No jobs match the selected filter.</p>
+              <button 
+                className="clear-filter-button"
+                onClick={() => setSelectedWorkMode(null)}
+              >
+                Clear Filter
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+          
+          <div className="job-list">
+            {filteredJobs.map((job, index) => (
+              <div 
+                key={index} 
+                className="job-card job-card-compact" 
+                onClick={() => job.id && handleJobSelect(job.id)}
+              >
+                {job.company_logo && (
+                  <div className="job-logo">
+                    <img 
+                      src={job.company_logo} 
+                      alt={`${job.company_name} logo`} 
+                      className="company-logo-img" 
+                    />
+                  </div>
+                )}
+                
+                <h4 className="job-title">{job.title}</h4>
+                <div className="job-company">{job.company_name}</div>
+                <div className="job-location">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#7f8c8d"/>
+                  </svg>
+                  {job.location_name}
+                </div>
+
+                {job.min_year && job.max_year && (
+                  <div className="job-experience">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="#7f8c8d"/>
+                    </svg>
+                    {renderExperience(job.min_year, job.max_year)}
+                  </div>
+                )}
+
+                {job.work_mode && (
+                  <div className="job-work-mode">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v-2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" fill="#7f8c8d"/>
+                    </svg>
+                    {ensureArray(job.work_mode).map(formatJobType).join(', ')}
+                  </div>
+                )}
+                
+                {job.skills && (
+                  <div className="job-skills">
+                    {ensureArray(job.skills).slice(0, 2).map((skill, i) => (
+                      <span key={i} className="skill-tag">
+                        {skill}
+                      </span>
+                    ))}
+                    {ensureArray(job.skills).length > 2 && (
+                      <span className="skill-tag more-skills">
+                        +{ensureArray(job.skills).length - 2}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                <div className="job-status">
+                  {job.status}
+                  {job.boosted && <span className="boosted-badge">Featured</span>}
+                </div>
+                
+                <div className="job-actions">
+                  <button 
+                    className="job-view-button" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      job.id && handleJobSelect(job.id);
+                    }}
+                  >
+                    View Details
+                  </button>
+                  
+                  <button 
+                    className="job-apply-button" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (job.id) {
+                        // Format the job title for URL (lowercase, replace spaces with hyphens)
+                        const formattedTitle = job.title
+                          .toLowerCase()
+                          .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
+                          .replace(/\s+/g, '-'); // Replace spaces with hyphens
+                        
+                        // Use the correct URL format as shown in the example
+                        window.open(`https://www.herkey.com/jobs/${formattedTitle}/${job.id}`, '_blank');
+                      }
+                    }}
+                  >
+                    Apply Now
+                  </button>
+                </div>
+              </div>
+            ))}
+
+          </div>
+        </>
       )}
     </div>
   );

@@ -1,10 +1,14 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 import time
 import requests
 from flask_cors import CORS
 from agent import run_agent  # Assuming run_agent is defined in agent.py
+from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
+import os
+
 app = Flask(__name__)
-CORS(app)  # Fixed the incomplete CORS setup
+app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
+CORS(app, supports_credentials=True)  # Enabling credentials for CORS
 
 def get_session_id():
     """Get a session ID from the HerKey API"""
@@ -20,6 +24,114 @@ def health_check():
         "message": "Server is running"
     })
 
+# New routes for authentication
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    
+    # Validate input
+    if not username or not email or not password:
+        return jsonify({
+            "status": "error",
+            "message": "Missing required fields"
+        }), 400
+    
+    # Create user
+    user_id = create_user(username, email, password)
+    
+    if user_id:
+        session['user_id'] = user_id
+        return jsonify({
+            "status": "success",
+            "message": "User created successfully",
+            "user_id": user_id
+        })
+    else:
+        return jsonify({
+            "status": "error",
+            "message": "Email already exists"
+        }), 409
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    # Validate input
+    if not email or not password:
+        return jsonify({
+            "status": "error",
+            "message": "Missing required fields"
+        }), 400
+    
+    # Authenticate user
+    user_id = authenticate_user(email, password)
+    
+    if user_id:
+        session['user_id'] = user_id
+        return jsonify({
+            "status": "success",
+            "message": "Login successful",
+            "user_id": user_id
+        })
+    else:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid email or password"
+        }), 401
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.pop('user_id', None)
+    return jsonify({
+        "status": "success",
+        "message": "Logout successful"
+    })
+
+@app.route('/api/user', methods=['GET'])
+def get_user():
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({
+            "status": "error",
+            "message": "Not authenticated"
+        }), 401
+    
+    user = get_user_by_id(user_id)
+    
+    if user:
+        return jsonify({
+            "status": "success",
+            "user": user
+        })
+    else:
+        return jsonify({
+            "status": "error",
+            "message": "User not found"
+        }), 404
+
+@app.route('/api/conversations', methods=['GET'])
+def get_conversations():
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({
+            "status": "error",
+            "message": "Not authenticated"
+        }), 401
+    
+    conversations = get_user_conversations(user_id)
+    
+    return jsonify({
+        "status": "success",
+        "conversations": conversations
+    })
+
 @app.route('/chat', methods=['POST'])
 def chat():
     # Get message and userId from request
@@ -27,8 +139,24 @@ def chat():
     message = data.get('message', '')
     user_id = data.get('userId', '')
     
+    # Check if user is authenticated for saving conversations
+    is_authenticated = False
+    if not user_id:
+        user_id = session.get('user_id')
+    
+    if user_id:
+        is_authenticated = True
+        # Fetch recent conversation history for context
+        # Note: get_user_conversations returns conversations in reverse chronological order (newest first)
+        # We need to reverse the list to get chronological order (oldest first)
+        conversation_history = get_user_conversations(user_id, limit=5)
+        conversation_history.reverse()  # Reverse to get chronological order (oldest first)
+    else:
+        conversation_history = []
+    
     # Log the incoming request
-    response=(run_agent(message))
+    response = run_agent(message, conversation_history)
+    
     if response['canvasType'] == 'job_search':
         # Generate link for job search with parameters encoded in the URL
         session_id = get_session_id()
@@ -50,85 +178,10 @@ def chat():
         
         # Keep the job_api for backward compatibility if needed
         response['canvasUtils']['job_api'] = session_id
-        
-        
-        return jsonify(response)
-    if '/job' in message.lower() or 'job' in message.lower():
-        # Get session ID for HerKey API
-        session_id = get_session_id()
-        
-        # Return a response with job search canvas
-        response = {
-            "text": "I found some job listings that might interest you. Check them out in the panel.",
-            "canvasType": "job_search",
-            "canvasUtils": {
-                "job_link": "https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs",
-                "job_api": session_id
-            }
-        }
     
-    elif '/roadmap' in message.lower() or 'roadmap' in message.lower():
-        print('yo')
-        response={
-            "text": "Generated this roadmap for you.",
-            "canvasType": "roadmap",
-            "canvasUtils": {
-                "roadmap":[
-                    {
-                        "title": "Roadmap 1",
-                        "description": "Description for roadmap 1",
-                        "link": "https://example.com/roadmap1"
-                    },
-                    {
-                        "title": "Roadmap 2",
-                        "description": "Description for roadmap 2",
-                        "link": "https://example.com/roadmap2"
-                    },
-                    {
-                        "title": "Roadmap 3",
-                        "description": "Description for roadmap 3",
-                        "link": "https://example.com/roadmap3"
-                    },
-                    {
-                        "title": "Roadmap 4",
-                        "description": "Description for roadmap 4",
-                        "link": "https://example.com/roadmap4"
-                    },
-                    {
-                        "title": "Roadmap 5",
-                        "description": "Description for roadmap 5",
-                        "link": "https://example.com/roadmap5"
-                    },
-                    {
-                        "title": "Roadmap 6",
-                        "description": "Description for roadmap 6",
-                        "link": "https://example.com/roadmap6"
-                    },
-                    {
-                        "title": "Roadmap 7",
-                        "description": "Description for roadmap 7",
-                        "link": "https://example.com/roadmap7"
-                    },
-                    {
-                        "title": "Roadmap 8",
-                        "description": "Description for roadmap 8",
-                        "link": "https://example.com/roadmap8"
-                    },
-                    {
-                        "title": "Roadmap 9",
-                        "description": "Description for roadmap 9",
-                        "link": "https://example.com/roadmap9"
-                    },
-                    {
-                        "title": "Roadmap 10",
-                        "description": "Description for roadmap 10",
-                        "link": "https://example.com/roadmap10"
-                    }
-                ]
-            }
-        }
-    
-   
+    # Save the conversation if user is authenticated
+    if is_authenticated:
+        save_conversation(user_id, message, response)
     
     # Add a short delay to simulate processing (optional)
     time.sleep(0.5)

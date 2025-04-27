@@ -6,10 +6,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, selectMessage, select
   return (
     <div className="chat-window">
       {messages.map((msg, idx) => {
-        // Determine if it's a user message (even-indexed) or bot message (odd-indexed)
-        // This assumes the pattern starts with a user message followed by a bot response
-        const isUserMessage = idx % 2 === 0;
-        
         return (
           <ChatMessage 
             key={idx} 
@@ -17,7 +13,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, selectMessage, select
             index={idx}
             selectMessage={selectMessage}
             isSelected={selectedMessageId === idx}
-            isUserMessage={isUserMessage}
+            isUserMessage={msg.isUserMessage === true}
           />
         );
       })}

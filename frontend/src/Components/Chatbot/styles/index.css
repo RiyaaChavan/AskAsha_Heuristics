@@ -1,0 +1,8 @@
+/* Import all component styles */
+@import './ChatbotContainer.css';
+@import './ChatWindow.css';
+@import './ChatInput.css';
+@import './CanvasArea.css';
+@import './JobSearchCanvas.css';
+@import './RoadmapCanvas.css';
+@import './SessionCanvas.css';

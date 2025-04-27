@@ -1,0 +1,188 @@
+/* Chat window styles */
+.chat-window {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scroll-behavior: smooth;
+  position: relative;
+}
+
+.chat-window::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chat-window::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Message bubbles */
+.message-bubble {
+  max-width: 80%;
+  margin-bottom: 0;
+  padding: 16px 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  position: relative;
+  line-height: 1.6;
+  align-self: flex-start;
+  background: var(--secondary-light);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+  transition: transform var(--transition-speed) var(--transition-function), box-shadow var(--transition-speed)
+    var(--transition-function);
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.message-bubble.clickable {
+  cursor: pointer;
+  position: relative;
+}
+
+.message-bubble.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px var(--shadow-color);
+}
+
+.message-bubble.selected {
+  border: 2px solid var(--accent);
+  box-shadow: 0 6px 18px rgba(197, 248, 200, 0.3);
+}
+
+/* Minimize button for canvas */
+.minimize-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--text-primary);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s var(--transition-function);
+  box-shadow: 0 1px 3px var(--shadow-color);
+  opacity: 0.7;
+  z-index: 2;
+}
+
+.minimize-button:hover {
+  transform: scale(1.1);
+  background: var(--primary-dark);
+  opacity: 1;
+}
+
+/* Hide the view-canvas-button since we're using the message bubble itself for toggle */
+.view-canvas-button {
+  display: none;
+}
+
+.canvas-indicator {
+  font-size: 0.8rem;
+  margin-top: 8px;
+  color: grey;
+  opacity: 0.8;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.message-bubble.user-message .canvas-indicator {
+  color: var(--text-primary);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px var(--shadow-color);
+}
+
+.message-bubble p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.message-bubble.user-message {
+  align-self: flex-end;
+  background: var(--primary);
+  color: var(--text-primary);
+  border: none;
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.user-message p {
+  color: var(--text-primary);
+}
+
+.message-bubble.with-canvas {
+  background: var(--secondary-light);
+  border: 1px solid rgba(255, 214, 224, 0.3);
+  border-bottom-left-radius: 4px;
+}
+
+/* View canvas button */
+.view-canvas-button {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: var(--text-primary);
+  border: none;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all var(--transition-speed) var(--transition-function);
+  box-shadow: 0 2px 8px rgba(165, 216, 255, 0.3);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-canvas-button:hover {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  box-shadow: 0 4px 12px rgba(165, 216, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.view-canvas-button:active {
+  transform: scale(0.98);
+}
+
+.view-canvas-button.active {
+  background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+  box-shadow: 0 2px 8px rgba(255, 214, 224, 0.4);
+}

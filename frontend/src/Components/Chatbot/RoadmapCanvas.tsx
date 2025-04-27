@@ -1,13 +1,14 @@
-// filepath: d:\Code\herkey\frontend\src\Components\Chatbot\RoadmapCanvas.tsx
 import React from 'react';
 import { CanvasProps, RoadmapItem } from './types';
 
-const RoadmapCanvas: React.FC<CanvasProps> = ({ message }) => {
+const RoadmapCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
   // Early return if no roadmap data is available
   if (!message.canvasUtils?.roadmap || !Array.isArray(message.canvasUtils.roadmap)) {
     return (
       <div className="canvas-panel roadmap-canvas">
-        <h3>Career Roadmap</h3>
+        <div className="canvas-header">
+          <h3>Career Roadmap</h3>
+        </div>
         <p>No roadmap data available.</p>
       </div>
     );
@@ -17,7 +18,9 @@ const RoadmapCanvas: React.FC<CanvasProps> = ({ message }) => {
 
   return (
     <div className="canvas-panel roadmap-canvas">
-      <h3>Career Roadmap</h3>
+      <div className="canvas-header">
+        <h3>Career Roadmap</h3>
+      </div>
       
       <div className="roadmap-container">
         {roadmapItems.map((item, index) => (
@@ -34,11 +37,6 @@ const RoadmapCanvas: React.FC<CanvasProps> = ({ message }) => {
                 LEARN MORE
               </a>
             </div>
-            {/* <div className="roadmap-circle"></div>
-            {index < roadmapItems.length - 1 && (
-              <div className="roadmap-connector"></div>
-            )}
-            <div className="roadmap-arrow"></div> */}
           </div>
         ))}
       </div>
