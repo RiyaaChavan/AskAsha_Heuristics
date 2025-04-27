@@ -1,0 +1,9 @@
+{
+    "servers": {
+        "my-mcp-server-1d257724": {
+            "type": "stdio",
+            "command": "herkeys",
+            "args": []
+        }
+    }
+}
