@@ -213,10 +213,7 @@ const ChatArea = () => {
         ))}
       </div>
 
-      {/* Typing indicator when needed */}
-      <div className="px-6 pb-2">
-        <div className="text-xs text-gray-500 italic">Asha is here to help you...</div>
-      </div>
+      
 
       {/* Input area */}
       <div className="p-4 bg-white dark:bg-gray-900 shadow-inner">

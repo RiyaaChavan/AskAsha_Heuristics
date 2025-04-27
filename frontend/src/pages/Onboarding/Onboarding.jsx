@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Onboarding.css';
 
 const Onboarding = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
   const [fileName, setFileName] = useState('No file chosen');
@@ -76,9 +78,7 @@ const Onboarding = () => {
   };
 
   const startChatbot = () => {
-    alert('Redirecting to Asha AI chatbot...');
-    // Redirect logic here
-    // window.location.href = '/chatbot';
+    navigate('/chatbot');
   };
 
   useEffect(() => {
