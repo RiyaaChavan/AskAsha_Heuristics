@@ -1,7 +1,7 @@
 Flask
 flask-cors
 pymongo
-
+gunicorn
 bson
 nltk
 PyPDF2
