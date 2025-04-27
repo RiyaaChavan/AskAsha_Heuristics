@@ -1,89 +1,3 @@
-# # app.py
-# from flask import Flask, request, jsonify
-# import os
-# import traceback
-# from werkzeug.utils import secure_filename
-# from parser import parse_resume
-# from profanity import check_profanity, get_profanity_response
-# from flask_cors import CORS
-
-
-# app = Flask(__name__)
-
-
-# CORS(app, origins="http://localhost:5173")
-
-
-# UPLOAD_FOLDER = 'uploads'
-# ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
-
-
-# # Create uploads directory if it doesn't exist
-# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# def allowed_file(filename):
-#     """Check if the file has an allowed extension"""
-#     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-# @app.route('/extract-skills', methods=['POST'])
-# def extract_skills():
-#     """Endpoint to extract skills from a resume"""
-#     if 'file' not in request.files:
-#         return jsonify({'error': 'No file part'}), 400
-   
-#     file = request.files['file']
-   
-#     if file.filename == '':
-#         return jsonify({'error': 'No selected file'}), 400
-   
-#     if file and allowed_file(file.filename):
-#         try:
-#             # Save file temporarily
-#             filename = secure_filename(file.filename)
-#             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#             file.save(file_path)
-           
-#             # Parse resume and extract skills
-#             skills_data = parse_resume(file_path)
-           
-#             # Clean up
-#             os.remove(file_path)
-           
-#             return jsonify(skills_data)
-           
-#         except Exception as e:
-#             # Clean up in case of error
-#             if os.path.exists(file_path):
-#                 os.remove(file_path)
-           
-#             print(f"Error extracting skills: {str(e)}")
-#             print(traceback.format_exc())
-#             return jsonify({'error': str(e)}), 500
-   
-#     return jsonify({'error': 'File type not allowed'}), 400
-
-
-# # FOR CHECKING PROFANITY
-# @app.route("/check_text", methods=["POST"])
-# def check_text():
-#     input_data = request.get_json()
-#     text = input_data.get("text")
-#     try:
-#         if check_profanity(text):
-#             response = get_profanity_response()
-#             return jsonify({"profanity_detected": True, "response": response})
-#         else:
-#             return jsonify({"profanity_detected": False, "message": "Text is clean."})
-#     except Exception as e:
-#         print(f"Error checking profanity: {str(e)}")
-#         return jsonify({"error": str(e)}), 500
-
-
-# if __name__ == '__main__':
-#     app.run(debug=True,port = 5001)
 import os
 import re
 import traceback
@@ -94,10 +8,14 @@ from nltk.tokenize import word_tokenize
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
-from profanity import check_profanity, get_profanity_response
+import pymongo
+from gridfs import GridFS
+import hashlib
+from bson import ObjectId
+from flask import Response
 
 # Download necessary NLTK resources
-nltk.download('punkt_tab')
+nltk.download('punkt')
 
 app = Flask(__name__)
 CORS(app, origins="http://localhost:5173")
@@ -106,6 +24,12 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
+
+# MongoDB Configuration
+MONGO_URI = os.getenv("MONGO_URI")
+client = pymongo.MongoClient(MONGO_URI)
+db = client.get_database()
+fs = GridFS(db)
 
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -253,21 +177,40 @@ def extract_skills():
    
     return jsonify({'error': 'File type not allowed'}), 400
 
-# FOR CHECKING PROFANITY
-@app.route("/check_text", methods=["POST"])
-def check_text():
-    input_data = request.get_json()
-    text = input_data.get("text")
-    try:
-        if check_profanity(text):
-            response = get_profanity_response()
-            return jsonify({"profanity_detected": True, "response": response})
-        else:
-            return jsonify({"profanity_detected": False, "message": "Text is clean."})
-    except Exception as e:
-        print(f"Error checking profanity: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+@app.route('/api/upload-resume', methods=['POST'])
+def upload_resume():
+    """Upload a resume and store it in MongoDB GridFS"""
+    if 'file' not in request.files:
+        return jsonify({'message': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'message': 'No selected file'}), 400
+    
+    if file and allowed_file(file.filename):
+        try:
+            # Save file to GridFS
+            filename = secure_filename(file.filename)
+            file_id = fs.put(file, filename=filename)
+            file_url = f'/api/files/{str(file_id)}'
+            return jsonify({'fileUrl': file_url})
+        
+        except Exception as e:
+            print(f"Error uploading file: {str(e)}")
+            return jsonify({'message': 'Error uploading file'}), 500
+    return jsonify({'message': 'Invalid file type'}), 400
 
+
+@app.route('/api/files/<file_id>', methods=['GET'])
+def get_file(file_id):
+    """Serve files from GridFS"""
+    try:
+        file = fs.get(ObjectId(file_id))
+        return Response(file, mimetype="application/octet-stream")
+    except Exception as e:
+        print(f"Error streaming file: {str(e)}")
+        return jsonify({'message': 'File not found'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True)
