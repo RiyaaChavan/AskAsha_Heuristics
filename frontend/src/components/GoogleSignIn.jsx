@@ -90,7 +90,7 @@ function GoogleSignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-500 via-purple-700 to-rose-500 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#a35a79] via-[#854d6d] to-[#6d3f59] p-4">
       <motion.div
         className="w-full max-w-6xl flex rounded-3xl overflow-hidden shadow-2xl bg-white bg-opacity-10 backdrop-blur-lg"
         initial={{ opacity: 0, y: 20 }}

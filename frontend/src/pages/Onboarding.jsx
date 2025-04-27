@@ -3,12 +3,14 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
   const [fileName, setFileName] = useState('No file chosen');
   const fileInputRef = useRef(null);
+
 
   // Separated state for each field to prevent form-wide re-renders
   const [name, setName] = useState('');
@@ -20,6 +22,7 @@ const Onboarding = () => {
   const [gender, setGender] = useState('');
   const [education, setEducation] = useState('');
   const [professionalStage, setProfessionalStage] = useState('');
+
 
   // Get the complete form data when needed
   const getFormData = () => ({
@@ -33,16 +36,19 @@ const Onboarding = () => {
     professionalStage
   });
 
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     setFileName(selectedFile ? selectedFile.name : 'No file chosen');
     setResume(selectedFile);
   };
 
+
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
+
 
   const nextStep = () => {
     if (currentStep === 1) {
@@ -70,50 +76,84 @@ const Onboarding = () => {
     setCurrentStep(currentStep + 1);
   };
 
+
   const prevStep = () => {
     setCurrentStep(currentStep - 1);
   };
 
 
+
+
   const submitForm = async () => {
     try {
       let resumeURL = '';
-      
-      // Skip the file upload for now to simplify debugging
-      
+      let skills = [];
+     
+      // Upload resume and extract skills if a file was provided
+      if (resume) {
+        const formData = new FormData();
+        formData.append('file', resume);
+       
+        try {
+          // Extract skills from resume
+          const skillsResponse = await axios.post('http://localhost:5001/extract-skills', formData);
+          skills = skillsResponse.data.skills || [];
+          console.log('Extracted skills:', skills);
+        } catch (resumeError) {
+          console.error('Error extracting skills:', resumeError);
+          // Continue with submission even if skill extraction fails
+        }
+       
+        // Skip resume upload if skills extraction failed
+        // Uncomment and implement this part when ready for resume upload
+        /*
+        try {
+          const resumeUploadResponse = await axios.post('/api/upload-resume', formData);
+          resumeURL = resumeUploadResponse.data.fileUrl;
+        } catch (uploadError) {
+          console.error('Error uploading resume:', uploadError);
+        }
+        */
+      }
+     
       // Get all form data
       const userData = getFormData();
-      console.log('Submitting user data:', userData); // Add this to debug
-      
+      console.log('Submitting user data:', userData);
+     
       // Send data to MongoDB through API
       const response = await axios.post('/api/onboarding', {
         ...userData,
-        resumeUrl: resumeURL,
+        skills: skills, // Add extracted skills
+        resumeURL: resumeURL, // Note: Changed from resumeUrl to resumeURL for consistency
         createdAt: new Date()
       });
-      
-      console.log('Server response:', response.data); // Add this to see server response
-      
+     
+      console.log('Server response:', response.data);
+     
       setIsCompleted(true);
-      
+     
       setTimeout(() => {
         navigate('/chatbot');
       }, 2000);
-      
+     
     } catch (error) {
-      console.error('Error saving data to MongoDB:', error);
+      console.error('Error during form submission:', error);
+      // Better error display
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        alert(`Error: ${error.response.data.message || 'Unknown server error'}`);
+        // The server responded with a status code outside the 2xx range
+        console.error('Server error:', error.response.data);
+        alert(`Server error: ${error.response.data.message || 'Unknown error'}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('No response received:', error.request);
+        alert('No response from server. Please try again later.');
       } else {
-        alert('There was an error saving your data. Please try again.');
+        // Something happened in setting up the request
+        alert(`Error: ${error.message}`);
       }
     }
   };
-  
+ 
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -127,6 +167,7 @@ const Onboarding = () => {
     }
   };
 
+
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
@@ -136,10 +177,12 @@ const Onboarding = () => {
     }
   };
 
+
   const buttonVariants = {
     hover: { scale: 1.05 },
     tap: { scale: 0.95 }
   };
+
 
   // Direct input components with individual state handlers
   const renderStep1 = () => (
@@ -147,6 +190,7 @@ const Onboarding = () => {
       <motion.h2 className="text-2xl font-semibold text-white mb-4" variants={itemVariants}>
         Basic Information
       </motion.h2>
+
 
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="name">
@@ -162,6 +206,7 @@ const Onboarding = () => {
         />
       </motion.div>
 
+
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="email">
           Email Address<span className="text-red-500">*</span>
@@ -175,6 +220,7 @@ const Onboarding = () => {
           required
         />
       </motion.div>
+
 
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="phone">
@@ -190,6 +236,7 @@ const Onboarding = () => {
         />
       </motion.div>
 
+
       <motion.div className="flex justify-end mt-4" variants={itemVariants}>
         <motion.button
           onClick={nextStep}
@@ -204,11 +251,13 @@ const Onboarding = () => {
     </motion.div>
   );
 
+
   const renderStep2 = () => (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <motion.h2 className="text-2xl font-semibold text-white mb-4" variants={itemVariants}>
         Location & Resume
       </motion.h2>
+
 
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="location">
@@ -224,6 +273,7 @@ const Onboarding = () => {
           required
         />
       </motion.div>
+
 
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="locationPreference">
@@ -242,6 +292,7 @@ const Onboarding = () => {
         </select>
       </motion.div>
 
+
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="resume">Upload Resume</label>
         <input
@@ -254,6 +305,7 @@ const Onboarding = () => {
         />
         <span className="text-gray-300 text-sm mt-1">{fileName}</span>
       </motion.div>
+
 
       <motion.div className="flex justify-between mt-4" variants={itemVariants}>
         <motion.button
@@ -278,11 +330,13 @@ const Onboarding = () => {
     </motion.div>
   );
 
+
   const renderStep3 = () => (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
       <motion.h2 className="text-2xl font-semibold text-white mb-4" variants={itemVariants}>
         Personal Details
       </motion.h2>
+
 
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="gender">
@@ -302,6 +356,7 @@ const Onboarding = () => {
         </select>
       </motion.div>
 
+
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="education">
           Education Level<span className="text-red-500">*</span>
@@ -320,6 +375,7 @@ const Onboarding = () => {
         </select>
       </motion.div>
 
+
       <motion.div className="flex flex-col mb-4" variants={itemVariants}>
         <label className="text-white font-medium mb-2" htmlFor="professionalStage">
           Professional Stage<span className="text-red-500">*</span>
@@ -337,6 +393,7 @@ const Onboarding = () => {
           <option value="senior">Senior Level</option>
         </select>
       </motion.div>
+
 
       <motion.div className="flex justify-between mt-4" variants={itemVariants}>
         <motion.button
@@ -361,6 +418,7 @@ const Onboarding = () => {
     </motion.div>
   );
 
+
   const renderFinalStep = () => (
     <motion.div className="flex justify-center items-center">
       <motion.div
@@ -375,6 +433,7 @@ const Onboarding = () => {
     </motion.div>
   );
 
+
   return (
     <div className="bg-gray-800 min-h-screen flex flex-col items-center justify-center">
       <div className="w-full max-w-md p-8 bg-gray-900 rounded-md shadow-lg">
@@ -383,5 +442,6 @@ const Onboarding = () => {
     </div>
   );
 };
+
 
 export default Onboarding;
