@@ -81,19 +81,16 @@ const Onboarding = () => {
     setCurrentStep(currentStep - 1);
   };
 
-
-
-
+  // Replace the submitForm function with this updated version
   const submitForm = async () => {
     try {
-      let resumeURL = '';
       let skills = [];
-     
-      // Upload resume and extract skills if a file was provided
+      
+      // Extract skills from resume if a file was provided
       if (resume) {
         const formData = new FormData();
         formData.append('file', resume);
-       
+        
         try {
           // Extract skills from resume
           const skillsResponse = await axios.post('http://localhost:5001/extract-skills', formData);
@@ -101,58 +98,44 @@ const Onboarding = () => {
           console.log('Extracted skills:', skills);
         } catch (resumeError) {
           console.error('Error extracting skills:', resumeError);
-          // Continue with submission even if skill extraction fails
         }
-       
-        // Skip resume upload if skills extraction failed
-        // Uncomment and implement this part when ready for resume upload
-        /*
-        try {
-          const resumeUploadResponse = await axios.post('/api/upload-resume', formData);
-          resumeURL = resumeUploadResponse.data.fileUrl;
-        } catch (uploadError) {
-          console.error('Error uploading resume:', uploadError);
-        }
-        */
       }
-     
+
       // Get all form data
       const userData = getFormData();
-      console.log('Submitting user data:', userData);
-     
-      // Send data to MongoDB through API
+
+      // Send data to MongoDB through API (without uploading resume)
       const response = await axios.post('/api/onboarding', {
         ...userData,
-        skills: skills, // Add extracted skills
-        resumeURL: resumeURL, // Note: Changed from resumeUrl to resumeURL for consistency
+        skills: skills, // Add extracted skills to the user data
         createdAt: new Date()
       });
-     
+
       console.log('Server response:', response.data);
-     
+
       setIsCompleted(true);
-     
+
       setTimeout(() => {
         navigate('/chatbot');
       }, 2000);
-     
+
     } catch (error) {
       console.error('Error during form submission:', error);
-      // Better error display
       if (error.response) {
-        // The server responded with a status code outside the 2xx range
         console.error('Server error:', error.response.data);
         alert(`Server error: ${error.response.data.message || 'Unknown error'}`);
       } else if (error.request) {
-        // The request was made but no response was received
         console.error('No response received:', error.request);
         alert('No response from server. Please try again later.');
       } else {
-        // Something happened in setting up the request
         alert(`Error: ${error.message}`);
       }
     }
   };
+
+
+
+
  
   // Animation variants
   const containerVariants = {

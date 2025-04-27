@@ -8,17 +8,18 @@ const crypto = require('crypto');
 const dotenv = require('dotenv');
 const { json } = require('stream/consumers');
 
-
 dotenv.config();
-
 
 const app = express();
 app.use(express.json());
 
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:5173' // Your frontend URL
+}));
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI;
-
 
 // Update your MongoDB connection with error handling
 mongoose.connect(MONGO_URI)
@@ -36,6 +37,7 @@ mongoose.connection.on('error', (err) => {
 
 
 // Create user schema and model
+// Update the user schema to include skills
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
@@ -43,12 +45,12 @@ const userSchema = new mongoose.Schema({
   location: { type: String, required: true },
   locationPreference: String,
   resumeUrl: String,
-  gender: String, // Make this optional
-  education: { type: String }, // Make this optional if causing issues
-  professionalStage: { type: String }, // Make this optional if causing issues
+  gender: String,
+  education: { type: String },
+  professionalStage: { type: String },
+  skills: [String], // Add this line to store skills as an array
   createdAt: { type: Date, default: Date.now },
 });
-
 
 const User = mongoose.model('User', userSchema);
 
@@ -155,7 +157,6 @@ app.get('/api/files/:filename', async (req, res) => {
       bucketName: 'uploads'
     });
 
-
     const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
    
     downloadStream.on('error', function(err) {
@@ -169,6 +170,23 @@ app.get('/api/files/:filename', async (req, res) => {
   }
 });
 
+// GET a user's profile by their ID
+app.get('/api/profile/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const user = await User.findById(id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
