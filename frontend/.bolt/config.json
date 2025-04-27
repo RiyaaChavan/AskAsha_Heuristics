@@ -1,3 +1,11 @@
 {
-  "template": "bolt-vite-react-ts"
+  "language": "javascript",
+  "framework": "react",
+  "tooling": {
+    "bundler": "vite",
+    "linter": "eslint",
+    "formatter": "prettier",
+    "cssFramework": "tailwind"
+  },
+  "typescript": false
 }
