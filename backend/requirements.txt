@@ -1,8 +1,0 @@
-Flask
-flask-cors
-pymongo
-gridfs
-bson
-nltk
-PyPDF2
-python-docx
