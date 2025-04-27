@@ -1,26 +1,17 @@
-import React, { useState } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import ChatArea from './components/ChatArea';
-import CanvasArea from './components/CanvasArea';
-import ExampleComponent from './components/GoogleSignIn';
-import GoogleSignIn from './components/GoogleSignIn';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import GoogleSignIn from "./components/GoogleSignIn";
+import Onboarding from "./pages/Onboarding";
+import Chatbot from "./pages/Chatbot";
 
 function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [canvasOpen, setCanvasOpen] = useState(true);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const toggleCanvas = () => {
-    setCanvasOpen(!canvasOpen);
-  };
-
   return (
-    <GoogleSignIn></GoogleSignIn>
+    <Router>
+      <Routes>
+        <Route path="/" element={<GoogleSignIn />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/chatbot" element={<Chatbot />} />
+      </Routes>
+    </Router>
   );
 }
 

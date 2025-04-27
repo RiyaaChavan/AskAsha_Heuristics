@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
@@ -13,7 +13,9 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const app = initializeApp(firebaseConfig);
+// 🛠️ Check if Firebase app already initialized
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
@@ -21,6 +23,8 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
 export { auth, googleProvider };
 export default app;
-
