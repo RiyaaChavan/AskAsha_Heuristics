@@ -1,40 +1,20 @@
-import { useContext } from 'react'
-import './App.css'
-import Chatbot from './Components/Chatbot'
-import Auth from './Components/Auth/Auth'
-import { AuthProvider, AuthContext } from './context/AuthContext'
-
-// Create an inner component that uses the AuthContext
-const AppContent = () => {
-  const { isAuthenticated, user, loading, logout } = useContext(AuthContext);
-  
-  if (loading) {
-    return <div className="loading">Loading...</div>;
-  }
-  
-  return (
-    <div className="app-container">
-      {isAuthenticated && user ? (
-        <div className="authenticated-container">
-          <div className="user-header">
-            <span>Welcome, {user.username}</span>
-            <button className="logout-button" onClick={logout}>Logout</button>
-          </div>
-          <Chatbot userId={user._id} />
-        </div>
-      ) : (
-        <Auth />
-      )}
-    </div>
-  );
-};
+import './App.css';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Chatbot from './Components/Chatbot';
+import Interview from './Components/Interview';
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <div className="app-container">
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to="/jobsearch" replace />} />
+          <Route path="/jobsearch" element={<Chatbot />} />
+          <Route path="/askasha" element={<Interview />} />
+        </Routes>
+      </Router>
+    </div>
   );
 }
 
-export default App
+export default App;
