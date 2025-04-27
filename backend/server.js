@@ -1,0 +1,141 @@
+// server.js or api/index.js
+const express = require('express');
+const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
+const { GridFsStorage } = require('multer-gridfs-storage');
+const crypto = require('crypto');
+const dotenv = require('dotenv');
+const { json } = require('stream/consumers');
+
+dotenv.config();
+
+const app = express();
+app.use(express.json());
+
+// MongoDB Connection
+const MONGO_URI = process.env.MONGO_URI;
+
+// Update your MongoDB connection with error handling
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('MongoDB Atlas connected'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    // Handle connection error appropriately
+  });
+
+// Add a general connection error handler
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error after initial connection:', err);
+});
+
+// Create user schema and model
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  location: { type: String, required: true },
+  locationPreference: String,
+  resumeUrl: String,
+  gender: String, // Make this optional
+  education: { type: String }, // Make this optional if causing issues
+  professionalStage: { type: String }, // Make this optional if causing issues
+  createdAt: { type: Date, default: Date.now },
+});
+
+const User = mongoose.model('User', userSchema);
+
+// Set up GridFS storage for file uploads
+const storage = new GridFsStorage({
+  url: MONGO_URI,
+  file: (req, file) => {
+    return new Promise((resolve, reject) => {
+      crypto.randomBytes(16, (err, buf) => {
+        if (err) {
+          return reject(err);
+        }
+        const filename = buf.toString('hex') + path.extname(file.originalname);
+        const fileInfo = {
+          filename: filename,
+          bucketName: 'uploads'
+        };
+        resolve(fileInfo);
+      });
+    });
+  }
+});
+
+const upload = multer({ storage });
+
+// API Endpoints
+app.post('/api/upload-resume', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+  
+  // Return the file URL that can be used to access the file
+  const fileUrl = `/api/files/${req.file.filename}`;
+  res.json({ fileUrl });
+});
+
+// Update your backend server.js file to add more debugging:
+
+app.post('/api/onboarding', async (req, res) => {
+  try {
+    console.log('Received user data:', req.body); // Add this to see what data is being received
+    const userData = req.body;
+    const newUser = new User(userData);
+    
+    // Validate before saving to catch schema errors
+    const validationError = newUser.validateSync();
+    if (validationError) {
+      console.error('Validation error:', validationError);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Validation error',
+        error: validationError.message
+      });
+    }
+    
+    await newUser.save();
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'User data saved successfully',
+      userId: newUser._id
+    });
+  } catch (error) {
+    console.error('Error saving user data:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error saving user data',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint to serve files from GridFS
+app.get('/api/files/:filename', async (req, res) => {
+  try {
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, {
+      bucketName: 'uploads'
+    });
+
+    const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
+    
+    downloadStream.on('error', function(err) {
+      return res.status(404).json({ message: "File not found" });
+    });
+    
+    downloadStream.pipe(res);
+  } catch (error) {
+    console.error('Error streaming file:', error);
+    res.status(500).json({ message: 'Error retrieving file' });
+  }
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
