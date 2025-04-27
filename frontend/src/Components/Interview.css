@@ -1,6 +1,6 @@
 /* General Chat Area */
-.chat-container {
-    background: linear-gradient(to right, #a1c4fd, #c2e9fb); /* Soothing gradient */
+.chat-container-interview {
+    background: linear-gradient(to right, #f2e0ee, #f2e0ee); /* Soothing gradient */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -9,7 +9,7 @@
 }
 
 /* Chat Box Layout */
-.chat-box {
+.chat-box-interview {
     background-color: #ffffff;
     border-radius: 1rem;
     width: 100%;
@@ -19,9 +19,9 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Header Section */
-.header {
-    background-color: #2d3748;
+/* header-main-interview Section */
+.header-main-interview {
+    background-color: #57793e;
     color: white;
     padding: 1rem;
     display: flex;
@@ -29,13 +29,13 @@
     justify-content: space-between;
 }
 
-.header h2 {
+.header-interview h2 {
     font-size: 1.25rem;
     font-weight: 600;
 }
 
 /* Message Container */
-.message-container {
+.message-container-interview {
     padding: 1rem;
     flex-grow: 1;
     overflow-y: auto;
@@ -43,21 +43,21 @@
 }
 
 /* Message Layout */
-.user-message, .bot-message {
+.user-message-interview, .bot-message-interview {
     display: flex;
     margin-bottom: 1rem;
 }
 
-.user-message {
+.user-message-interview {
     justify-content: flex-end;
 }
 
-.bot-message {
+.bot-message-interview {
     justify-content: flex-start;
 }
 
 /* Message Box Styling */
-.message-box {
+.message-box-interview {
     max-width: 85%; /* Increased width for better visibility */
     padding: 1rem 1.5rem; /* Larger padding for better spacing */
     border-radius: 1rem;
@@ -66,21 +66,21 @@
 }
 
 /* User Message Styling */
-.user-message .message-box {
-    background-color: #6b46c1;
+.user-message-interview .message-box-interview {
+    background-color: #57793e;
     color: white;
     border-radius: 0.75rem 0.75rem 0 0.75rem;
 }
 
 /* Bot Message Styling */
-.bot-message .message-box {
+.bot-message-interview .message-box-interview {
     background-color: #e2e8f0;
     color: #2d3748;
     border-radius: 0.75rem 0.75rem 0.75rem 0;
 }
 
 /* System Message Styling */
-.system-message {
+.system-message-interview {
     background-color: #edf2f7;
     color: #4a5568;
     font-style: italic;
@@ -89,7 +89,7 @@
 }
 
 /* Input Field */
-input[type="text"] {
+input[type="text"].input-interview {
     width: 80%;
     padding: 1rem;
     margin-right: 1rem;
@@ -99,27 +99,27 @@ input[type="text"] {
 }
 
 /* Button Styling */
-button {
-    padding: 1rem 1.5rem;
-    border-radius: 0.75rem;
-    background-color: #6b46c1;
+button.button-interview {
+    padding: 1rem 8rem;
+    border-radius: 0 rem;
+    background-color: #57793e;
     color: white;
     cursor: pointer;
     transition: background-color 0.2s;
     font-size: 1.1rem; /* Larger button text */
 }
 
-button:hover {
-    background-color: #5a3ea6;
+button.button-interview:hover {
+    background-color: #a63e64;
 }
 
-button:disabled {
+button.button-interview:disabled {
     background-color: #e2e8f0;
     cursor: not-allowed;
 }
 
 /* For User ID Prompt */
-.user-id-prompt {
+.user-id-prompt-interview {
     position: fixed;
     top: 0;
     left: 0;
@@ -131,7 +131,7 @@ button:disabled {
     align-items: center;
 }
 
-.user-id-prompt .modal-content {
+.user-id-prompt-interview .modal-content {
     background: white;
     padding: 1rem;
     border-radius: 8px;
@@ -139,7 +139,7 @@ button:disabled {
     max-width: 400px;
 }
 
-.user-id-prompt input {
+.user-id-prompt-interview input {
     width: 100%;
     padding: 1rem;
     margin-bottom: 1rem;
@@ -147,9 +147,9 @@ button:disabled {
     border: 1px solid #ccc;
 }
 
-.user-id-prompt button {
+.user-id-prompt-interview button {
     width: 100%;
-    background-color: #6b46c1;
+    background-color: #57793e;
     color: white;
     padding: 1rem;
     border-radius: 8px;

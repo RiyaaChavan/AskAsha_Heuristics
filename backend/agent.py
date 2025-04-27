@@ -162,6 +162,12 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
     """
     Generate a structured learning roadmap for the given topic.
     Returns a list of roadmap items.
+    The roadmap should address one of these three user personas:
+   
+    1. FRESHERS: Women just beginning their career, seeking guidance on entry-level positions and early career development
+    2. RISERS: Women with 3-8 years of experience looking to advance to leadership positions
+    3. REJOINERS: Women returning to the workforce after a career break (maternity, caregiving, etc.)
+   
     
     Args:
         topic (str): The topic to generate a roadmap for

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ArrowLeft, Search } from 'lucide-react';
-// import './interview.css'; // Import the CSS file
+ import './interview.css'; // Import the CSS file
 
 export default function Interview() {
   const [currentChat, setCurrentChat] = useState(null);
@@ -233,10 +233,10 @@ const startChatSession = async (chatType) => {
   );
 
   return (
-    <div className="chat-container">
+    <div className="chat-container-interview">
       {showUserIdPrompt && <UserIdPrompt />}
-      <div className="chat-box">
-        <div className="header">
+      <div className="chat-box-interview">
+        <div className="header-main-interview">
           {currentChat ? (
             <>
               <button onClick={handleBackToMain}>
@@ -249,15 +249,15 @@ const startChatSession = async (chatType) => {
           )}
         </div>
 
-        <div className="message-container">
+        <div className="message-container-interview">
           {messages.map((message) => (
-            <div className={message.sender === 'user' ? 'user-message' : 'bot-message'} key={message.id}>
-              <div className="message-box" dangerouslySetInnerHTML={{ __html: message.text }} />
+            <div className={message.sender === 'user' ? 'user-message-interview' : 'bot-message-interview'} key={message.id}>
+              <div className="message-box-interview" dangerouslySetInnerHTML={{ __html: message.text }} />
             </div>
           ))}
           {isLoading && (
-            <div className="bot-message">
-              <div className="message-box">⏳ Typing...</div>
+            <div className="bot-message-interview">
+              <div className="message-box-interview">⏳ Typing...</div>
             </div>
           )}
         </div>
@@ -265,7 +265,7 @@ const startChatSession = async (chatType) => {
         {!currentChat && (
           <div className="flex flex-col items-center justify-center p-4 gap-4">
             {chatOptions.map(option => (
-              <button key={option.id} onClick={() => startChatSession(option.id)} className="bg-purple-600 text-white p-3 rounded-full w-full">
+              <button key={option.id} onClick={() => startChatSession(option.id)} className="button-interview">
                 {option.title}
               </button>
             ))}
@@ -279,12 +279,12 @@ const startChatSession = async (chatType) => {
               placeholder="Ask a question..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              className="input"
+              className="input-interview"
             />
             <button
               type="submit"
               disabled={isLoading || !inputText.trim()}
-              className="bg-purple-600 text-white py-2 px-4 rounded-full"
+              className="button-interview"
             >
               <MessageSquare size={18} />
             </button>
@@ -294,4 +294,3 @@ const startChatSession = async (chatType) => {
     </div>
   );
 }
-
