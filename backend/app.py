@@ -213,8 +213,8 @@ app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production
 CORS(app, supports_credentials=True)
 
 # External API keys
-os.environ["TAVILY_API_KEY"] = 'XBqW4qD8r6uiDf0wGAHdwA3xfZf7GQvz'
-os.environ["COHERE_API_KEY"] = os.getenv("COHERE_API_KEY")  # Replace with your actual API key
+os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY")  # Replace with your actual API key
+# os.environ["COHERE_API_KEY"] = os.getenv("COHERE_API_KEY")  # Replace with your actual API key
 
 # Initialize internet search tool and LLM
 internet_search = TavilySearchResults()
@@ -364,7 +364,7 @@ def chat():
     return jsonify(response)
 
 # -------------- LangChain Career Coach / Interview Bot -------------- #
-@app.route('/api/start-session', methods=['POST'])
+@app.route('/start-session', methods=['POST'])
 def start_session():
     data = request.json
     chat_type = data.get('chatType')
@@ -384,7 +384,7 @@ def start_session():
 
 import re
 
-@app.route('/api/send-message', methods=['POST'])
+@app.route('/send-message', methods=['POST'])
 def send_message():
     data = request.json
     session_id = data.get('sessionId')
@@ -522,7 +522,7 @@ At the end of the interview, rate the user based on their performance and provid
 
   
 
-@app.route('/api/end-session', methods=['POST'])
+@app.route('/end-session', methods=['POST'])
 def end_session():
     data = request.json
     session_id = data.get('sessionId')

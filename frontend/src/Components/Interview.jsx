@@ -11,7 +11,7 @@ export default function Interview() {
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   
-  const API_URL = 'https://askasha.onrender.com';
+  const API_URL = 'https://askasha.onrender.com/api';
 
   // Removed skill development option as requested
   const chatOptions = [
