@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ArrowLeft, Search } from 'lucide-react';
-import './Interview.css'; // Import the CSS file
+// import './interview.css'; // Import the CSS file
 
 export default function Interview() {
   const [currentChat, setCurrentChat] = useState(null);
@@ -11,7 +11,7 @@ export default function Interview() {
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   
-  const API_URL = 'https://askasha.onrender.com/api';
+  const API_URL = 'https://heuristics-ashaai-3.onrender.com/api';
 
   // Removed skill development option as requested
   const chatOptions = [

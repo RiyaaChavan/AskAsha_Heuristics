@@ -92,7 +92,7 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
     
     setIsLoadingHistory(true);
     try {
-      const res = await fetch('https://askasha.onrender.com/conversations', {
+      const res = await fetch('https://heuristics-ashaai-3.onrender.com/conversations', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -218,7 +218,7 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
 
     const payload = { message: input, userId };
     try {
-      const res = await fetch('https://askasha.onrender.com/chat', {
+      const res = await fetch('https://heuristics-ashaai-3.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

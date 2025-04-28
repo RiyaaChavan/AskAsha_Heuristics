@@ -203,6 +203,9 @@ import requests
 from agent import run_agent  # Your run_agent logic
 from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # LangChain, Tavily, Cohere imports
 from langchain_cohere import ChatCohere
 from langchain_community.tools.tavily_search import TavilySearchResults
