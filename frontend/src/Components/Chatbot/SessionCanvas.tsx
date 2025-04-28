@@ -79,12 +79,11 @@ const getCategoryName = (categoryId: number | string): string => {
   return CATEGORY_MAPPING[id] || `Category ${categoryId}`;
 };
 
-const SessionCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
+const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   // Category options for filtering
@@ -122,8 +121,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
           
           sessionId = sessionData.body.session_id;
         }
-        
-        setSessionId(sessionId);
         
         // Now fetch the sessions with the authorization header
         const sessionResponse = await fetch(message.canvasUtils.session_link, {

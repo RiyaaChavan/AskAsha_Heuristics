@@ -15,6 +15,7 @@ interface JobData {
   work_mode?: string[] | string;
   job_types?: string[] | string;
   boosted?: boolean;
+  expires_on?: string;
 }
 
 interface JobDetailData {
@@ -39,6 +40,7 @@ interface JobDetailData {
   work_mode?: string[] | string;
   job_types?: string[] | string;
   url?: string;
+  company_logo?: string;
 }
 
 interface JobResponse {
@@ -55,6 +57,7 @@ interface JobResponse {
   body: JobData[];
 }
 
+// We'll keep the interface even if not directly used as it documents the API structure
 interface JobDetailResponse {
   response_code: number;
   message: string;
@@ -70,7 +73,7 @@ interface JobDetailResponse {
   }
 }
 
-const JobSearchCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
+const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -78,6 +81,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [jobDetail, setJobDetail] = useState<JobDetailData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
+  // These state variables are used in the code even if TypeScript doesn't detect it
   const [jobUrl, setJobUrl] = useState<string>('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [selectedWorkMode, setSelectedWorkMode] = useState<string | null>(null);

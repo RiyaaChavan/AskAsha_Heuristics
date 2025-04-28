@@ -11,8 +11,8 @@ function App() {
         <Header userName="C" notificationCount={1} />
         <Routes>
           <Route path="/" element={<Navigate to="/jobsearch" replace />} />
-          <Route path="/jobsearch" element={<Chatbot />} />
-          <Route path="/askasha" element={<Interview />} />
+          <Route path="/jobsearch" element={<Chatbot userId="User" />} />
+          <Route path="/askasha" element={<Interview userId="User" />} />
         </Routes>
       </div>
     </Router>

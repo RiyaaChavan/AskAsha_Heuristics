@@ -1,7 +1,19 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-  // Add Link from react-router-dom
+
+// Define interfaces for props
+interface NavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+  to: string;
+}
+
+interface HeaderProps {
+  userName: string;
+  notificationCount: number;
+}
 
 // Icon components (simplified)
 const BriefcaseIcon = () => (
@@ -128,15 +140,6 @@ const Navigation = styled.nav`
   overflow-x: auto;
   padding-bottom: 8px;
   background-color: #8a4a6f;
-`;
-
-const NavLink = styled(Link)`
-  color: white; /* or any other color you prefer */
-  text-decoration: none; /* remove underline */
-
-  &:hover {
-    color: #ec4899; /* hover color */
-  }
 `;
 
 const NavItem = styled.div<{ active?: boolean }>`

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ChatInputProps } from './types';
 
 const ChatInput: React.FC<ChatInputProps> = ({ input, setInput, sendMessage }) => {

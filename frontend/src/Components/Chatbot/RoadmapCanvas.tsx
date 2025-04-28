@@ -1,7 +1,7 @@
 import React from 'react';
 import { CanvasProps, RoadmapItem } from './types';
 
-const RoadmapCanvas: React.FC<CanvasProps> = ({ message, onClose }) => {
+const RoadmapCanvas: React.FC<CanvasProps> = ({ message }) => {
   // Early return if no roadmap data is available
   if (!message.canvasUtils?.roadmap || !Array.isArray(message.canvasUtils.roadmap)) {
     return (
