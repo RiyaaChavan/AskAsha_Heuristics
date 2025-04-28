@@ -214,7 +214,7 @@ CORS(app, supports_credentials=True)
 
 # External API keys
 os.environ["TAVILY_API_KEY"] = 'XBqW4qD8r6uiDf0wGAHdwA3xfZf7GQvz'
-os.environ["COHERE_API_KEY"] = 'NYilw39ngvgVrZhaxDHG2mFJZTnNj6Bhzs5HnpXK'
+os.environ["COHERE_API_KEY"] = os.getenv("COHERE_API_KEY")  # Replace with your actual API key
 
 # Initialize internet search tool and LLM
 internet_search = TavilySearchResults()
@@ -382,6 +382,8 @@ def start_session():
 
     return jsonify({"sessionId": session_id, "message": f"Started {chat_type} session"})
 
+import re
+
 @app.route('/api/send-message', methods=['POST'])
 def send_message():
     data = request.json
@@ -396,30 +398,29 @@ def send_message():
     session_data = sessions[session_id]
     messages = session_data['messages']
     chat_type = session_data['chat_type']
-    did_search = False
 
     try:
         if chat_type == "interview":
-        # Initialize interview flow if not already
+            # Initialize interview flow if not already
             if "interview_stage" not in session_data:
+                session_data["interview_stage"] = "ask_role"  # Set initial stage
                 return jsonify({"message": "Please provide your role for the mock interview."})
-                session_data["interview_stage"] = "ask_role"
 
             stage = session_data["interview_stage"]
 
             if stage == "ask_role":
                 session_data["role"] = user_message
-                session_data["interview_stage"] = "ask_experience"
+                session_data["interview_stage"] = "ask_experience"  # Move to next stage
                 return jsonify({"message": "How many years of experience do you have in this field?"})
 
             elif stage == "ask_experience":
                 session_data["experience"] = user_message
-                session_data["interview_stage"] = "ask_skills"
+                session_data["interview_stage"] = "ask_skills"  # Move to next stage
                 return jsonify({"message": "What are your key skills related to this role?"})
 
             elif stage == "ask_skills":
                 session_data["skills"] = user_message
-                session_data["interview_stage"] = "start_interview"
+                session_data["interview_stage"] = "start_interview"  # Move to the interview stage
                 # System prompt to guide the LLM
                 system_prompt = f"""
     ## Task and Context
@@ -432,57 +433,93 @@ def send_message():
                 return jsonify({"message": "Let's begin the mock interview! Ready?"})
 
             elif stage == "start_interview" and user_message.lower() in ["yes", "ready", "start"]:
-                session_data["interview_stage"] = "interviewing"
+                session_data["interview_stage"] = "interviewing"  # Move to the actual interview stage
+
+                # Generate initial interview question
                 messages.append(HumanMessage(content="Generate an initial interview question based on the user's profile."))
+
+                response = llm.invoke(messages)
+                model_reply = response.content.strip()
+
+                # Add question to memory
+                messages.append(AIMessage(content=model_reply))
+
+                return jsonify({"message": model_reply})
 
             elif stage == "interviewing":
                 messages.append(HumanMessage(content=user_message))
-                messages.append(HumanMessage(content="Generate a follow-up question based on the user's response. If the user responds well, move to a new topic. If interview is complete, conclude and give feedback."))
 
-        
+                # Generate follow-up question based on user input
+                messages.append(HumanMessage(content="Generate a follow-up question based on the user's response. If the user response is satisfactory ask a different question. If the interview questions have covered all aspects to be asked about then start concluding the interview."))
+
+                follow_up_response = llm.invoke(messages)
+                follow_up_reply = follow_up_response.content.strip()
+
+                messages.append(AIMessage(content=follow_up_reply))
+
+                return jsonify({"message": follow_up_reply})
+
+            elif stage == "concluding":
+                # Provide interview rating and feedback
+                rating_messages = [
+                    HumanMessage(content="Please rate the user's performance on the interview based on their responses. Provide constructive feedback.")
+                ]
+                rating_response = llm.invoke(rating_messages)
+                rating_reply = rating_response.content.strip()
+
+                return jsonify({"message": rating_reply})
+
         else:
-        # 🌟 CAREER COACH NORMAL FLOW 🌟
-            did_search = False
-
-        # Step 1: Add human message
+            # If it's not interview, handle other chat types
             messages.append(HumanMessage(content=user_message))
 
-        # Step 2: First model response
+            # Call the LLM for normal conversation
             response = llm.invoke(messages)
             model_reply = response.content.strip()
 
-        # Step 3: Check if model requested a search
-            search_match = re.search(r"Action:\s*Search\[(.*?)\]", model_reply, re.IGNORECASE)
-
-            if search_match:
-                search_query = search_match.group(1)
-                print(f"🔎 Model requested search: {search_query}")
-                try:
-                    search_results = search_online(search_query)
-                    snippets = "\n".join([doc.metadata['snippet'] for doc in search_results])
-
-                # Step 4: Feed search results back to model
-                    search_context = f"Here are search results for '{search_query}':\n{snippets}\n\nUse this to answer properly."
-                    messages.append(HumanMessage(content=search_context))
-
-                # Step 5: Reinvoke model after search
-                    response = llm.invoke(messages)
-                    model_reply = response.content.strip()
-                    did_search = True
-
-                except Exception as e:
-                    model_reply = f"Sorry, I tried to search but something went wrong: {str(e)}"
-
-        # Step 6: Save final bot reply
             messages.append(AIMessage(content=model_reply))
 
-            return jsonify({
-            "message": model_reply,
-            "didSearch": did_search
-            })
+            return jsonify({"message": model_reply})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error in processing message: {str(e)}")
+        return jsonify({"error": "An error occurred while processing your request."}), 500
+
+# Function to call Cohere or LLM API for generating interview questions
+def generate_interview_question(role, experience, skills, messages):
+    # Create a prompt for the LLM based on the user's profile
+    prompt = f"""
+    The user is preparing for the role of {role} with {experience} years of experience. 
+    Their key skills include {skills}.
+    Ask one question at a time, and based on the user's answers, ask relevant follow-up questions. 
+Make the interview realistic by using contextual follow-up questions, similar to how a real interview would flow. 
+Ask follow up questions if the user seems to be struggling move to the next question.
+At the end of the interview, rate the user based on their performance and provide feedback.
+    """
+
+    # Add the system message with the context about the user's role, experience, and skills
+    system_message = SystemMessage(content=prompt)
+    messages.append(system_message)
+
+    try:
+        # Invoke the model to generate the question based on the updated conversation context
+        response = llm.invoke(messages)
+        model_reply = response.content.strip()
+
+        # Add the AI's reply (generated interview question) to the message history
+        messages.append(AIMessage(content=model_reply))
+
+        # Return the interview question as a JSON response
+        return {"message": model_reply, "didSearch": False}
+
+    except Exception as e:
+        # Handle any potential errors during the invocation of the model
+        print(f"Error invoking the model: {str(e)}")
+        return {"error": "Sorry, I couldn't generate a question right now."}
+
+
+
+
   
 
 @app.route('/api/end-session', methods=['POST'])

@@ -11,7 +11,7 @@ export default function Interview() {
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = 'https://askasha.onrender.com';
 
   // Removed skill development option as requested
   const chatOptions = [
@@ -24,7 +24,7 @@ export default function Interview() {
       messageContainer.scrollTop = messageContainer.scrollHeight;
     }
   }, [messages]);
-  
+
   // This function is called when a chat option button is clicked
   const startChatSession = async (chatType) => {
     // Always show the name prompt first
@@ -186,7 +186,9 @@ export default function Interview() {
           ? [
               {
                 id: Date.now(),
-                text: `Hello ${userId}, how are you today?`,
+                text: chatType === 'Interview' 
+                ? `Hello ${userId}, how are you today? Enter the role you want to prepare for.` 
+                : `Hello ${userId}, how are you today?`,
                 sender: 'bot',
               },
               ...initialMessages,

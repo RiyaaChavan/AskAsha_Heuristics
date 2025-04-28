@@ -61,7 +61,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     
     setIsLoadingHistory(true);
     try {
-      const res = await fetch('http://localhost:5000/api/conversations', {
+      const res = await fetch('https://askasha.onrender.com/conversations', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
