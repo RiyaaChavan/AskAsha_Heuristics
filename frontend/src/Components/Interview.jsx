@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ArrowLeft, Search } from 'lucide-react';
-import './interview.css'; // Import the CSS file
+import './Interview.css'; // Import the CSS file
 
 export default function Interview() {
   const [currentChat, setCurrentChat] = useState(null);

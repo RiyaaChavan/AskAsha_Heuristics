@@ -218,7 +218,7 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
 
     const payload = { message: input, userId };
     try {
-      const res = await fetch('http://localhost:5000/chat', {
+      const res = await fetch('https://askasha.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
