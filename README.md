@@ -66,8 +66,8 @@ Its mission is to empower women by providing:
 
 ```bash
 # Clone frontend repository
-git clone https://github.com/your-repo/askasha-frontend.git
-cd askasha-frontend
+git clone -b finale https://github.com/RiyaaChavan/AskAsha_Heuristics.git
+cd frontend
 
 # Install dependencies
 npm install
@@ -85,8 +85,8 @@ npm run dev
 
 ```bash
 # Clone backend repository
-git clone https://github.com/your-repo/askasha-backend.git
-cd askasha-backend
+git clone -b finale https://github.com/RiyaaChavan/AskAsha_Heuristics.git
+cd backend
 
 # Create virtual environment
 python3 -m venv venv
@@ -105,8 +105,9 @@ COHERE_API_KEY=your_cohere_key
 npm install
 npm start
 
-# FastAPI server
-uvicorn main:app --reload
+# Flask server
+cd backend
+python app.py
 ```
 
 ---
