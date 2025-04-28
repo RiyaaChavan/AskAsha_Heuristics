@@ -61,7 +61,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     
     setIsLoadingHistory(true);
     try {
-      const res = await fetch('https://heuristics-ashaai-3.onrender.com/conversations', {
+      const res = await fetch('https://askasha.onrender.com/conversations', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -121,7 +121,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
 
     const payload: Payload = { message: input, userId };
     try {
-      const res = await fetch('https://heuristics-ashaai-3.onrender.com/chat', {
+      const res = await fetch('https://askasha.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
