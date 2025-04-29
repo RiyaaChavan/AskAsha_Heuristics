@@ -24,7 +24,7 @@ AskAsha is an AI-powered virtual assistant aimed at enhancing user engagement on
 Its mission is to empower women by providing:
 - Career guidance (coaching, roadmaps, mock interviews)
 - Job & event discovery (real-time listings, community events)
-- Accessibility (voice interfaces, resume uploads)
+- Accessibility (resume uploads)
 - Ethical AI (gender-bias detection, RAG for up-to-date information)
 
 ---
