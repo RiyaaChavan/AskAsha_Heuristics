@@ -192,13 +192,24 @@
 #     app.run(host='0.0.0.0', port=5000, debug=True)
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
-import os
 import time
 import requests
 import urllib.parse
 import uuid
-import re
 import requests
+from pymongo import MongoClient
+from dotenv import load_dotenv
+from bson import ObjectId
+import os
+import jwt
+from werkzeug.utils import secure_filename
+from datetime import datetime
+import PyPDF2
+import docx2txt
+import nltk
+from nltk.tokenize import word_tokenize
+
+
 # Import your internal logic
 from agent import run_agent  # Your run_agent logic
 from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
@@ -214,6 +225,19 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
 CORS(app, supports_credentials=True)
+
+client = MongoClient(os.getenv('MONGODB_URI'))
+db = client.askasha_db
+
+# Configure upload folder
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # External API keys
 os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY")  # Replace with your actual API key
@@ -267,6 +291,161 @@ def get_session_id():
 def search_online(query):
     """Search using Tavily"""
     return internet_search.invoke({"query": query})
+
+#SKILL PARSING FUNCTION
+nltk.download('punkt')
+
+# Define skills database
+SKILL_PATTERNS = {
+    # Programming Languages
+    'languages': [
+        'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'ruby', 'php', 'go', 'rust',
+        'scala', 'kotlin', 'swift', 'objective-c', 'r', 'matlab', 'perl', 'bash', 'shell', 'sql',
+        'html', 'css', 'xml', 'yaml', 'json'
+    ],
+    
+    # Frameworks & Libraries
+    'frameworks': [
+        'react', 'angular', 'vue', 'node.js', 'express', 'django', 'flask', 'spring', 'asp.net',
+        'laravel', 'ruby on rails', 'jquery', 'bootstrap', 'tailwind', 'next.js', 'gatsby',
+        'tensorflow', 'pytorch', 'keras', 'scikit-learn', 'pandas', 'numpy', 'scipy', 'matplotlib'
+    ],
+    
+    # Databases
+    'databases': [
+        'sql', 'mysql', 'postgresql', 'mongodb', 'sqlite', 'oracle', 'redis', 'dynamodb',
+        'firebase', 'cassandra', 'elasticsearch', 'neo4j', 'nosql'
+    ],
+    
+    # DevOps & Cloud
+    'devops': [
+        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'ci/cd', 'terraform',
+        'ansible', 'git', 'github', 'gitlab', 'bitbucket', 'jira', 'agile', 'scrum'
+    ],
+    
+    # Mobile Development
+    'mobile': [
+        'android', 'ios', 'react native', 'flutter', 'xamarin', 'swift', 'kotlin',
+        'mobile development', 'app development'
+    ],
+    
+    # Soft Skills
+    'soft_skills': [
+        'problem solving', 'teamwork', 'communication', 'leadership', 'time management',
+        'project management', 'critical thinking', 'analytical skills', 'adaptability'
+    ],
+    
+    # Data Science & Machine Learning
+    'data_science': [
+        'machine learning', 'deep learning', 'neural networks', 'data analysis', 'data visualization',
+        'big data', 'hadoop', 'spark', 'nlp', 'computer vision', 'ai', 'artificial intelligence',
+        'data mining', 'statistical analysis', 'business intelligence', 'a/b testing'
+    ],
+    
+    # Design
+    'design': [
+        'ui/ux', 'graphic design', 'adobe photoshop', 'adobe illustrator', 'figma', 'sketch',
+        'responsive design', 'wireframing', 'prototyping'
+    ]
+}
+
+# Create a flat list of all skills
+ALL_SKILLS = []
+for category, skills in SKILL_PATTERNS.items():
+    ALL_SKILLS.extend(skills)
+
+def extract_text_from_pdf(file_path):
+    """Extract text from PDF file"""
+    with open(file_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+        return text
+
+def extract_text_from_docx(file_path):
+    """Extract text from DOCX file"""
+    return docx2txt.process(file_path)
+
+def extract_text_from_txt(file_path):
+    """Extract text from plain text file"""
+    with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+        return file.read()
+
+def extract_text_from_file(file_path):
+    """Extract text from various file formats"""
+    file_extension = file_path.split('.')[-1].lower()
+    
+    if file_extension == 'pdf':
+        return extract_text_from_pdf(file_path)
+    elif file_extension == 'docx':
+        return extract_text_from_docx(file_path)
+    elif file_extension == 'txt':
+        return extract_text_from_txt(file_path)
+    else:
+        return ""
+
+def extract_skills_from_text(text):
+    """Extract skills from text using nltk and pattern matching"""
+    # Tokenize the text into words
+    words = word_tokenize(text.lower())
+    
+    skills_found = set()
+    
+    # Check if each word is a skill from our skill list
+    for word in words:
+        if word in ALL_SKILLS:
+            skills_found.add(word)
+    
+    # Also look for skills mentioned in lists and bullet points
+    bullet_pattern = r'(?:•|\*|\-|\d+\.)?\s*([A-Za-z0-9][\w\+\#\.\s]+)(?:,|\.|;|$)'
+    for match in re.finditer(bullet_pattern, text.lower()):
+        item = match.group(1).strip()
+        # Check if this item contains any of our skills
+        for skill in ALL_SKILLS:
+            if re.search(r'\b' + re.escape(skill) + r'\b', item):
+                skills_found.add(skill)
+    
+    # Format skills with proper capitalization
+    formatted_skills = []
+    for skill in skills_found:
+        # Special case for acronyms
+        if skill.upper() in ['HTML', 'CSS', 'SQL', 'PHP', 'AWS', 'GCP', 'API', 'AI', 'ML', 'NLP']:
+            formatted_skills.append(skill.upper())
+        else:
+            # Capitalize first letter of each word
+            formatted_skills.append(' '.join(word.capitalize() for word in skill.split()))
+    
+    # Categorize skills
+    categorized_skills = {}
+    for skill in skills_found:
+        for category, category_skills in SKILL_PATTERNS.items():
+            if skill in category_skills:
+                if category not in categorized_skills:
+                    categorized_skills[category] = []
+                
+                # Add with proper formatting
+                if skill.upper() in ['HTML', 'CSS', 'SQL', 'PHP', 'AWS', 'GCP', 'API', 'AI', 'ML', 'NLP']:
+                    categorized_skills[category].append(skill.upper())
+                else:
+                    categorized_skills[category].append(' '.join(word.capitalize() for word in skill.split()))
+                break
+    
+    return {
+        "skills": sorted(formatted_skills),
+        "categorized_skills": categorized_skills
+    }
+
+def parse_resume(file_path):
+    """Main function to parse resume and extract skills"""
+    # Extract text from the file
+    text = extract_text_from_file(file_path)
+    
+    # Extract skills from the text
+    skills_data = extract_skills_from_text(text)
+    
+    return skills_data
+\
 
 # -------------- Health Check -------------- #
 @app.route('/api/health', methods=['GET'])
@@ -330,6 +509,104 @@ def get_conversations():
     conversations = get_user_conversations(user_id)
     return jsonify({"status": "success", "conversations": conversations})
 
+@app.route('/api/check-user', methods=['POST'])
+def check_user():
+    data = request.json
+    user = db.users.find_one({'uid': data['uid']})
+    return jsonify({'exists': bool(user)})
+
+@app.route('/api/create-profile', methods=['POST'])
+def create_profile():
+    try:
+        # Get form data
+        data = request.form.to_dict()
+        uid = data.pop('uid', None)
+        
+        if not uid:
+            return jsonify({'error': 'User ID is required'}), 400
+
+        # Handle resume file
+        if 'resume' not in request.files:
+            return jsonify({'error': 'No resume file'}), 400
+            
+        resume_file = request.files['resume']
+        if resume_file and allowed_file(resume_file.filename):
+            filename = secure_filename(f"{uid}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume_file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            resume_file.save(filepath)
+            
+            # Parse resume and extract skills
+            skills_data = parse_resume(filepath)
+            
+            # Create user profile
+            profile_data = {
+                'uid': uid,
+                'name': data.get('name'),
+                'email': data.get('email'),
+                'phone': data.get('phone'),
+                'location': data.get('location'),
+                'locationPreference': data.get('locationPreference'),
+                'gender': data.get('gender'),
+                'education': data.get('education'),
+                'professionalStage': data.get('professionalStage'),
+                'resume_file': filename,
+                'skills': skills_data['skills'],
+                'categorized_skills': skills_data['categorized_skills'],
+                'created_at': datetime.utcnow()
+            }
+            
+            # Insert or update profile
+            db.users.update_one(
+                {'uid': uid},
+                {'$set': profile_data},
+                upsert=True
+            )
+            
+            return jsonify({'message': 'Profile created successfully'}), 201
+            
+        return jsonify({'error': 'Invalid file type'}), 400
+
+    except Exception as e:
+        print(f"Error creating profile: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/update-profile/<uid>', methods=['PUT'])
+def update_profile(uid):
+    try:
+        data = request.json
+        result = db.users.update_one(
+            {'uid': uid},
+            {'$set': data}
+        )
+        if result.modified_count:
+            return jsonify({'message': 'Profile updated successfully'})
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/api/profile/<uid>', methods=['GET'])
+def get_profile(uid):
+    try:
+        user = db.users.find_one({'uid': uid})
+        if user:
+            user['_id'] = str(user['_id'])  # Convert ObjectId to string
+            return jsonify(user)
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        print(f"Server error: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+@app.route('/api/delete-profile/<uid>', methods=['DELETE'])
+def delete_profile(uid):
+    try:
+        result = db.users.delete_one({'uid': uid})
+        if result.deleted_count:
+            return jsonify({'message': 'Profile deleted successfully'})
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 # -------------- Chat via run_agent (HerKey Chatbot) -------------- #
 @app.route('/api/chat', methods=['POST'])
 def chat():
