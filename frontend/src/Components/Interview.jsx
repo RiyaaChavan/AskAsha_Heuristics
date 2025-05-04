@@ -9,7 +9,7 @@ export default function Interview() {
   const [sessionId, setSessionId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState('');
-  const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
+  const [showUserIdPrompt, setShowUserIdPrompt] = useState(true);
   const [charCount, setCharCount] = useState(0);
   
   const API_URL = 'https://askasha.onrender.com/api';
@@ -18,12 +18,10 @@ export default function Interview() {
   
   // Determine chat type from URL path
   const chatType = location.pathname.includes('interview') ? 'interview' : 'career';
-  
-  // Start session immediately when component mounts
+
   useEffect(() => {
-    if (!userId) {
-      setShowUserIdPrompt(true);
-    } else {
+    // Only start session if we have a userId
+    if (userId && !sessionId) {
       startChatSession();
     }
   }, [userId]);
@@ -211,34 +209,30 @@ export default function Interview() {
     return chatType === 'interview' ? 'Job Interview Prep' : 'Career Coach';
   };
 
-  const UserIdPrompt = () => (
-    <div className="user-id-prompt-interview">
-      <div className="modal-content">
-        <h3>What's your name?</h3>
-        <form onSubmit={handleUserIdSubmit}>
-          <input
-            type="text"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            placeholder="Enter your name"
-            className="name-input"
-            required
-            autoFocus
-          />
-          <button
-            type="submit"
-            className="continue-button"
-          >
-            Continue
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-
   return (
     <div className="chat-container-interview asha-theme">
-      {showUserIdPrompt && <UserIdPrompt />}
+      {showUserIdPrompt && (
+        <div className="name-modal-overlay">
+          <div className="name-modal">
+            <h3>What's your name?</h3>
+            <form onSubmit={handleUserIdSubmit}>
+              <input
+                type="text"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="Enter your name"
+                className="name-input"
+                required
+                autoFocus
+              />
+              <button type="submit" className="continue-button">
+                Continue
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="chat-box-interview">
         <div className="header-main-interview">
           <button onClick={handleBackToMain} className="back-button">
@@ -255,32 +249,33 @@ export default function Interview() {
           ))}
           {isLoading && (
             <div className="bot-message-interview">
-              <div className="message-box-interview typing-indicator">⏳ Typing...</div>
+              <div className="message-box-interview typing-indicator">
+                <span>Typing...</span>
+              </div>
             </div>
           )}
         </div>
 
-        <form onSubmit={handleSendMessage} className="message-input-container">
-          <div className="input-wrapper">
-            <input
-              type="text"
-              placeholder="Ask a question..."
-              value={inputText}
-              onChange={handleInputChange}
-              className="message-input"
-              disabled={isLoading || !sessionId}
-            />
-            <div className="char-count">{charCount} / 1200</div>
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading || !inputText.trim() || !sessionId}
-            className="send-button"
-            aria-label="Send message"
-          >
-            <Send size={18} />
-          </button>
-        </form>
+        <div className="input-area-interview">
+          <form onSubmit={handleSendMessage}>
+            <div className="input-container">
+              <input
+                type="text"
+                placeholder="Ask a question..."
+                value={inputText}
+                onChange={handleInputChange}
+                disabled={isLoading || !sessionId}
+              />
+              <button 
+                type="submit"
+                disabled={isLoading || !inputText.trim() || !sessionId}
+                className="send-button"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
