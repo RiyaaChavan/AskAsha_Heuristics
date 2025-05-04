@@ -11,12 +11,11 @@ export default function Interview() {
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = 'https://askasha.onrender.com/api';
 
   const chatOptions = [
     { id: 'career', title: 'Career Coach', description: 'Get guidance on career paths and growth opportunities' },
     { id: 'interview', title: 'Job Interview Prep', description: 'Practice interview questions and get feedback' },
-    { id: 'skills', title: 'Skill Development Roadmap', description: 'Create personalized learning paths for new skills' },
   ];
 
 const startChatSession = async (chatType) => {
@@ -44,7 +43,6 @@ const startChatSession = async (chatType) => {
       setSessionId(data.sessionId);
       setCurrentChat(chatType);
 
-      // Override the first message
       const initialMessages = data.messageHistory || [];
       const messagesToDisplay = initialMessages.length > 0 
         ? [
@@ -208,22 +206,22 @@ const startChatSession = async (chatType) => {
   };
 
   const UserIdPrompt = () => (
-    <div className="user-id-prompt">
+    <div className="user-id-prompt-interview">
       <div className="modal-content">
-        <h3 className="text-lg font-semibold mb-4">What's your name?</h3>
+        <h3>What's your name?</h3>
         <form onSubmit={handleUserIdSubmit}>
-        <input
-             type="text"
-              value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                       placeholder="Enter your name"
-                 className="w-full border border-gray-300 rounded px-4 py-2 mb-4"
-                       required
-                  autoFocus // Ensures the input is focused
-/>
+          <input
+            type="text"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="Enter your name"
+            className="name-input"
+            required
+            autoFocus
+          />
           <button
             type="submit"
-            className="w-full bg-purple-600 text-white py-2 rounded"
+            className="continue-button"
           >
             Continue
           </button>
