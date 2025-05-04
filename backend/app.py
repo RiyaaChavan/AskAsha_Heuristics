@@ -132,7 +132,7 @@
 #         "conversations": conversations
 #     })
 
-# @app.route('/chat', methods=['POST'])
+# @app.route('/api/chat', methods=['POST'])
 # def chat():
 #     # Get message and userId from request
 #     data = request.get_json()
@@ -269,7 +269,7 @@ def search_online(query):
     return internet_search.invoke({"query": query})
 
 # -------------- Health Check -------------- #
-@app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "ok", "message": "Server is running"})
 
@@ -331,7 +331,7 @@ def get_conversations():
     return jsonify({"status": "success", "conversations": conversations})
 
 # -------------- Chat via run_agent (HerKey Chatbot) -------------- #
-@app.route('/chat', methods=['POST'])
+@app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     message = data.get('message', '')

@@ -12,7 +12,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Main chat endpoint
-app.post('/chat', (req, res) => {
+app.post('/api/chat', (req, res) => {
   const { message, userId } = req.body;
   
   // Log the incoming request
@@ -46,7 +46,7 @@ app.post('/chat', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
 
