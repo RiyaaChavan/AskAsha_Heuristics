@@ -1,112 +1,151 @@
-/* Update existing chat container styling to match other components */
-.chat-container-interview {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--background, #f9f9f9);
+/* Keep these styles for the input area as they're still used */
+.message-input-container {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eaeaea;
+    gap: 0.75rem;
+    position: sticky;
+    bottom: 0;
+  }
+  
+  .input-wrapper {
+    position: relative;
+    flex: 1;
+  }
+  
+  .message-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 24px;
+    border: 1px solid #ddd;
+    font-size: 0.95rem;
+    background-color: white;
+    transition: border-color 0.2s;
+  }
+  
+  .message-input:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+  
+  .char-count {
+    position: absolute;
+    right: 12px;
+    bottom: -1.5rem;
+    font-size: 0.75rem;
+    color: #888;
+  }
+  
+  .send-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary, #6366f1);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .send-button:hover {
+    background-color: var(--primary-dark, #4f46e5);
+  }
+  
+  .send-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  /* You can remove this class as it's no longer used */
+  /* 
+  .chat-options-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     padding: 1rem;
-    position: relative;
-    padding-bottom: 0;
+    gap: 1rem;
+  }
+  */
+  
+  .back-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+  
+  .typing-indicator {
+    background-color: #f0f0f0 !important;
+    color: #666 !important;
+  }
+  
+  /* You can remove these styles as they're no longer used */
+  /*
+  .button-interview {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    background-color: var(--primary, #6366f1);
+    color: white;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1rem;
+  }
+  
+  .button-interview:hover {
+    background-color: var(--primary-dark, #4f46e5);
+  }
+  
+  .button-interview:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  */
+  
+  /* Add these new styles to enhance the component */
+  .message-container-interview {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
   
   .chat-box-interview {
-    background-color: var(--surface, #ffffff);
-    border-radius: 1rem;
-    width: 100%;
-    height: 100%;
-    padding-top: 0;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 15px var(--shadow-color, rgba(0, 0, 0, 0.1));
-  }
-  
-  /* Header styling */
-  .header-main-interview {
-    background-color: var(--primary, #6366f1);
-    color: white;
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 1rem 1rem 0 0;
-  }
-  
-  /* Name prompt modal styling to match screenshot */
-  .user-id-prompt-interview {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-  }
-  
-  .user-id-prompt-interview .modal-content {
-    background: #f0f0f0;
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    width: 90%;
-    max-width: 320px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  }
-  
-  .user-id-prompt-interview h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #333;
-    text-align: center;
-  }
-  
-  .user-id-prompt-interview .name-input {
-    width: 100%;
-    padding: 0.8rem;
-    margin-bottom: 1rem;
+    height: 100%;
     border-radius: 0.5rem;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-    box-sizing: border-box;
-    background-color: #fff;
+    overflow: hidden;
   }
   
-  .user-id-prompt-interview .continue-button {
-    width: 100%;
-    background-color: var(--primary, #57793e);
-    color: white;
-    padding: 0.8rem;
-    border-radius: 0.5rem;
-    border: none;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    font-weight: 500;
+  /* Style for user messages to match job search/sessions UI */
+  .user-message-interview .message-box-interview {
+    background-color: #fad0d0;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem 1rem 0 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
   
-  .user-id-prompt-interview .continue-button:hover {
-    background-color: var(--primary-dark, #4a6934);
-  }
-  
-  /* Button styling for chat options */
-  button.button-interview {
-    width: 80%;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    background-color: var(--primary, #6366f1);
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    font-size: 1.1rem;
-    border: none;
-    margin-bottom: 0.5rem;
-  }
-  
-  button.button-interview:hover {
-    background-color: var(--primary-dark, #4338ca);
+  /* Style for bot messages to match job search/sessions UI */
+  .bot-message-interview .message-box-interview {
+    background-color: #d3eaff;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem 1rem 1rem 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
