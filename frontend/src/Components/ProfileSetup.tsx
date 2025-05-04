@@ -38,7 +38,7 @@ export const ProfileSetup = () => {
       if (!currentUser?.uid) return;
 
       try {
-        const response = await fetch(`http://localhost:5000/api/profile/${currentUser.uid}`);
+        const response = await fetch(`https://askasha.onrender.com/api/profile/${currentUser.uid}`);
         if (response.ok) {
           navigate('/home');
         }
@@ -81,7 +81,7 @@ export const ProfileSetup = () => {
     formDataToSend.append('uid', currentUser?.uid || '');
 
     try {
-      const response = await fetch('http://localhost:5000/api/create-profile', {
+      const response = await fetch('https://askasha.onrender.com/api/create-profile', {
         method: 'POST',
         body: formDataToSend,
       });
