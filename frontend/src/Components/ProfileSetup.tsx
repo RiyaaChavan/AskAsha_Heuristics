@@ -40,7 +40,7 @@ export const ProfileSetup = () => {
       try {
         const response = await fetch(`https://askasha.onrender.com/api/profile/${currentUser.uid}`);
         if (response.ok) {
-          navigate('/home');
+          navigate('/jobsearch');
         }
       } catch (error) {
         console.error('Error checking profile:', error);
@@ -87,7 +87,7 @@ export const ProfileSetup = () => {
       });
 
       if (response.ok) {
-        navigate('/home');
+        navigate('/jobsearch');
       }
     } catch (error) {
       console.error('Error creating profile:', error);
