@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ArrowLeft, Send } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import './Chatbot/styles/Interview.css';
+import './Chatbot/styles/Interview.css'; // Import the CSS file
 
 export default function Interview() {
+  const [currentChat, setCurrentChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [sessionId, setSessionId] = useState(null);
@@ -12,86 +12,69 @@ export default function Interview() {
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   const [charCount, setCharCount] = useState(0);
   
+  // Updated API URL to use askasha.onrender.com
   const API_URL = 'https://askasha.onrender.com/api';
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  // More specific path checking for chat type
-  const chatType = location.pathname.includes('/interview') ? 'interview' : 'career';
 
-  useEffect(() => {
-    // Check if user has already provided a name
-    const savedUserId = localStorage.getItem('asha_userId');
-    if (savedUserId) {
-      setUserId(savedUserId);
-      setShowUserIdPrompt(false);
-      // Only start session if we haven't already
-      if (!sessionId) {
-        startChatSession(savedUserId);
-      }
+  const chatOptions = [
+    { id: 'career', title: 'Career Coach', description: 'Get guidance on career paths and growth opportunities' },
+    { id: 'interview', title: 'Job Interview Prep', description: 'Practice interview questions and get feedback' },
+  ];
+
+const startChatSession = async (chatType) => {
+  if (!userId) {
+    setShowUserIdPrompt(true);
+    setCurrentChat(chatType);
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/start-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chatType,
+        userId,
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      setSessionId(data.sessionId);
+      setCurrentChat(chatType);
+
+      // Override the first message
+      const initialMessages = data.messageHistory || [];
+      const messagesToDisplay = initialMessages.length > 0 
+        ? [
+            {
+              id: Date.now(),
+              text: `Hello ${userId}, how are you today?`,
+              sender: 'bot',
+            },
+            ...initialMessages,
+          ]
+        : [
+            {
+              id: Date.now(),
+              text: `Hello ${userId}, how are you today?`,
+              sender: 'bot',
+            },
+          ];
+
+      setMessages(messagesToDisplay);
     } else {
-      setShowUserIdPrompt(true);
+      console.error('Failed to start session:', data.error);
     }
-  }, []);
+  } catch (error) {
+    console.error('Error starting session:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-  // Effect to handle navigation changes
-  useEffect(() => {
-    if (userId && !sessionId) {
-      startChatSession(userId);
-    }
-  }, [location.pathname, userId]);
-
-  const startChatSession = async (userIdToUse = userId) => {
-    if (!userIdToUse) {
-      setShowUserIdPrompt(true);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/start-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatType,
-          userId: userIdToUse,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSessionId(data.sessionId);
-
-        const initialMessages = data.messageHistory || [];
-        const messagesToDisplay = initialMessages.length > 0 
-          ? [
-              {
-                id: Date.now(),
-                text: `Hello ${userIdToUse}, how are you today?`,
-                sender: 'bot',
-              },
-              ...initialMessages,
-            ]
-          : [
-              {
-                id: Date.now(),
-                text: `Hello ${userIdToUse}, how are you today?`,
-                sender: 'bot',
-              },
-            ];
-
-        setMessages(messagesToDisplay);
-      } else {
-        console.error('Failed to start session:', data.error);
-      }
-    } catch (error) {
-      console.error('Error starting session:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -192,7 +175,7 @@ export default function Interview() {
   
     return formattedResponse;
   };
-
+  
   const handleBackToMain = async () => {
     if (sessionId) {
       try {
@@ -210,27 +193,22 @@ export default function Interview() {
       }
     }
     
-    // Reset state but keep the userId
+    setCurrentChat(null);
     setSessionId(null);
     setMessages([]);
-    
-    // Navigate back to home
-    navigate('/');
   };
 
   const handleUserIdSubmit = (e) => {
     e.preventDefault();
-    const enteredUserId = userId.trim();
-    if (!enteredUserId) return;
-    
-    // Save user ID to localStorage to persist across sessions
-    localStorage.setItem('asha_userId', enteredUserId);
     setShowUserIdPrompt(false);
-    startChatSession(enteredUserId);
+    if (currentChat) {
+      startChatSession(currentChat);
+    }
   };
 
-  const getChatTitle = () => {
-    return chatType === 'interview' ? 'Job Interview Prep' : 'Career Coach';
+  const getCurrentChatTitle = (chatId = currentChat) => {
+    const option = chatOptions.find(opt => opt.id === chatId);
+    return option ? option.title : '';
   };
 
   return (
@@ -259,10 +237,16 @@ export default function Interview() {
 
       <div className="chat-box-interview">
         <div className="header-main-interview">
-          <button onClick={handleBackToMain} className="back-button">
-            <ArrowLeft size={20} />
-          </button>
-          <h2>{getChatTitle()}</h2>
+          {currentChat ? (
+            <>
+              <button onClick={handleBackToMain} className="back-button">
+                <ArrowLeft size={20} />
+              </button>
+              <h2>{getCurrentChatTitle()}</h2>
+            </>
+          ) : (
+            <h2>Choose Your Assistant</h2>
+          )}
         </div>
 
         <div className="message-container-interview">
@@ -274,33 +258,45 @@ export default function Interview() {
           {isLoading && (
             <div className="bot-message-interview">
               <div className="message-box-interview typing-indicator">
-                <span>Typing...</span>
+                <span>⏳ Typing...</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="input-area-interview">
-          <form onSubmit={handleSendMessage}>
-            <div className="input-container">
-              <input
-                type="text"
-                placeholder="Ask a question..."
-                value={inputText}
-                onChange={handleInputChange}
-                disabled={isLoading || !sessionId}
-              />
-              <div className="char-count">{charCount}/1200</div>
-              <button 
-                type="submit"
-                disabled={isLoading || !inputText.trim() || !sessionId}
-                className="send-button"
-              >
-                <Send size={18} />
+        {!currentChat && (
+          <div className="chat-options-container">
+            {chatOptions.map(option => (
+              <button key={option.id} onClick={() => startChatSession(option.id)} className="button-interview">
+                {option.title}
               </button>
-            </div>
-          </form>
-        </div>
+            ))}
+          </div>
+        )}
+
+        {currentChat && (
+          <div className="input-area-interview">
+            <form onSubmit={handleSendMessage}>
+              <div className="input-container">
+                <input
+                  type="text"
+                  placeholder="Ask a question..."
+                  value={inputText}
+                  onChange={handleInputChange}
+                  disabled={isLoading || !sessionId}
+                />
+                <div className="char-count">{charCount}/1200</div>
+                <button 
+                  type="submit"
+                  disabled={isLoading || !inputText.trim() || !sessionId}
+                  className="send-button"
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-/* Base styles for containers */
+/* General Chat Area */
 .chat-container-interview {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     height: 100%;
@@ -8,6 +8,7 @@
     background-color: var(--background, #f3f4f6);
   }
   
+  /* Chat Box Layout */
   .chat-box-interview {
     display: flex;
     flex-direction: column;
@@ -18,7 +19,7 @@
     background-color: white;
   }
   
-  /* Header styles - matching job search/sessions UI */
+  /* Header Section */
   .header-main-interview {
     display: flex;
     align-items: center;
@@ -52,7 +53,7 @@
     background-color: rgba(255, 255, 255, 0.2);
   }
   
-  /* Message container styles */
+  /* Message Container */
   .message-container-interview {
     flex: 1;
     padding: 1rem;
@@ -63,6 +64,7 @@
     background-color: #f9f9f9;
   }
   
+  /* Message Layout */
   .user-message-interview {
     display: flex;
     justify-content: flex-end;
@@ -75,18 +77,21 @@
     margin-bottom: 0.75rem;
   }
   
+  /* Message Box Styling */
   .message-box-interview {
     padding: 0.75rem 1rem;
     max-width: 80%;
     word-break: break-word;
   }
   
+  /* User Message Styling - Changed to pink */
   .user-message-interview .message-box-interview {
     background-color: #fad0d0; /* Pink bubble for user */
     border-radius: 1rem 1rem 0 1rem;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
   
+  /* Bot Message Styling - Changed to blue */
   .bot-message-interview .message-box-interview {
     background-color: #d3eaff; /* Blue bubble for bot */
     border-radius: 1rem 1rem 1rem 0;
@@ -159,7 +164,40 @@
     cursor: not-allowed;
   }
   
-  /* Name modal styles - matching screenshot */
+  /* Chat options container */
+  .chat-options-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  /* Main buttons (Career Coach, Interview Prep) */
+  .button-interview {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    background-color: #57793e; /* Green button like job search */
+    color: white;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1rem;
+    min-width: 250px;
+  }
+  
+  .button-interview:hover {
+    background-color: #496832;
+  }
+  
+  .button-interview:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  /* Name modal styling - matching screenshot */
   .name-modal-overlay {
     position: fixed;
     top: 0;
