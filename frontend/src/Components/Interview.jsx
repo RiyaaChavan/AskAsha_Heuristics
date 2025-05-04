@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, ArrowLeft, Send } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Search } from 'lucide-react';
 import './Chatbot/styles/Interview.css'; // Import the CSS file
-import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function Interview() {
   const [currentChat, setCurrentChat] = useState(null);
@@ -11,86 +10,68 @@ export default function Interview() {
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
-  const [charCount, setCharCount] = useState(0);
   
   const API_URL = 'https://askasha.onrender.com/api';
-  const navigate = useNavigate();
 
   const chatOptions = [
     { id: 'career', title: 'Career Coach', description: 'Get guidance on career paths and growth opportunities' },
     { id: 'interview', title: 'Job Interview Prep', description: 'Practice interview questions and get feedback' },
   ];
 
-  // Check for existing user on initial load
-  useEffect(() => {
-    const savedUserId = localStorage.getItem('asha_userId');
-    if (savedUserId) {
-      setUserId(savedUserId);
-    }
-  }, []);
+const startChatSession = async (chatType) => {
+  if (!userId) {
+    setShowUserIdPrompt(true);
+    setCurrentChat(chatType);
+    return;
+  }
 
-  const startChatSession = async (chatType) => {
-    if (!userId) {
-      setShowUserIdPrompt(true);
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/start-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chatType,
+        userId,
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      setSessionId(data.sessionId);
       setCurrentChat(chatType);
-      return;
+
+      const initialMessages = data.messageHistory || [];
+      const messagesToDisplay = initialMessages.length > 0 
+        ? [
+            {
+              id: Date.now(),
+              text: 'Hello, how are you today?',
+              sender: 'bot',
+            },
+            ...initialMessages,
+          ]
+        : [
+            {
+              id: Date.now(),
+              text: 'Hello, how are you today?',
+              sender: 'bot',
+            },
+          ];
+
+      setMessages(messagesToDisplay);
+    } else {
+      console.error('Failed to start session:', data.error);
     }
-    
-    // Store userId for future sessions
-    localStorage.setItem('asha_userId', userId);
+  } catch (error) {
+    console.error('Error starting session:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/start-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatType,
-          userId,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSessionId(data.sessionId);
-        setCurrentChat(chatType);
-
-        // Override the first message
-        const initialMessages = data.messageHistory || [];
-        const messagesToDisplay = initialMessages.length > 0 
-          ? [
-              {
-                id: Date.now(),
-                text: `Hello ${userId}, how are you today?`,
-                sender: 'bot',
-              },
-              ...initialMessages,
-            ]
-          : [
-              {
-                id: Date.now(),
-                text: `Hello ${userId}, how are you today?`,
-                sender: 'bot',
-              },
-            ];
-
-        setMessages(messagesToDisplay);
-      } else {
-        console.error('Failed to start session:', data.error);
-      }
-    } catch (error) {
-      console.error('Error starting session:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    setInputText(e.target.value);
-    setCharCount(e.target.value.length);
-  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -104,7 +85,6 @@ export default function Interview() {
 
     setMessages([...messages, userMessage]);
     setInputText('');
-    setCharCount(0);
     setIsLoading(true);
 
     try {
@@ -148,7 +128,7 @@ export default function Interview() {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, {
         id: Date.now() + 2,
-        text: "Error: Could not connect to server",
+        text: `Error: Could not connect to server`,
         sender: 'system',
       }]);
     } finally {
@@ -179,7 +159,7 @@ export default function Interview() {
       formattedResponse = `<ul style="list-style-position: inside; padding-left: 0;">${formattedResponse}</ul>`;
     }
   
-    // Link detection and formatting: 'text'
+    // Link detection and formatting: '[text](url)'
     formattedResponse = formattedResponse.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (match, text, url) => {
       return `<a href="${url}" target="_blank" style="color: #6b46c1; text-decoration: none;">${text}</a>`;
     });
@@ -187,6 +167,9 @@ export default function Interview() {
     return formattedResponse;
   };
   
+  
+  
+
   const handleBackToMain = async () => {
     if (sessionId) {
       try {
@@ -209,10 +192,6 @@ export default function Interview() {
     setMessages([]);
   };
 
-  const handleBackToOptions = () => {
-    handleBackToMain();
-  };
-
   const handleUserIdSubmit = (e) => {
     e.preventDefault();
     setShowUserIdPrompt(false);
@@ -221,40 +200,44 @@ export default function Interview() {
     }
   };
 
-  const getCurrentChatTitle = () => {
-    const option = chatOptions.find(opt => opt.id === currentChat);
-    return option ? option.title : 'Choose Your Assistant';
+  const getCurrentChatTitle = (chatId = currentChat) => {
+    const option = chatOptions.find(opt => opt.id === chatId);
+    return option ? option.title : '';
   };
+
+  const UserIdPrompt = () => (
+    <div className="user-id-prompt-interview">
+      <div className="modal-content">
+        <h3>What's your name?</h3>
+        <form onSubmit={handleUserIdSubmit}>
+          <input
+            type="text"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="Enter your name"
+            className="name-input"
+            required
+            autoFocus
+          />
+          <button
+            type="submit"
+            className="continue-button"
+          >
+            Continue
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 
   return (
     <div className="chat-container-interview asha-theme">
-      {showUserIdPrompt && (
-        <div className="name-modal-overlay">
-          <div className="name-modal">
-            <h3>What's your name?</h3>
-            <form onSubmit={handleUserIdSubmit}>
-              <input
-                type="text"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="Enter your name"
-                className="name-input"
-                required
-                autoFocus
-              />
-              <button type="submit" className="continue-button">
-                Continue
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
+      {showUserIdPrompt && <UserIdPrompt />}
       <div className="chat-box-interview">
         <div className="header-main-interview">
           {currentChat ? (
             <>
-              <button onClick={handleBackToOptions} className="back-button">
+              <button onClick={handleBackToMain}>
                 <ArrowLeft size={20} />
               </button>
               <h2>{getCurrentChatTitle()}</h2>
@@ -264,53 +247,46 @@ export default function Interview() {
           )}
         </div>
 
-        {!currentChat ? (
-          <div className="chat-options-container">
+        <div className="message-container-interview">
+          {messages.map((message) => (
+            <div className={message.sender === 'user' ? 'user-message-interview' : 'bot-message-interview'} key={message.id}>
+              <div className="message-box-interview" dangerouslySetInnerHTML={{ __html: message.text }} />
+            </div>
+          ))}
+          {isLoading && (
+            <div className="bot-message-interview">
+              <div className="message-box-interview">⏳ Typing...</div>
+            </div>
+          )}
+        </div>
+
+        {!currentChat && (
+          <div className="flex flex-col items-center justify-center p-4 gap-4">
             {chatOptions.map(option => (
               <button key={option.id} onClick={() => startChatSession(option.id)} className="button-interview">
                 {option.title}
               </button>
             ))}
           </div>
-        ) : (
-          <>
-            <div className="message-container-interview">
-              {messages.map((message) => (
-                <div className={message.sender === 'user' ? 'user-message-interview' : 'bot-message-interview'} key={message.id}>
-                  <div className="message-box-interview" dangerouslySetInnerHTML={{ __html: message.text }} />
-                </div>
-              ))}
-              {isLoading && (
-                <div className="bot-message-interview">
-                  <div className="message-box-interview typing-indicator">
-                    <span>👉 Typing...</span>
-                  </div>
-                </div>
-              )}
-            </div>
+        )}
 
-            <div className="input-area-interview">
-              <form onSubmit={handleSendMessage}>
-                <div className="input-container">
-                  <input
-                    type="text"
-                    placeholder="Ask a question..."
-                    value={inputText}
-                    onChange={handleInputChange}
-                    disabled={isLoading || !sessionId}
-                  />
-                  <div className="char-count">{charCount}/1200</div>
-                  <button 
-                    type="submit"
-                    disabled={isLoading || !inputText.trim() || !sessionId}
-                    className="send-button"
-                  >
-                    <Send size={18} />
-                  </button>
-                </div>
-              </form>
-            </div>
-          </>
+        {currentChat && (
+          <form onSubmit={handleSendMessage} className="flex items-center justify-between p-4">
+            <input
+              type="text"
+              placeholder="Ask a question..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              className="input-interview"
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !inputText.trim()}
+              className="button-interview"
+            >
+              <MessageSquare size={18} />
+            </button>
+          </form>
         )}
       </div>
     </div>
