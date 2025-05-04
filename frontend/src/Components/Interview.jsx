@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ArrowLeft, Search } from 'lucide-react';
-// import './interview.css'; // Import the CSS file
+import './styles/Interview.css'; // Import the CSS file
 
 export default function Interview() {
   const [currentChat, setCurrentChat] = useState(null);
@@ -11,26 +11,69 @@ export default function Interview() {
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   
-  const API_URL = 'https://askasha.onrender.com/api';
+  const API_URL = 'http://localhost:5000/api';
 
-  // Removed skill development option as requested
   const chatOptions = [
     { id: 'career', title: 'Career Coach', description: 'Get guidance on career paths and growth opportunities' },
     { id: 'interview', title: 'Job Interview Prep', description: 'Practice interview questions and get feedback' },
+    { id: 'skills', title: 'Skill Development Roadmap', description: 'Create personalized learning paths for new skills' },
   ];
-  useEffect(() => {
-    const messageContainer = document.querySelector('.message-container-interview');
-    if (messageContainer) {
-      messageContainer.scrollTop = messageContainer.scrollHeight;
-    }
-  }, [messages]);
 
-  // This function is called when a chat option button is clicked
-  const startChatSession = async (chatType) => {
-    // Always show the name prompt first
+const startChatSession = async (chatType) => {
+  if (!userId) {
     setShowUserIdPrompt(true);
     setCurrentChat(chatType);
-  };
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/start-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chatType,
+        userId,
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      setSessionId(data.sessionId);
+      setCurrentChat(chatType);
+
+      // Override the first message
+      const initialMessages = data.messageHistory || [];
+      const messagesToDisplay = initialMessages.length > 0 
+        ? [
+            {
+              id: Date.now(),
+              text: 'Hello, how are you today?',
+              sender: 'bot',
+            },
+            ...initialMessages,
+          ]
+        : [
+            {
+              id: Date.now(),
+              text: 'Hello, how are you today?',
+              sender: 'bot',
+            },
+          ];
+
+      setMessages(messagesToDisplay);
+    } else {
+      console.error('Failed to start session:', data.error);
+    }
+  } catch (error) {
+    console.error('Error starting session:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -125,6 +168,9 @@ export default function Interview() {
   
     return formattedResponse;
   };
+  
+  
+  
 
   const handleBackToMain = async () => {
     if (sessionId) {
@@ -148,67 +194,11 @@ export default function Interview() {
     setMessages([]);
   };
 
-  // This function is called when the name form is submitted
   const handleUserIdSubmit = (e) => {
     e.preventDefault();
-    
-    if (userId.trim()) {
-      setShowUserIdPrompt(false);
-      // Now initiate the actual chat with the provided name
-      initiateChat(currentChat);
-    }
-  };
-
-  // This function starts the actual chat session after getting the user's name
-  const initiateChat = async (chatType) => {
-    if (!chatType || !userId) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/start-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatType,
-          userId,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSessionId(data.sessionId);
-
-        // Override the first message
-        const initialMessages = data.messageHistory || [];
-        const messagesToDisplay = initialMessages.length > 0 
-          ? [
-              {
-                id: Date.now(),
-                text: chatType === 'Interview' 
-                ? `Hello ${userId}, how are you today? Enter the role you want to prepare for.` 
-                : `Hello ${userId}, how are you today?`,
-                sender: 'bot',
-              },
-              ...initialMessages,
-            ]
-          : [
-              {
-                id: Date.now(),
-                text: `Hello ${userId}, how are you today?`,
-                sender: 'bot',
-              },
-            ];
-
-        setMessages(messagesToDisplay);
-      } else {
-        console.error('Failed to start session:', data.error);
-      }
-    } catch (error) {
-      console.error('Error starting session:', error);
-    } finally {
-      setIsLoading(false);
+    setShowUserIdPrompt(false);
+    if (currentChat) {
+      startChatSession(currentChat);
     }
   };
 
@@ -217,30 +207,34 @@ export default function Interview() {
     return option ? option.title : '';
   };
 
-  return (
-    <div className="chat-container-interview">
-      {/* This is the name prompt overlay that appears when showUserIdPrompt is true */}
-      {showUserIdPrompt && (
-        <div className="user-id-prompt-interview">
-          <div className="modal-content">
-            <h3>What's your name?</h3>
-            <form onSubmit={handleUserIdSubmit}>
-              <input
-                type="text"
-                value={userId}
+  const UserIdPrompt = () => (
+    <div className="user-id-prompt">
+      <div className="modal-content">
+        <h3 className="text-lg font-semibold mb-4">What's your name?</h3>
+        <form onSubmit={handleUserIdSubmit}>
+        <input
+             type="text"
+              value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                placeholder="Enter your name"
-                required
-                autoFocus
-              />
-              <button type="submit">
-                Continue
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-      
+                       placeholder="Enter your name"
+                 className="w-full border border-gray-300 rounded px-4 py-2 mb-4"
+                       required
+                  autoFocus // Ensures the input is focused
+/>
+          <button
+            type="submit"
+            className="w-full bg-purple-600 text-white py-2 rounded"
+          >
+            Continue
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="chat-container-interview asha-theme">
+      {showUserIdPrompt && <UserIdPrompt />}
       <div className="chat-box-interview">
         <div className="header-main-interview">
           {currentChat ? (
@@ -269,7 +263,7 @@ export default function Interview() {
         </div>
 
         {!currentChat && (
-          <div className="chat-options-container">
+          <div className="flex flex-col items-center justify-center p-4 gap-4">
             {chatOptions.map(option => (
               <button key={option.id} onClick={() => startChatSession(option.id)} className="button-interview">
                 {option.title}
@@ -279,7 +273,7 @@ export default function Interview() {
         )}
 
         {currentChat && (
-          <form onSubmit={handleSendMessage} className="input-container-interview">
+          <form onSubmit={handleSendMessage} className="flex items-center justify-between p-4">
             <input
               type="text"
               placeholder="Ask a question..."
@@ -290,7 +284,7 @@ export default function Interview() {
             <button
               type="submit"
               disabled={isLoading || !inputText.trim()}
-              className="send-button-interview"
+              className="button-interview"
             >
               <MessageSquare size={18} />
             </button>
