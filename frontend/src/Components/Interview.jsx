@@ -261,7 +261,7 @@ const startChatSession = async (chatType) => {
         </div>
 
         {!currentChat && (
-          <div className="flex flex-col items-center justify-center p-4 gap-4">
+          <div className="chat-options-container">
             {chatOptions.map(option => (
               <button key={option.id} onClick={() => startChatSession(option.id)} className="button-interview">
                 {option.title}
@@ -271,21 +271,23 @@ const startChatSession = async (chatType) => {
         )}
 
         {currentChat && (
-          <form onSubmit={handleSendMessage} className="flex items-center justify-between p-4">
-            <input
-              type="text"
-              placeholder="Ask a question..."
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              className="input-interview"
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !inputText.trim()}
-              className="button-interview"
-            >
-              <MessageSquare size={18} />
-            </button>
+          <form onSubmit={handleSendMessage} className="chat-input-form">
+            <div className="input-container">
+              <input
+                type="text"
+                placeholder="Ask a question..."
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                className="input-interview"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !inputText.trim()}
+                className="send-button"
+              >
+                Send
+              </button>
+            </div>
           </form>
         )}
       </div>
