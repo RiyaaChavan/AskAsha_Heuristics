@@ -12,18 +12,18 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 60px);
-    border-radius: 8px;
+    border-radius: 0;
     overflow: hidden;
     margin: 0;
     background-color: white;
   }
   
-  /* Header styles */
+  /* Header styles - matching job search/sessions UI */
   .header-main-interview {
     display: flex;
     align-items: center;
     padding: 1rem;
-    background-color: #57793e;
+    background-color: #57793e; /* Green header like job search */
     color: white;
   }
   
@@ -46,6 +46,10 @@
     padding: 0.5rem;
     border-radius: 50%;
     margin-right: 0.5rem;
+  }
+  
+  .back-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
   }
   
   /* Message container styles */
@@ -78,13 +82,13 @@
   }
   
   .user-message-interview .message-box-interview {
-    background-color: #fad0d0;
+    background-color: #fad0d0; /* Pink bubble for user */
     border-radius: 1rem 1rem 0 1rem;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
   
   .bot-message-interview .message-box-interview {
-    background-color: #d3eaff;
+    background-color: #d3eaff; /* Blue bubble for bot */
     border-radius: 1rem 1rem 1rem 0;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
@@ -95,33 +99,44 @@
     font-style: italic;
   }
   
-  /* Input area styles - matches screenshot */
+  /* Input area styles - matching job search/sessions UI */
   .input-area-interview {
-    padding: 0.75rem;
-    background-color: #f9f9f9;
+    position: sticky;
+    bottom: 0;
+    padding: 1rem;
+    background-color: #ffffff;
     border-top: 1px solid #eaeaea;
+    z-index: 10;
   }
   
   .input-container {
+    position: relative;
     display: flex;
     align-items: center;
     background-color: #ffffff;
     border: 1px solid #ddd;
     border-radius: 24px;
-    padding: 0.25rem;
+    padding: 0.25rem 0.75rem;
   }
   
   .input-container input {
     flex: 1;
     border: none;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 0.5rem;
     font-size: 0.95rem;
     background: transparent;
     outline: none;
   }
   
-  .input-container button {
-    background-color: #57793e;
+  .char-count {
+    position: absolute;
+    right: 60px;
+    color: #888;
+    font-size: 0.75rem;
+  }
+  
+  .input-container .send-button {
+    background-color: #57793e; /* Green send button like job search */
     color: white;
     border: none;
     width: 36px;
@@ -131,10 +146,15 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    margin-right: 4px;
+    margin-left: 0.5rem;
+    transition: background-color 0.2s;
   }
   
-  .input-container button:disabled {
+  .input-container .send-button:hover {
+    background-color: #496832;
+  }
+  
+  .input-container .send-button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
   }
@@ -182,7 +202,7 @@
   .continue-button {
     width: 100%;
     padding: 0.75rem;
-    background-color: #57793e;
+    background-color: #57793e; /* Green button like job search */
     color: white;
     border: none;
     border-radius: 4px;

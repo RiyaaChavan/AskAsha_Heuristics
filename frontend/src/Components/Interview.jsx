@@ -9,25 +9,40 @@ export default function Interview() {
   const [sessionId, setSessionId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState('');
-  const [showUserIdPrompt, setShowUserIdPrompt] = useState(true);
+  const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   const [charCount, setCharCount] = useState(0);
   
   const API_URL = 'https://askasha.onrender.com/api';
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Determine chat type from URL path
-  const chatType = location.pathname.includes('interview') ? 'interview' : 'career';
+  // More specific path checking for chat type
+  const chatType = location.pathname.includes('/interview') ? 'interview' : 'career';
 
   useEffect(() => {
-    // Only start session if we have a userId
-    if (userId && !sessionId) {
-      startChatSession();
+    // Check if user has already provided a name
+    const savedUserId = localStorage.getItem('asha_userId');
+    if (savedUserId) {
+      setUserId(savedUserId);
+      setShowUserIdPrompt(false);
+      // Only start session if we haven't already
+      if (!sessionId) {
+        startChatSession(savedUserId);
+      }
+    } else {
+      setShowUserIdPrompt(true);
     }
-  }, [userId]);
+  }, []);
 
-  const startChatSession = async () => {
-    if (!userId) {
+  // Effect to handle navigation changes
+  useEffect(() => {
+    if (userId && !sessionId) {
+      startChatSession(userId);
+    }
+  }, [location.pathname, userId]);
+
+  const startChatSession = async (userIdToUse = userId) => {
+    if (!userIdToUse) {
       setShowUserIdPrompt(true);
       return;
     }
@@ -41,7 +56,7 @@ export default function Interview() {
         },
         body: JSON.stringify({
           chatType,
-          userId,
+          userId: userIdToUse,
         }),
       });
 
@@ -54,7 +69,7 @@ export default function Interview() {
           ? [
               {
                 id: Date.now(),
-                text: `Hello ${userId}, how are you today?`,
+                text: `Hello ${userIdToUse}, how are you today?`,
                 sender: 'bot',
               },
               ...initialMessages,
@@ -62,7 +77,7 @@ export default function Interview() {
           : [
               {
                 id: Date.now(),
-                text: `Hello ${userId}, how are you today?`,
+                text: `Hello ${userIdToUse}, how are you today?`,
                 sender: 'bot',
               },
             ];
@@ -195,14 +210,23 @@ export default function Interview() {
       }
     }
     
+    // Reset state but keep the userId
+    setSessionId(null);
+    setMessages([]);
+    
     // Navigate back to home
     navigate('/');
   };
 
   const handleUserIdSubmit = (e) => {
     e.preventDefault();
+    const enteredUserId = userId.trim();
+    if (!enteredUserId) return;
+    
+    // Save user ID to localStorage to persist across sessions
+    localStorage.setItem('asha_userId', enteredUserId);
     setShowUserIdPrompt(false);
-    startChatSession();
+    startChatSession(enteredUserId);
   };
 
   const getChatTitle = () => {
@@ -266,6 +290,7 @@ export default function Interview() {
                 onChange={handleInputChange}
                 disabled={isLoading || !sessionId}
               />
+              <div className="char-count">{charCount}/1200</div>
               <button 
                 type="submit"
                 disabled={isLoading || !inputText.trim() || !sessionId}
