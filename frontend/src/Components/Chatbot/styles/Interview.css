@@ -1,37 +1,39 @@
-/* Input area adjustments for exact screenshot match */
+/* Input area styling to match screenshot */
 .input-area-interview {
     position: sticky;
     bottom: 0;
-    padding: 0.5rem 1rem;
-    background-color: #ffffff;
-    border-top: 1px solid #e0e0e0;
+    padding: 0.5rem;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eaeaea;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
 }
 
 .input-container {
     position: relative;
     display: flex;
     align-items: center;
-    background-color: #ffffff;
+    background-color: white;
     border: 1px solid #ddd;
-    border-radius: 24px;
+    border-radius: 20px;
     padding: 0.25rem 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .input-container input {
     flex: 1;
     border: none;
-    padding: 0.75rem;
+    padding: 0.5rem 0.75rem;
     font-size: 0.95rem;
     background: transparent;
     outline: none;
-    min-height: 24px;
-    box-sizing: border-box;
+    min-height: 20px;
 }
 
 .char-count {
     position: absolute;
-    right: 48px;
+    right: 50px;
     color: #888;
     font-size: 0.75rem;
 }
@@ -40,47 +42,74 @@
     background-color: #57793e;
     color: white;
     border: none;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    margin-left: 4px;
-    padding: 0;
+    margin-right: 2px;
     transition: background-color 0.2s;
 }
 
-/* Name modal adjustments for exact screenshot match */
+/* Volume slider styling as seen in screenshot */
+.volume-slider-container {
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.volume-slider {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #ddd;
+    outline: none;
+    border-radius: 2px;
+    margin: 0 0.5rem;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #57793e;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Name modal styling to match screenshot */
 .name-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.65);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    backdrop-filter: blur(3px);
 }
 
 .name-modal {
     background-color: #f0f0f0;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 1.25rem;
-    width: 90%;
-    max-width: 320px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    text-align: center;
+    width: 320px;
+    max-width: 90%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .name-modal h3 {
     margin-top: 0;
     margin-bottom: 1rem;
-    font-size: 1rem;
+    font-size: 0.95rem;
     text-align: center;
     color: #333;
     font-weight: 500;
@@ -91,42 +120,32 @@
     padding: 0.75rem;
     border: 1px solid #ccc;
     border-radius: 4px;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     font-size: 0.9rem;
     box-sizing: border-box;
+    background-color: white;
 }
 
 .continue-button {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.6rem;
     background-color: #57793e;
     color: white;
     border: none;
     border-radius: 4px;
     font-size: 0.9rem;
-    font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-weight: 500;
 }
 
-/* Bot/user message specific adjustments */
+/* Message styling adjustments to match screenshot */
 .user-message-interview .message-box-interview {
-    background-color: #ffccd5; /* Slightly pinker to match screenshot */
+    background-color: #ffc2c2;
     border-radius: 1rem 1rem 0 1rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    padding: 0.5rem 1rem;
 }
 
 .bot-message-interview .message-box-interview {
-    background-color: #7ac0ff; /* Slightly bluer to match screenshot */
+    background-color: #7ac0ff;
     border-radius: 1rem 1rem 1rem 0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    padding: 0.5rem 1rem;
-}
-
-/* Message container background */
-.message-container-interview {
-    background-color: #f3f4f6; /* Slightly gray background as in screenshot */
-    padding: 1rem;
-    padding-bottom: 0.5rem;
 }
