@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const res = await fetch('https://askasha.onrender.com/user', {
+        const res = await fetch('https://askasha.onrender.com/api/user', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include', // Important for cookies/session
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch('https://askasha.onrender.com/login', {
+      const res = await fetch('https://askasha.onrender.com/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       if (data.status === 'success') {
         // Fetch user data
-        const userRes = await fetch('https://askasha.onrender.com/user', {
+        const userRes = await fetch('https://askasha.onrender.com/api/user', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Signup function
   const signup = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch('https://askasha.onrender.com/signup', {
+      const res = await fetch('https://askasha.onrender.com/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       if (data.status === 'success') {
         // Fetch user data
-        const userRes = await fetch('https://askasha.onrender.com/user', {
+        const userRes = await fetch('https://askasha.onrender.com/api/user', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout function
   const logout = async () => {
     try {
-      await fetch('https://askasha.onrender.com/logout', {
+      await fetch('https://askasha.onrender.com/api/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
