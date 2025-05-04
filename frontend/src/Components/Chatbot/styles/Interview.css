@@ -1,45 +1,42 @@
 /* General Chat Area */
 .chat-container-interview {
-    background: linear-gradient(to right, #f2e0ee, #f2e0ee); /* Soothing gradient */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    height: 100%;
+    width: 100%;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    padding: 1rem;
-    position: relative;
-    padding-bottom: 0; /* For proper positioning of modal */
+    flex-direction: column;
+    background-color: var(--background, #f3f4f6);
 }
 
 /* Chat Box Layout */
 .chat-box-interview {
-    background-color: #ffffff;
-    border-radius: 1rem;
-    width: 100%;
-    height: 100%;
-    padding-top: 0;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    height: calc(100vh - 60px);
+    border-radius: 0;
+    overflow: hidden;
+    margin: 0;
+    background-color: white;
 }
 
-/* header-main-interview Section */
+/* Header Section */
 .header-main-interview {
-    background-color: #57793e;
-    color: white;
-    padding: 1rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    border-radius: 1rem 1rem 0 0;
+    padding: 1rem;
+    background-color: #57793e; /* Green header like job search */
+    color: white;
 }
 
 .header-main-interview h2 {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 600;
     margin: 0;
+    flex-grow: 1;
+    text-align: right;
 }
 
-.header-main-interview button {
+.back-button {
     background: none;
     border: none;
     color: white;
@@ -48,56 +45,63 @@
     align-items: center;
     justify-content: center;
     padding: 0.5rem;
-    padding-bottom: 0;
+    border-radius: 50%;
+    margin-right: 0.5rem;
 }
 
-/* Message Container */
+.back-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
 /* Message Container */
 .message-container-interview {
+    flex: 1;
     padding: 1rem;
-    padding-bottom: 0;
-    flex-grow: 1;
     overflow-y: auto;
-    background-color: #f1f5f9; /* Lighter gray background for better contrast */
-    max-height: 550px; /* Adjust height based on your layout */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background-color: #f9f9f9;
 }
-
 
 /* Message Layout */
-.user-message-interview, .bot-message-interview {
-    display: flex;
-    margin-bottom: 1rem;
-}
-
 .user-message-interview {
+    display: flex;
     justify-content: flex-end;
+    margin-bottom: 0.75rem;
 }
 
 .bot-message-interview {
+    display: flex;
     justify-content: flex-start;
+    margin-bottom: 0.75rem;
 }
 
 /* Message Box Styling */
 .message-box-interview {
-    max-width: 85%; /* Increased width for better visibility */
-    padding: 1rem 1.5rem; /* Larger padding for better spacing */
-    border-radius: 1rem;
-    font-size: 1.1rem; /* Slightly larger text for readability */
-    line-height: 1.5;
+    padding: 0.75rem 1rem;
+    max-width: 80%;
+    word-break: break-word;
 }
 
-/* User Message Styling - Changed to pink */
+/* User Message Styling - Pink bubble as shown in screenshot */
 .user-message-interview .message-box-interview {
-    background-color: #ffd6e0; /* Pink color */
-    color: black;
-    border-radius: 0.75rem 0.75rem 0 0.75rem;
+    background-color: #fad0d0;
+    border-radius: 1rem 1rem 0 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Bot Message Styling - Changed to blue */
+/* Bot Message Styling - Blue bubble as shown in screenshot */
 .bot-message-interview .message-box-interview {
-    background-color: #7ac0ff; /* Blue color */
-    color: black;
-    border-radius: 0.75rem 0.75rem 0.75rem 0;
+    background-color: #d3eaff;
+    border-radius: 1rem 1rem 1rem 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.typing-indicator {
+    background-color: #f0f0f0 !important;
+    color: #666 !important;
+    font-style: italic;
 }
 
 /* System Message Styling */
@@ -117,41 +121,71 @@
     justify-content: center;
     padding: 1rem;
     gap: 1rem;
+    flex: 1;
 }
 
-/* Input container */
-.input-container-interview {
+/* Input area styles - matching screenshot */
+.input-area-interview {
+    position: sticky;
+    bottom: 0;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border-top: 1px solid #eaeaea;
+    z-index: 10;
+}
+
+.input-container {
+    position: relative;
     display: flex;
-    padding: 1rem;
-    gap: 0.5rem;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 24px;
+    padding: 0.25rem;
 }
 
-/* Input Field */
-input[type="text"].input-interview {
-    flex-grow: 1;
-    padding: 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    font-size: 1.1rem;
+.input-container input {
+    flex: 1;
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    background: transparent;
+    outline: none;
 }
 
-/* Send Button Styling - Decreased width */
-button.send-button-interview {
-    width: 50px; /* Narrower button width */
-    padding: 0.5rem;
-    border-radius: 0.75rem;
-    background-color: #87c05a;
+.char-count {
+    position: absolute;
+    right: 55px;
+    color: #888;
+    font-size: 0.75rem;
+}
+
+.send-button {
+    background-color: #57793e;
     color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background-color: #496832;
+}
+
+.send-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
 /* Main buttons (Career Coach, Interview Prep) */
-button.button-interview {
+.button-interview {
     width: 80%;
     padding: 1rem;
     border-radius: 0.75rem;
@@ -162,72 +196,71 @@ button.button-interview {
     font-size: 1.1rem;
     border: none;
     margin-bottom: 0.5rem;
+    max-width: 300px;
 }
 
-button.button-interview:hover,
-button.send-button-interview:hover {
-    background-color: #a63e64;
+.button-interview:hover {
+    background-color: #496832;
 }
 
-button:disabled {
-    background-color: #e2e8f0;
+.button-interview:disabled {
+    background-color: #ccc;
     cursor: not-allowed;
 }
 
-/* Name Prompt Modal - Fixed to ensure it's visible */
-.user-id-prompt-interview {
+/* Name modal styling - matching screenshot */
+.name-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999; /* Make sure it's on top */
+    z-index: 1000;
 }
 
-.user-id-prompt-interview .modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 0.75rem;
+.name-modal {
+    background-color: #f0f0f0; /* Gray background as in screenshot */
+    border-radius: 8px;
+    padding: 1.5rem;
     width: 90%;
-    max-width: 350px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.user-id-prompt-interview h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    color: #333;
+    max-width: 320px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
 
-.user-id-prompt-interview input {
-    width: 100%;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-    box-sizing: border-box;
+.name-modal h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    text-align: center;
+    color: #333;
 }
 
-.user-id-prompt-interview button {
+.name-input {
     width: 100%;
-    background-color: #57793e;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.continue-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #57793e; /* Green button as in screenshot */
     color: white;
-    padding: 1rem;
-    border-radius: 0.5rem;
     border: none;
+    border-radius: 4px;
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
-.user-id-prompt-interview button:hover {
-    background-color: #4a6934;
+.continue-button:hover {
+    background-color: #496832;
 }

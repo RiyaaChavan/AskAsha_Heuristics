@@ -11,74 +11,86 @@ export default function Interview() {
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
+  const [charCount, setCharCount] = useState(0);
   
   const API_URL = 'https://askasha.onrender.com/api';
-  const location = useLocation();
   const navigate = useNavigate();
-
-  // Determine chat type from URL path
-  const chatType = location.pathname === '/interview' ? 'interview' : 'career';
 
   const chatOptions = [
     { id: 'career', title: 'Career Coach', description: 'Get guidance on career paths and growth opportunities' },
     { id: 'interview', title: 'Job Interview Prep', description: 'Practice interview questions and get feedback' },
   ];
 
-const startChatSession = async (chatType) => {
-  if (!userId) {
-    setShowUserIdPrompt(true);
-    setCurrentChat(chatType);
-    return;
-  }
-
-  setIsLoading(true);
-  try {
-    const response = await fetch(`${API_URL}/start-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chatType,
-        userId,
-      }),
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      setSessionId(data.sessionId);
-      setCurrentChat(chatType);
-
-      // Override the first message
-      const initialMessages = data.messageHistory || [];
-      const messagesToDisplay = initialMessages.length > 0 
-        ? [
-            {
-              id: Date.now(),
-              text: `Hello ${userId}, how are you today?`,
-              sender: 'bot',
-            },
-            ...initialMessages,
-          ]
-        : [
-            {
-              id: Date.now(),
-              text: `Hello ${userId}, how are you today?`,
-              sender: 'bot',
-            },
-          ];
-
-      setMessages(messagesToDisplay);
-    } else {
-      console.error('Failed to start session:', data.error);
+  // Check for existing user on initial load
+  useEffect(() => {
+    const savedUserId = localStorage.getItem('asha_userId');
+    if (savedUserId) {
+      setUserId(savedUserId);
     }
-  } catch (error) {
-    console.error('Error starting session:', error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  }, []);
 
+  const startChatSession = async (chatType) => {
+    if (!userId) {
+      setShowUserIdPrompt(true);
+      setCurrentChat(chatType);
+      return;
+    }
+    
+    // Store userId for future sessions
+    localStorage.setItem('asha_userId', userId);
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/start-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatType,
+          userId,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setSessionId(data.sessionId);
+        setCurrentChat(chatType);
+
+        // Override the first message
+        const initialMessages = data.messageHistory || [];
+        const messagesToDisplay = initialMessages.length > 0 
+          ? [
+              {
+                id: Date.now(),
+                text: `Hello ${userId}, how are you today?`,
+                sender: 'bot',
+              },
+              ...initialMessages,
+            ]
+          : [
+              {
+                id: Date.now(),
+                text: `Hello ${userId}, how are you today?`,
+                sender: 'bot',
+              },
+            ];
+
+        setMessages(messagesToDisplay);
+      } else {
+        console.error('Failed to start session:', data.error);
+      }
+    } catch (error) {
+      console.error('Error starting session:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+    setCharCount(e.target.value.length);
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -92,6 +104,7 @@ const startChatSession = async (chatType) => {
 
     setMessages([...messages, userMessage]);
     setInputText('');
+    setCharCount(0);
     setIsLoading(true);
 
     try {
@@ -191,7 +204,13 @@ const startChatSession = async (chatType) => {
       }
     }
     
-    navigate('/');
+    setCurrentChat(null);
+    setSessionId(null);
+    setMessages([]);
+  };
+
+  const handleBackToOptions = () => {
+    handleBackToMain();
   };
 
   const handleUserIdSubmit = (e) => {
@@ -199,25 +218,12 @@ const startChatSession = async (chatType) => {
     setShowUserIdPrompt(false);
     if (currentChat) {
       startChatSession(currentChat);
-    } else {
-      startChatSession(chatType);
     }
   };
 
-  useEffect(() => {
-    // Check if user has already provided a name
-    const savedUserId = localStorage.getItem('asha_userId');
-    if (savedUserId) {
-      setUserId(savedUserId);
-      setShowUserIdPrompt(false);
-      startChatSession(chatType);
-    } else {
-      setShowUserIdPrompt(true);
-    }
-  }, []);
-
   const getCurrentChatTitle = () => {
-    return chatType === 'interview' ? 'Job Interview Prep' : 'Career Coach';
+    const option = chatOptions.find(opt => opt.id === currentChat);
+    return option ? option.title : 'Choose Your Assistant';
   };
 
   return (
@@ -246,48 +252,66 @@ const startChatSession = async (chatType) => {
 
       <div className="chat-box-interview">
         <div className="header-main-interview">
-          <button onClick={handleBackToMain} className="back-button">
-            <ArrowLeft size={20} />
-          </button>
-          <h2>{getCurrentChatTitle()}</h2>
-        </div>
-
-        <div className="message-container-interview">
-          {messages.map((message) => (
-            <div className={message.sender === 'user' ? 'user-message-interview' : 'bot-message-interview'} key={message.id}>
-              <div className="message-box-interview" dangerouslySetInnerHTML={{ __html: message.text }} />
-            </div>
-          ))}
-          {isLoading && (
-            <div className="bot-message-interview">
-              <div className="message-box-interview typing-indicator">
-                <span>👉 Typing...</span>
-              </div>
-            </div>
+          {currentChat ? (
+            <>
+              <button onClick={handleBackToOptions} className="back-button">
+                <ArrowLeft size={20} />
+              </button>
+              <h2>{getCurrentChatTitle()}</h2>
+            </>
+          ) : (
+            <h2>Choose Your Assistant</h2>
           )}
         </div>
 
-        <div className="input-area-interview">
-          <form onSubmit={handleSendMessage}>
-            <div className="input-container">
-              <input
-                type="text"
-                placeholder="Ask a question..."
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                disabled={isLoading || !sessionId}
-              />
-              <div className="char-count">{inputText.length}/1200</div>
-              <button 
-                type="submit"
-                disabled={isLoading || !inputText.trim() || !sessionId}
-                className="send-button"
-              >
-                <Send size={18} />
+        {!currentChat ? (
+          <div className="chat-options-container">
+            {chatOptions.map(option => (
+              <button key={option.id} onClick={() => startChatSession(option.id)} className="button-interview">
+                {option.title}
               </button>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="message-container-interview">
+              {messages.map((message) => (
+                <div className={message.sender === 'user' ? 'user-message-interview' : 'bot-message-interview'} key={message.id}>
+                  <div className="message-box-interview" dangerouslySetInnerHTML={{ __html: message.text }} />
+                </div>
+              ))}
+              {isLoading && (
+                <div className="bot-message-interview">
+                  <div className="message-box-interview typing-indicator">
+                    <span>👉 Typing...</span>
+                  </div>
+                </div>
+              )}
             </div>
-          </form>
-        </div>
+
+            <div className="input-area-interview">
+              <form onSubmit={handleSendMessage}>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    placeholder="Ask a question..."
+                    value={inputText}
+                    onChange={handleInputChange}
+                    disabled={isLoading || !sessionId}
+                  />
+                  <div className="char-count">{charCount}/1200</div>
+                  <button 
+                    type="submit"
+                    disabled={isLoading || !inputText.trim() || !sessionId}
+                    className="send-button"
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
