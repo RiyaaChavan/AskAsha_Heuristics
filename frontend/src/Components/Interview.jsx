@@ -88,8 +88,12 @@ export default function Interview() {
   };
 
   const handleInputChange = (e) => {
-    setInputText(e.target.value);
-    setCharCount(e.target.value.length);
+    const value = e.target.value;
+    // Limit input to 1200 characters
+    if (value.length <= 1200) {
+      setInputText(value);
+      setCharCount(value.length);
+    }
   };
 
   const handleSendMessage = async (e) => {
@@ -187,7 +191,7 @@ export default function Interview() {
     return formattedResponse;
   };
   
-  const handleBackToMain = async () => {
+  const handleBackToOptions = async () => {
     if (sessionId) {
       try {
         await fetch(`${API_URL}/end-session`, {
@@ -209,12 +213,9 @@ export default function Interview() {
     setMessages([]);
   };
 
-  const handleBackToOptions = () => {
-    handleBackToMain();
-  };
-
   const handleUserIdSubmit = (e) => {
     e.preventDefault();
+    localStorage.setItem('asha_userId', userId);
     setShowUserIdPrompt(false);
     if (currentChat) {
       startChatSession(currentChat);
@@ -289,6 +290,7 @@ export default function Interview() {
               )}
             </div>
 
+            {/* Always show the input area when in a chat */}
             <div className="input-area-interview">
               <form onSubmit={handleSendMessage}>
                 <div className="input-container">
