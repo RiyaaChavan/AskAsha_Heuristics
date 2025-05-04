@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, ArrowLeft, Send } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Search } from 'lucide-react';
 import './Chatbot/styles/Interview.css'; // Import the CSS file
 
 export default function Interview() {
@@ -10,14 +10,13 @@ export default function Interview() {
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
-  const [charCount, setCharCount] = useState(0);
   
-  // Updated API URL to use askasha.onrender.com
-  const API_URL = 'https://askasha.onrender.com/api';
+  const API_URL = 'http://localhost:5000/api';
 
   const chatOptions = [
     { id: 'career', title: 'Career Coach', description: 'Get guidance on career paths and growth opportunities' },
     { id: 'interview', title: 'Job Interview Prep', description: 'Practice interview questions and get feedback' },
+    { id: 'skills', title: 'Skill Development Roadmap', description: 'Create personalized learning paths for new skills' },
   ];
 
 const startChatSession = async (chatType) => {
@@ -29,7 +28,7 @@ const startChatSession = async (chatType) => {
 
   setIsLoading(true);
   try {
-    const response = await fetch(`${API_URL}/start-session`, {
+    const response = await fetch(${API_URL}/start-session, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +50,7 @@ const startChatSession = async (chatType) => {
         ? [
             {
               id: Date.now(),
-              text: `Hello ${userId}, how are you today?`,
+              text: 'Hello, how are you today?',
               sender: 'bot',
             },
             ...initialMessages,
@@ -59,7 +58,7 @@ const startChatSession = async (chatType) => {
         : [
             {
               id: Date.now(),
-              text: `Hello ${userId}, how are you today?`,
+              text: 'Hello, how are you today?',
               sender: 'bot',
             },
           ];
@@ -88,11 +87,10 @@ const startChatSession = async (chatType) => {
 
     setMessages([...messages, userMessage]);
     setInputText('');
-    setCharCount(0);
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/send-message`, {
+      const response = await fetch(${API_URL}/send-message, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +122,7 @@ const startChatSession = async (chatType) => {
       } else {
         setMessages(prev => [...prev, {
           id: Date.now() + 2,
-          text: `Error: ${data.error}`,
+          text: Error: ${data.error},
           sender: 'system',
         }]);
       }
@@ -132,7 +130,7 @@ const startChatSession = async (chatType) => {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, {
         id: Date.now() + 2,
-        text: `Error: Could not connect to server`,
+        text: Error: Could not connect to server,
         sender: 'system',
       }]);
     } finally {
@@ -140,46 +138,44 @@ const startChatSession = async (chatType) => {
     }
   };
 
-  const handleInputChange = (e) => {
-    setInputText(e.target.value);
-    setCharCount(e.target.value.length);
-  };
-
   const formatBotResponse = (response) => {
     // Handle Markdown-like bold, italics, bullet points, and links
     let formattedResponse = response;
   
-    // Bold text: '**bold**'
-    formattedResponse = formattedResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Bold text: '*bold*'
+    formattedResponse = formattedResponse.replace(/\\(.?)\\*/g, '<strong>$1</strong>');
   
-    // Italics text: '*italics*'
-    formattedResponse = formattedResponse.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Italics text: 'italics'
+    formattedResponse = formattedResponse.replace(/\(.?)\*/g, '<em>$1</em>');
   
     // Bullet points (assuming each point starts with a number or bullet-like pattern)
     formattedResponse = formattedResponse.replace(/^\s*(\d+\.|-\s)(.*)$/gm, (match, p1, p2) => {
       if (p1.includes('.')) {
-        return `<li style="margin-left: 20px; list-style-type: decimal;">${p2}</li>`; // Indent for subpoints (numbered)
+        return <li style="margin-left: 20px; list-style-type: decimal;">${p2}</li>; // Indent for subpoints (numbered)
       }
-      return `<li style="margin-left: 20px; list-style-type: disc;">${p2}</li>`; // Regular bullet points
+      return <li style="margin-left: 20px; list-style-type: disc;">${p2}</li>; // Regular bullet points
     });
   
     // Wrap bullet points inside <ul> if any were found
     if (formattedResponse.includes('<li>')) {
-      formattedResponse = `<ul style="list-style-position: inside; padding-left: 0;">${formattedResponse}</ul>`;
+      formattedResponse = <ul style="list-style-position: inside; padding-left: 0;">${formattedResponse}</ul>;
     }
   
     // Link detection and formatting: '[text](url)'
     formattedResponse = formattedResponse.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (match, text, url) => {
-      return `<a href="${url}" target="_blank" style="color: #6b46c1; text-decoration: none;">${text}</a>`;
+      return <a href="${url}" target="_blank" style="color: #6b46c1; text-decoration: none;">${text}</a>;
     });
   
     return formattedResponse;
   };
   
+  
+  
+
   const handleBackToMain = async () => {
     if (sessionId) {
       try {
-        await fetch(`${API_URL}/end-session`, {
+        await fetch(${API_URL}/end-session, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -211,35 +207,39 @@ const startChatSession = async (chatType) => {
     return option ? option.title : '';
   };
 
+  const UserIdPrompt = () => (
+    <div className="user-id-prompt">
+      <div className="modal-content">
+        <h3 className="text-lg font-semibold mb-4">What's your name?</h3>
+        <form onSubmit={handleUserIdSubmit}>
+        <input
+             type="text"
+              value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                       placeholder="Enter your name"
+                 className="w-full border border-gray-300 rounded px-4 py-2 mb-4"
+                       required
+                  autoFocus // Ensures the input is focused
+/>
+          <button
+            type="submit"
+            className="w-full bg-purple-600 text-white py-2 rounded"
+          >
+            Continue
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
   return (
     <div className="chat-container-interview asha-theme">
-      {showUserIdPrompt && (
-        <div className="name-modal-overlay">
-          <div className="name-modal">
-            <h3>What's your name?</h3>
-            <form onSubmit={handleUserIdSubmit}>
-              <input
-                type="text"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="Enter your name"
-                className="name-input"
-                required
-                autoFocus
-              />
-              <button type="submit" className="continue-button">
-                Continue
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
+      {showUserIdPrompt && <UserIdPrompt />}
       <div className="chat-box-interview">
         <div className="header-main-interview">
           {currentChat ? (
             <>
-              <button onClick={handleBackToMain} className="back-button">
+              <button onClick={handleBackToMain}>
                 <ArrowLeft size={20} />
               </button>
               <h2>{getCurrentChatTitle()}</h2>
@@ -257,15 +257,13 @@ const startChatSession = async (chatType) => {
           ))}
           {isLoading && (
             <div className="bot-message-interview">
-              <div className="message-box-interview typing-indicator">
-                <span>⏳ Typing...</span>
-              </div>
+              <div className="message-box-interview">⏳ Typing...</div>
             </div>
           )}
         </div>
 
         {!currentChat && (
-          <div className="chat-options-container">
+          <div className="flex flex-col items-center justify-center p-4 gap-4">
             {chatOptions.map(option => (
               <button key={option.id} onClick={() => startChatSession(option.id)} className="button-interview">
                 {option.title}
@@ -275,27 +273,22 @@ const startChatSession = async (chatType) => {
         )}
 
         {currentChat && (
-          <div className="input-area-interview">
-            <form onSubmit={handleSendMessage}>
-              <div className="input-container">
-                <input
-                  type="text"
-                  placeholder="Ask a question..."
-                  value={inputText}
-                  onChange={handleInputChange}
-                  disabled={isLoading || !sessionId}
-                />
-                <div className="char-count">{charCount}/1200</div>
-                <button 
-                  type="submit"
-                  disabled={isLoading || !inputText.trim() || !sessionId}
-                  className="send-button"
-                >
-                  <Send size={18} />
-                </button>
-              </div>
-            </form>
-          </div>
+          <form onSubmit={handleSendMessage} className="flex items-center justify-between p-4">
+            <input
+              type="text"
+              placeholder="Ask a question..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              className="input-interview"
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !inputText.trim()}
+              className="button-interview"
+            >
+              <MessageSquare size={18} />
+            </button>
+          </form>
         )}
       </div>
     </div>
