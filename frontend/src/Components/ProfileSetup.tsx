@@ -106,36 +106,29 @@ export const ProfileSetup = () => {
       
       console.log("Response status:", response.status);
       
-      // Get the response text for debugging
-      const responseText = await response.text();
-      console.log("Response body:", responseText);
-      
-      // Force navigation regardless of response - if we got here, the submission likely succeeded
-      console.log("Forcing navigation to /jobsearch");
-      
-      // Store a flag in localStorage to indicate successful profile creation
-      localStorage.setItem('profileCreated', 'true');
-      
-      // Try multiple navigation approaches in sequence
+      // IMPORTANT CHANGE: Parse JSON properly and check for actual success
+      let jsonResponse;
       try {
-        navigate('/jobsearch', { replace: true });
-        console.log("React Router navigation attempted");
+        const text = await response.text();
+        console.log("Raw response:", text);
+        jsonResponse = JSON.parse(text);
+      } catch (e) {
+        console.error("Error parsing JSON response:", e);
+        throw new Error("Invalid response from server");
+      }
+      
+      if (response.ok) {
+        console.log("Profile created successfully:", jsonResponse);
         
-        // If still here after 300ms, try window.location
-        setTimeout(() => {
-          console.log("Attempting window.location navigation");
-          window.location.href = '/jobsearch';
-          
-          // Last resort: try different URL format
-          setTimeout(() => {
-            console.log("Final navigation attempt");
-            window.location.replace(window.location.origin + '/jobsearch');
-          }, 300);
-        }, 300);
-      } catch (navError) {
-        console.error("Navigation error:", navError);
-        // Direct browser to jobsearch page as final fallback
+        // Set a success flag in localStorage
+        localStorage.setItem('profileCreated', 'true');
+        localStorage.setItem('uid', currentUser.uid);
+        
+        // Use simple window.location navigation which is most reliable
         window.location.href = '/jobsearch';
+      } else {
+        console.error("Profile creation failed:", jsonResponse);
+        setError(jsonResponse?.error || 'Failed to create profile');
       }
     } catch (error) {
       console.error("Profile submission error:", error);
