@@ -34,8 +34,12 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from profanity import check_profanity, get_profanity_response
 
 app = Flask(__name__)
+CORS(app, origins=[
+    "https://ask-asha-heuristics-git-pushing-riyaas-projects.vercel.app",
+    "http://localhost:5173"  # Keep localhost for development
+], supports_credentials=True)
+
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
-CORS(app, supports_credentials=True)
 
 client = MongoClient(os.getenv('MONGODB_URI'))
 db = client.askasha_db
