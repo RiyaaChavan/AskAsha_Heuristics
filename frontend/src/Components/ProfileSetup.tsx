@@ -32,13 +32,14 @@ export const ProfileSetup = () => {
     professionalStage: '',
     resume: null
   });
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const checkProfile = async () => {
       if (!currentUser?.uid) return;
 
       try {
-        const response = await fetch(`https://askasha.onrender.com/api/profile/${currentUser.uid}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
         if (response.ok) {
           navigate('/jobsearch');
         }
@@ -71,6 +72,7 @@ export const ProfileSetup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Add this line to clear any previous errors
     
     const formDataToSend = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
@@ -81,16 +83,27 @@ export const ProfileSetup = () => {
     formDataToSend.append('uid', currentUser?.uid || '');
 
     try {
+      console.log("Submitting profile to:", `${import.meta.env.VITE_API_URL}/create-profile`);
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL}/create-profile`, {
         method: 'POST',
         body: formDataToSend,
       });
 
       if (response.ok) {
-        navigate('/jobsearch');
+        console.log("Profile created successfully");
+        // Add a small delay before redirecting
+        setTimeout(() => {
+          navigate('/jobsearch', { replace: true });
+        }, 300);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Network error while creating profile. Please try again.');
+        console.error("Profile creation failed:", errorData);
       }
     } catch (error) {
       console.error('Error creating profile:', error);
+      setError('Network error while creating profile. Please try again.');
     }
   };
 
