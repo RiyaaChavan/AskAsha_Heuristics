@@ -25,7 +25,7 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`https://askasha.onrender.com/api/profile/${currentUser?.uid}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser?.uid}`);
         const data = await response.json();
         setProfile(data);
       } catch (error) {

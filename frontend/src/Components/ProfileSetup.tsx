@@ -81,7 +81,7 @@ export const ProfileSetup = () => {
     formDataToSend.append('uid', currentUser?.uid || '');
 
     try {
-      const response = await fetch('https://askasha.onrender.com/api/create-profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/create-profile`, {
         method: 'POST',
         body: formDataToSend,
       });

@@ -25,7 +25,7 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        const response = await fetch(`https://askasha.onrender.com/api/profile/${currentUser.uid}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
         setHasProfile(response.ok);
       } catch (error) {
         console.error('Error checking profile:', error);
