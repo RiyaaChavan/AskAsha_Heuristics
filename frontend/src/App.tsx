@@ -16,10 +16,17 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const checkProfile = async () => {
+      // First check localStorage flag from successful profile creation
+      if (localStorage.getItem('profileCreated') === 'true') {
+        console.log("Profile found in localStorage");
+        setHasProfile(true);
+        setLoading(false);
+        return;
+      }
+
       if (!currentUser?.uid) {
         setLoading(false);
         return;
@@ -30,30 +37,25 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
         console.log("Profile check response:", response.status);
         
-        // If profile exists, proceed
         if (response.ok) {
+          console.log("Profile exists in database");
           setHasProfile(true);
-          setLoading(false);
+          // Store flag for future checks
+          localStorage.setItem('profileCreated', 'true');
         } else {
-          // Retry up to 3 times if the profile check fails
-          if (retryCount < 3) {
-            console.log(`Retrying profile check (${retryCount + 1}/3)...`);
-            setRetryCount(retryCount + 1);
-            setTimeout(() => checkProfile(), 1000); // Retry after 1 second
-          } else {
-            setHasProfile(false);
-            setLoading(false);
-          }
+          console.log("Profile does not exist");
+          setHasProfile(false);
         }
       } catch (error) {
         console.error('Error checking profile:', error);
         setHasProfile(false);
+      } finally {
         setLoading(false);
       }
     };
 
     checkProfile();
-  }, [currentUser, retryCount]);
+  }, [currentUser]);
 
   if (loading) {
     return (

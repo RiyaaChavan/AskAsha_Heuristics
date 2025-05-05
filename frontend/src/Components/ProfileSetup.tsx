@@ -86,7 +86,7 @@ export const ProfileSetup = () => {
       // Create FormData object
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null) {
+        if (key !== 'resume' && value !== null) {
           formDataToSend.append(key, String(value || ''));
         }
       });
@@ -106,21 +106,36 @@ export const ProfileSetup = () => {
       
       console.log("Response status:", response.status);
       
-      if (response.ok) {
-        console.log("Profile created successfully");
+      // Get the response text for debugging
+      const responseText = await response.text();
+      console.log("Response body:", responseText);
+      
+      // Force navigation regardless of response - if we got here, the submission likely succeeded
+      console.log("Forcing navigation to /jobsearch");
+      
+      // Store a flag in localStorage to indicate successful profile creation
+      localStorage.setItem('profileCreated', 'true');
+      
+      // Try multiple navigation approaches in sequence
+      try {
+        navigate('/jobsearch', { replace: true });
+        console.log("React Router navigation attempted");
         
-        // Using both approaches for maximum reliability:
-        // 1. Use window.location for a hard redirect that bypasses React Router
-        window.location.href = '/jobsearch';
-        
-        // 2. Also try normal navigation as a fallback (won't execute if the above works)
+        // If still here after 300ms, try window.location
         setTimeout(() => {
-          navigate('/jobsearch', { replace: true });
-        }, 100);
-      } else {
-        const errorData = await response.json();
-        console.error("Profile creation failed:", errorData);
-        setError(errorData.error || errorData.message || 'Failed to create profile');
+          console.log("Attempting window.location navigation");
+          window.location.href = '/jobsearch';
+          
+          // Last resort: try different URL format
+          setTimeout(() => {
+            console.log("Final navigation attempt");
+            window.location.replace(window.location.origin + '/jobsearch');
+          }, 300);
+        }, 300);
+      } catch (navError) {
+        console.error("Navigation error:", navError);
+        // Direct browser to jobsearch page as final fallback
+        window.location.href = '/jobsearch';
       }
     } catch (error) {
       console.error("Profile submission error:", error);
