@@ -84,6 +84,7 @@ export const ProfileSetup = () => {
     setError('');
 
     try {
+      // Create FormData object
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== 'resume' && value !== null) {
@@ -96,12 +97,25 @@ export const ProfileSetup = () => {
       }
 
       formDataToSend.append('uid', currentUser.uid);
-
+      
+      console.log("Submitting profile to:", `${import.meta.env.VITE_API_URL}/create-profile`);
+      
       const response = await apiService.createProfile(formDataToSend);
+      console.log("Profile creation response:", response);
 
-      if (response.status === 'success') {
-        // Navigate to chatbot (home) page after successful profile creation
-        navigate('/', { replace: true });
+      if (response.status === 'success' || response.message === 'Profile created successfully') {
+        // Store profile status and user ID in localStorage
+        localStorage.setItem('profileCreated', 'true');
+        localStorage.setItem('userId', currentUser.uid);
+        
+        // First try React Router navigation
+        navigate('/jobsearch', { replace: true });
+        
+        // As a fallback, use direct window location after a short delay
+        setTimeout(() => {
+          console.log("Fallback navigation to /jobsearch");
+          window.location.href = '/jobsearch';
+        }, 300);
       } else {
         setError(response.error || 'Failed to create profile');
       }
