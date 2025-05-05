@@ -3,7 +3,6 @@ import JobSearchCanvas from './JobSearchCanvas';
 import RoadmapCanvas from './RoadmapCanvas';
 import SessionCanvas from './SessionCanvas';
 
-
 interface CanvasAreaProps {
   selectedMessageId: number | null;
   messages: any[];
@@ -29,7 +28,7 @@ const CanvasArea: React.FC<CanvasAreaProps> = ({
         return <JobSearchCanvas message={message} onClose={clearSelectedMessage} />;
       case 'roadmap':
         return <RoadmapCanvas message={message} onClose={clearSelectedMessage} />;
-      case 'sessions':
+      case 'session_search':
         return <SessionCanvas message={message} onClose={clearSelectedMessage} />;
       default:
         return <div className="canvas-content">No content available</div>;
@@ -39,17 +38,22 @@ const CanvasArea: React.FC<CanvasAreaProps> = ({
   return (
     <div className={`canvas-area ${isOpen ? 'open' : 'closed'}`}>
       <div className="canvas-header">
+        <h2>Details</h2>
         <button 
           className="canvas-toggle-button" 
           onClick={toggleCanvas}
-          aria-label={isOpen ? "Close canvas" : "Open canvas"}
+          aria-label={isOpen ? "Close panel" : "Open panel"}
         >
-          {isOpen ? '❮' : '❯'}
+          <span className="toggle-icon">
+            {isOpen ? '›' : '‹'}
+          </span>
         </button>
       </div>
-      <div className="canvas-content">
-        {renderCanvas()}
-      </div>
+      {isOpen && (
+        <div className="canvas-content">
+          {renderCanvas()}
+        </div>
+      )}
     </div>
   );
 };

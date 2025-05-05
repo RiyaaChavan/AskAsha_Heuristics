@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
@@ -8,6 +8,7 @@ interface NavItemProps {
   label: string;
   active?: boolean;
   to: string;
+  baseColor: string;  // Added as required prop
 }
 
 interface HeaderProps {
@@ -52,6 +53,7 @@ const MapIcon = () => (
     <line x1="16" y1="6" x2="16" y2="22"></line>
   </svg>
 );
+
 const BellIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -59,13 +61,42 @@ const BellIcon = () => (
   </svg>
 );
 
+const UserIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+    <circle cx="12" cy="7" r="4"></circle>
+  </svg>
+);
 
-// Styled components (no change)
+// Styled components
 const HeaderContainer = styled.header`
-  background-color: #8a4a6f;
+  background: linear-gradient(135deg, #c770a0, #a35a79, #854d6d, #6d3f59);
   color: white;
   padding: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.7), transparent);
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+    pointer-events: none;
+  }
 `;
 
 const HeaderInner = styled.div`
@@ -94,81 +125,233 @@ const Logo = styled.div`
 const ProfileSection = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
 `;
 
 const NotificationBell = styled.div`
   position: relative;
   cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: rgba(255, 255, 255, 0.05);
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    
+    svg {
+      stroke: white;
+      transform: rotate(5deg) scale(1.1);
+    }
+  }
+  
+  &:active {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(0.92);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.1);
+  }
+  
   svg {
-    opacity: 0.8;
+    opacity: 1;
+    transition: all 0.25s ease;
   }
 `;
 
 const NotificationBadge = styled.span`
   position: absolute;
-  top: -4px;
-  right: -4px;
-  background-color: #ec4899;
+  top: 4px;
+  right: 4px;
+  background: linear-gradient(to bottom right, #ff5a8d, #f86d96);
   color: white;
   font-size: 0.75rem;
+  font-weight: 600;
   border-radius: 9999px;
-  height: 16px;
-  width: 16px;
+  height: 18px;
+  width: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 5px rgba(248, 109, 150, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  animation: pulse 2s infinite;
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(248, 109, 150, 0.5);
+    }
+    70% {
+      box-shadow: 0 0 0 6px rgba(248, 109, 150, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(248, 109, 150, 0);
+    }
+  }
 `;
 
 const Avatar = styled.div`
-  background-color: #ec4899;
+  background: linear-gradient(135deg, #9f7afa, #7b68ee, #5d4db8);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 9999px;
-  height: 32px;
-  width: 32px;
+  height: 40px;
+  width: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  
+  &:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 16px rgba(91, 77, 184, 0.4);
+    background: linear-gradient(135deg, #aa8dfb, #8673f4, #6a5ccb);
+    
+    &::before {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  &:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #8a77fa, #6658c7, #4c42a5);
+  }
 `;
 
 const Navigation = styled.nav`
   max-width: 1200px;
-  margin: 16px auto 0;
+  margin: 20px auto 0;
   display: flex;
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 8px;
-  background-color: #8a4a6f;
+  
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+  }
 `;
 
-const NavItem = styled.div<{ active?: boolean }>`
+const NavItem = styled.div<{ 
+  active?: boolean; 
+  baseColor: string;  // Changed from optional to required
+  isHovered?: boolean; 
+  isClicked?: boolean;
+}>`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: 9999px;
-  background-color: ${props => props.active ? '#9c4dcc' : 'rgba(241, 241, 241, 0.1)'};
+  background-color: ${props => {
+    if (props.active) return props.baseColor;
+    if (props.isClicked) return props.baseColor.replace(/\d+/, m => Math.max(parseInt(m) - 30, 0).toString());
+    if (props.isHovered) return props.baseColor.replace(/\d+/, m => Math.max(parseInt(m) - 20, 0).toString());
+    return props.baseColor + 'cc';
+  }};
   cursor: pointer;
   color: white;
-  transition: background-color 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  box-shadow: ${props => 
+    props.isClicked ? 
+    'inset 0 2px 5px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1)' : 
+    props.isHovered ? 
+    '0 6px 14px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1)' : 
+    '0 2px 8px rgba(0, 0, 0, 0.15)'
+  };
+  transform: ${props => {
+    if (props.isClicked) return 'translateY(1px) scale(0.98)';
+    if (props.isHovered) return 'translateY(-2px)';
+    return 'translateY(0)';
+  }};
+  position: relative;
+  overflow: hidden;
   
-  &:hover {
-    background-color:rgb(245, 241, 247);
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: ${props => props.isHovered ? 'linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))' : 'none'};
+    pointer-events: none;
+    opacity: ${props => props.isHovered ? 1 : 0};
+    transition: opacity 0.2s ease;
   }
-
+  
   svg {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 9999px;
     padding: 4px;
+    transition: all 0.25s ease;
+  }
+
+  &:hover svg {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: rotate(5deg) scale(1.1);
   }
 `;
 
-// NavItem Component with routing
-const NavItemComponent: React.FC<NavItemProps> = ({ icon, label, active = false, to }) => {
+// NavItem Component with routing and hover/click effects
+const NavItemComponent: React.FC<NavItemProps & { baseColor?: string }> = ({ icon, label, active = false, to, baseColor }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
+  
+  const handleMouseDown = () => {
+    setIsClicked(true);
+  };
+  
+  const handleMouseUp = () => {
+    setTimeout(() => setIsClicked(false), 150);
+  };
+  
   return (
-    <NavItem active={active}>
+    <NavItem 
+      active={active} 
+      baseColor={baseColor}
+      isHovered={isHovered}
+      isClicked={isClicked}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setIsClicked(false);
+      }}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+    >
       <Link to={to} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
         {icon}
         <span>{label}</span>
@@ -202,11 +385,11 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
       </HeaderInner>
 
       <Navigation>
-        <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" />
-        <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/jobsearch" />
-        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/askasha" />
-        <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/askasha" />
-        <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/jobsearch" />
+        <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" baseColor="#966FD6" />
+        <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/jobsearch" baseColor="#6395EE" />
+        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/askasha" baseColor="#feff51" /> {/* Changed from yellow to orange */}
+        <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/askasha" baseColor="#E85BB1" /> {/* Changed from pink to better shade */}
+        <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/jobsearch" baseColor="#4CAF70" /> {/* Changed from green to better shade */}
       </Navigation>
     </HeaderContainer>
   );

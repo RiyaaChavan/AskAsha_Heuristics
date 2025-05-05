@@ -25,8 +25,9 @@
 
 .canvas-header {
   display: flex;
-  justify-content: flex-end;
-  padding: 10px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
@@ -35,12 +36,12 @@
 }
 
 .canvas-toggle-button {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface);
   color: var(--text-primary);
-  border: none;
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,12 +49,19 @@
   cursor: pointer;
   padding: 0;
   transition: all 0.2s var(--transition-function);
-  box-shadow: 0 2px 5px var(--shadow-color);
 }
 
 .canvas-toggle-button:hover {
-  transform: scale(1.1);
-  background: var(--primary-dark);
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.canvas-toggle-button .toggle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .canvas-content {
@@ -195,4 +203,40 @@
   .canvas-area.closed .canvas-toggle-button {
     transform: rotate(270deg);
   }
+}
+
+/* Canvas container */
+.canvas-container {
+  position: relative;
+  height: 100%;
+}
+
+.canvas-toggle-button-fixed {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  width: 32px;
+  height: 48px;
+  border-radius: 4px 0 0 4px;
+  background: var(--primary, #007bff);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.canvas-toggle-button-fixed:hover {
+  background: var(--primary-dark, #0056b3);
+  width: 36px;
+}
+
+.canvas-toggle-button-fixed .toggle-icon {
+  font-size: 20px;
+  line-height: 1;
 }

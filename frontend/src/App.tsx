@@ -1,8 +1,10 @@
-import './App.css';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Chatbot from './Components/Chatbot';
 import Interview from './Components/Interview';
 import Header from './Components/Header';
+import './App.css';
+import './Components/Chatbot/styles/CanvasArea.css';
 
 function App() {
   return (

@@ -1,0 +1,57 @@
+.chatbot-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.chatbot-main {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 320px;
+  transition: width 0.3s var(--transition-function);
+}
+
+/* Transition effect for chat container width */
+.canvas-area.closed + .chat-container {
+  width: 100%;
+}
+
+.canvas-area.open + .chat-container {
+  width: calc(100% - 40%);
+}
+
+/* Input area styles */
+.input-area {
+  padding: 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .chatbot-main {
+    flex-direction: column;
+  }
+  
+  .chat-container {
+    width: 100% !important;
+    height: calc(100% - 50%);
+  }
+  
+  .canvas-area.open + .chat-container {
+    width: 100% !important;
+  }
+}

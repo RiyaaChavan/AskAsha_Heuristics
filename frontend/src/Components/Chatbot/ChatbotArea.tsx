@@ -56,32 +56,39 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
   // Handle selecting a message to display its canvas
   const selectMessage = (index: number) => {
     if (messages[index].canvasType !== 'none') {
-      setSelectedMessageId(index);
-      setIsCanvasOpen(true); // Open canvas when selecting a message
+      if (selectedMessageId === index) {
+        // If clicking the same message, toggle canvas
+        setIsCanvasOpen(prev => !prev);
+      } else {
+        // If clicking a different message, open canvas and select it
+        setSelectedMessageId(index);
+        setIsCanvasOpen(true);
+      }
     }
   };
 
   // Toggle canvas open/closed state
   const toggleCanvas = () => {
     setIsCanvasOpen(prev => !prev);
-    // If canvas is being closed, deselect message
+    // Only clear selected message if we're closing the canvas
     if (isCanvasOpen) {
       setSelectedMessageId(null);
     }
   };
-  
-  // Function to clear the selected message (close the canvas)
+
+  // Function to clear the selected message
   const clearSelectedMessage = () => {
     setSelectedMessageId(null);
+    setIsCanvasOpen(false);
   };
 
   // Auto-select new messages with canvases
   useEffect(() => {
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage.canvasType !== 'none') {
+      if (lastMessage.canvasType !== 'none' && !lastMessage.isUserMessage) {
         setSelectedMessageId(messages.length - 1);
-        setIsCanvasOpen(true); // Make sure canvas is open for new messages with canvas
+        setIsCanvasOpen(true);
       }
     }
   }, [messages.length]);
@@ -274,17 +281,8 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendMessage()}
               placeholder="Type your message..."
+              className="chat-input"
             />
-            <button onClick={() => {
-              if (isListening) {
-                recognitionRef.current?.stop();
-                setIsListening(false);
-              } else {
-                startListening();
-              }
-            }} className={`mic-button ${isListening ? 'listening' : ''}`}>
-              {isListening ? '🎤 Listening...' : '🎤'}
-            </button>
             <button onClick={sendMessage}>Send</button>
           </div>
         </div>
