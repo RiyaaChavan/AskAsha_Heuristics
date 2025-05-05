@@ -591,18 +591,56 @@ def send_message():
 
                 return jsonify({"message": rating_reply})
 
+    #     else:
+    #         # If it's not interview, handle other chat types
+    #         messages.append(HumanMessage(content=user_message))
+
+    #         # Call the LLM for normal conversation
+    #         response = llm.invoke(messages)
+    #         model_reply = response.content.strip()
+
+    #         messages.append(AIMessage(content=model_reply))
+
+    #         return jsonify({"message": model_reply})
+
+
         else:
-            # If it's not interview, handle other chat types
             messages.append(HumanMessage(content=user_message))
 
-            # Call the LLM for normal conversation
-            response = llm.invoke(messages)
-            model_reply = response.content.strip()
+            try:
+                # Step 1: Let the model think
+                response = llm.invoke(messages)
+                model_reply = response.content.strip()
 
-            messages.append(AIMessage(content=model_reply))
+                # Step 2: Check if model wants to search the internet
+                search_match = re.search(r"Action:\s*Search\[(.*?)\]", model_reply, re.IGNORECASE)
 
-            return jsonify({"message": model_reply})
+                if search_match:
+                    search_query = search_match.group(1)
+                    print(f"🔎 Bot decided to search for: {search_query}")
 
+                    try:
+                        search_results = internet_search.invoke({"query": search_query})
+                        snippets = "\n".join([doc.metadata['snippet'] for doc in search_results])
+
+                        # Feed back the search context
+                        search_context = f"Here are search results for '{search_query}':\n{snippets}\n\nUse this to answer properly."
+                        messages.append(HumanMessage(content=search_context))
+
+                        # Re-invoke model with updated context
+                        response = llm.invoke(messages)
+                        model_reply = response.content.strip()
+
+                    except Exception as e:
+                        model_reply = f"Sorry, I tried to search the web but something went wrong. Error: {str(e)}"
+
+                # Step 3: Store and return model response
+                messages.append(AIMessage(content=model_reply))
+                return jsonify({"message": model_reply})
+
+            except Exception as e:
+                print(f"Non-interview error: {str(e)}")
+                return jsonify({"error": "An error occurred while processing your request."}), 500
     except Exception as e:
         print(f"Error in processing message: {str(e)}")
         return jsonify({"error": "An error occurred while processing your request."}), 500
