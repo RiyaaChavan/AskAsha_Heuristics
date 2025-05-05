@@ -106,33 +106,30 @@ export const ProfileSetup = () => {
       
       console.log("Response status:", response.status);
       
-      // IMPORTANT CHANGE: Parse JSON properly and check for actual success
-      let jsonResponse;
       try {
-        const text = await response.text();
-        console.log("Raw response:", text);
-        jsonResponse = JSON.parse(text);
-      } catch (e) {
-        console.error("Error parsing JSON response:", e);
-        throw new Error("Invalid response from server");
-      }
-      
-      if (response.ok) {
-        console.log("Profile created successfully:", jsonResponse);
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
         
-        // Set a success flag in localStorage
+        // Store flag BEFORE navigation
         localStorage.setItem('profileCreated', 'true');
-        localStorage.setItem('uid', currentUser.uid);
+        localStorage.setItem('userId', currentUser.uid);
         
-        // Use simple window.location navigation which is most reliable
-        window.location.href = '/jobsearch';
-      } else {
-        console.error("Profile creation failed:", jsonResponse);
-        setError(jsonResponse?.error || 'Failed to create profile');
+        // Fixed navigation - use navigate with replace option to clear history
+        if (response.ok) {
+          // Try both approaches for maximum reliability
+          console.log("Profile created! Navigating to home page...");
+          navigate('/', { replace: true });
+        } else {
+          const jsonResponse = JSON.parse(responseText);
+          setError(jsonResponse?.error || 'Failed to create profile');
+        }
+      } catch (error) {
+        console.error("Error parsing response:", error);
+        setError('Invalid response from server');
       }
     } catch (error) {
       console.error("Profile submission error:", error);
-      setError('Network error while creating profile. Please try again.');
+      setError('Network error while creating profile');
     } finally {
       setSubmitting(false);
     }

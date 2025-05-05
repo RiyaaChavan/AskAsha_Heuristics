@@ -332,51 +332,58 @@ def create_profile():
         if not uid:
             return jsonify({'error': 'User ID is required'}), 400
 
-        # Handle resume file
-        if 'resume' not in request.files:
-            return jsonify({'error': 'No resume file'}), 400
+        # Debug print
+        print(f"Creating profile for uid: {uid}")
+        print(f"Form data: {data}")
+        print(f"Files: {request.files}")
             
-        resume_file = request.files['resume']
-        if resume_file and allowed_file(resume_file.filename):
-            filename = secure_filename(f"{uid}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume_file.filename}")
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            resume_file.save(filepath)
-            
-            # Parse resume and extract skills
-            skills_data = parse_resume(filepath)
-            
-            # Create user profile
-            profile_data = {
-                'uid': uid,
-                'name': data.get('name'),
-                'email': data.get('email'),
-                'phone': data.get('phone'),
-                'location': data.get('location'),
-                'locationPreference': data.get('locationPreference'),
-                'gender': data.get('gender'),
-                'education': data.get('education'),
-                'professionalStage': data.get('professionalStage'),
-                'resume_file': filename,
-                'skills': skills_data['skills'],
-                'categorized_skills': skills_data['categorized_skills'],
-                'created_at': datetime.utcnow()
-            }
-            
-            # Insert or update profile
-            db.users.update_one(
-                {'uid': uid},
-                {'$set': profile_data},
-                upsert=True
-            )
-            
-            return jsonify({'message': 'Profile created successfully'}), 201
-            
-        return jsonify({'error': 'Invalid file type'}), 400
+        # Handle resume file with better error handling
+        filename = "no_resume_provided"
+        skills_data = {"skills": [], "categorized_skills": {}}
+        
+        if 'resume' in request.files and request.files['resume'].filename:
+            resume_file = request.files['resume']
+            if allowed_file(resume_file.filename):
+                try:
+                    filename = secure_filename(f"{uid}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume_file.filename}")
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    resume_file.save(filepath)
+                    
+                    # Parse resume and extract skills
+                    skills_data = parse_resume(filepath)
+                except Exception as e:
+                    print(f"Error saving or parsing resume: {str(e)}")
+        
+        # Create user profile
+        profile_data = {
+            'uid': uid,
+            'name': data.get('name', ''),
+            'email': data.get('email', ''),
+            'phone': data.get('phone', ''),
+            'location': data.get('location', ''),
+            'locationPreference': data.get('locationPreference', ''),
+            'gender': data.get('gender', ''),
+            'education': data.get('education', ''),
+            'professionalStage': data.get('professionalStage', ''),
+            'resume_file': filename,
+            'skills': skills_data.get('skills', []),
+            'categorized_skills': skills_data.get('categorized_skills', {}),
+            'created_at': datetime.utcnow()
+        }
+        
+        # Insert or update profile
+        db.users.update_one(
+            {'uid': uid},
+            {'$set': profile_data},
+            upsert=True
+        )
+        
+        print(f"Profile created successfully for uid: {uid}")
+        return jsonify({'message': 'Profile created successfully', 'status': 'success'}), 201
 
     except Exception as e:
         print(f"Error creating profile: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
-
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/update-profile/<uid>', methods=['PUT'])
 def update_profile(uid):

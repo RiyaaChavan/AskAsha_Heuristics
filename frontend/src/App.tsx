@@ -11,7 +11,6 @@ import Profile from './pages/Profile';
 import { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 
-
 const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
@@ -72,51 +71,19 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route 
-            path="/profile-setup" 
-            element={
-              <ProtectedRoute>
-                <ProfileSetup />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <ProfileRequiredRoute>
-                  <Profile />
-                </ProfileRequiredRoute>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/jobsearch" 
-            element={
-              <ProtectedRoute>
-                <ProfileRequiredRoute>
-                  <Chatbot userId='User' />
-                </ProfileRequiredRoute>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/askasha" 
-            element={
-              <ProtectedRoute>
-                <ProfileRequiredRoute>
-                  <Interview userId='User' />
-                </ProfileRequiredRoute>
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/" element={<ProtectedRoute><ProfileRequiredRoute><Chatbot /></ProfileRequiredRoute></ProtectedRoute>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/profile-setup" element={<ProfileSetup />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/interview" element={<ProtectedRoute><ProfileRequiredRoute><Interview /></ProfileRequiredRoute></ProtectedRoute>} />
+          {/* This route can be removed if you use '/' as the destination after profile completion */}
+          <Route path="/jobsearch" element={<Navigate to="/" replace />} />
         </Routes>
-      </AuthProvider>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 
