@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import './ProfileSetup.css';
+import { apiService } from '../services/apiService';
 
 interface UserProfile {
   name: string;
@@ -40,8 +41,8 @@ export const ProfileSetup = () => {
       if (!currentUser?.uid) return;
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
-        if (response.ok) {
+        const data = await apiService.getProfile(currentUser.uid);
+        if (data) {
           navigate('/jobsearch');
         }
       } catch (error) {
@@ -73,63 +74,38 @@ export const ProfileSetup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!currentUser?.uid) {
       setError("User not authenticated");
       return;
     }
-    
+
     setSubmitting(true);
     setError('');
-    
+
     try {
-      // Create FormData object
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== 'resume' && value !== null) {
           formDataToSend.append(key, String(value || ''));
         }
       });
-      
+
       if (formData.resume instanceof File) {
         formDataToSend.append('resume', formData.resume);
       }
-      
+
       formDataToSend.append('uid', currentUser.uid);
-      
-      console.log("Submitting profile to:", `${import.meta.env.VITE_API_URL}/create-profile`);
-      
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create-profile`, {
-        method: 'POST',
-        body: formDataToSend,
-      });
-      
-      console.log("Response status:", response.status);
-      
-      try {
-        const responseText = await response.text();
-        console.log("Raw response:", responseText);
-        
-        // Store flag BEFORE navigation
-        localStorage.setItem('profileCreated', 'true');
-        localStorage.setItem('userId', currentUser.uid);
-        
-        // Fixed navigation - use navigate with replace option to clear history
-        if (response.ok) {
-          // Try both approaches for maximum reliability
-          console.log("Profile created! Navigating to home page...");
-          navigate('/', { replace: true });
-        } else {
-          const jsonResponse = JSON.parse(responseText);
-          setError(jsonResponse?.error || 'Failed to create profile');
-        }
-      } catch (error) {
-        console.error("Error parsing response:", error);
-        setError('Invalid response from server');
-      }
+
+      const response = await apiService.createProfile(formDataToSend);
+
+      localStorage.setItem('profileCreated', 'true');
+      localStorage.setItem('userId', currentUser.uid);
+
+      navigate('/', { replace: true });
     } catch (error) {
       console.error("Profile submission error:", error);
-      setError('Network error while creating profile');
+      setError('Error creating profile. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +122,7 @@ export const ProfileSetup = () => {
   if (loading) {
     return (
       <div className="loading-container">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="loading-content"
@@ -166,10 +142,10 @@ export const ProfileSetup = () => {
 
         <div className="progress-section">
           <div className="progress-bar-container">
-            <motion.div 
+            <motion.div
               className="progress-bar"
               initial={{ width: "0%" }}
-              animate={{ width: `${(step/3) * 100}%` }}
+              animate={{ width: `${(step / 3) * 100}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
@@ -182,7 +158,7 @@ export const ProfileSetup = () => {
       </div>
 
       <div className="form-wrapper">
-        <motion.div 
+        <motion.div
           className="form-container"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -348,7 +324,7 @@ export const ProfileSetup = () => {
                   Previous
                 </button>
               )}
-              
+
               {step < 3 ? (
                 <button
                   type="button"

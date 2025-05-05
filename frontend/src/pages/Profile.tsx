@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import profileIcon from "../assets/profile.png"
 import Header from '../Components/Header';
 import "./Profile.css"
+import { apiService } from '../services/apiService';
 
 interface UserProfile {
   name: string;
@@ -25,8 +26,8 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser?.uid}`);
-        const data = await response.json();
+        if (!currentUser?.uid) return;
+        const data = await apiService.getProfile(currentUser.uid);
         setProfile(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
