@@ -33,6 +33,7 @@ export const ProfileSetup = () => {
     resume: null
   });
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -72,38 +73,60 @@ export const ProfileSetup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); // Add this line to clear any previous errors
     
-    const formDataToSend = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null) {
-        formDataToSend.append(key, value);
-      }
-    });
-    formDataToSend.append('uid', currentUser?.uid || '');
-
+    if (!currentUser?.uid) {
+      setError("User not authenticated");
+      return;
+    }
+    
+    setSubmitting(true);
+    setError('');
+    
     try {
+      // Create FormData object
+      const formDataToSend = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null) {
+          formDataToSend.append(key, String(value || ''));
+        }
+      });
+      
+      if (formData.resume instanceof File) {
+        formDataToSend.append('resume', formData.resume);
+      }
+      
+      formDataToSend.append('uid', currentUser.uid);
+      
       console.log("Submitting profile to:", `${import.meta.env.VITE_API_URL}/create-profile`);
       
       const response = await fetch(`${import.meta.env.VITE_API_URL}/create-profile`, {
         method: 'POST',
         body: formDataToSend,
       });
-
+      
+      console.log("Response status:", response.status);
+      
       if (response.ok) {
         console.log("Profile created successfully");
-        // Add a small delay before redirecting
+        
+        // Using both approaches for maximum reliability:
+        // 1. Use window.location for a hard redirect that bypasses React Router
+        window.location.href = '/jobsearch';
+        
+        // 2. Also try normal navigation as a fallback (won't execute if the above works)
         setTimeout(() => {
           navigate('/jobsearch', { replace: true });
-        }, 300);
+        }, 100);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Network error while creating profile. Please try again.');
         console.error("Profile creation failed:", errorData);
+        setError(errorData.error || errorData.message || 'Failed to create profile');
       }
     } catch (error) {
-      console.error('Error creating profile:', error);
+      console.error("Profile submission error:", error);
       setError('Network error while creating profile. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -333,8 +356,9 @@ export const ProfileSetup = () => {
                 <button
                   type="submit"
                   className="nav-button submit-button"
+                  disabled={submitting}
                 >
-                  Complete Profile
+                  {submitting ? 'Submitting...' : 'Complete Profile'}
                 </button>
               )}
             </div>

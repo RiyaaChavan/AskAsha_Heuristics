@@ -16,6 +16,7 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -25,18 +26,34 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
+        console.log("Checking profile at:", `${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
         const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
-        setHasProfile(response.ok);
+        console.log("Profile check response:", response.status);
+        
+        // If profile exists, proceed
+        if (response.ok) {
+          setHasProfile(true);
+          setLoading(false);
+        } else {
+          // Retry up to 3 times if the profile check fails
+          if (retryCount < 3) {
+            console.log(`Retrying profile check (${retryCount + 1}/3)...`);
+            setRetryCount(retryCount + 1);
+            setTimeout(() => checkProfile(), 1000); // Retry after 1 second
+          } else {
+            setHasProfile(false);
+            setLoading(false);
+          }
+        }
       } catch (error) {
         console.error('Error checking profile:', error);
         setHasProfile(false);
-      } finally {
         setLoading(false);
       }
     };
 
     checkProfile();
-  }, [currentUser]);
+  }, [currentUser, retryCount]);
 
   if (loading) {
     return (
@@ -52,22 +69,6 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
 
   return <>{children}</>;
 };
-
-// function App() {
-//   return (
-//     <Router>
-//       <div className="app-container">
-//         <Header userName="C" notificationCount={1} />
-//         <Routes>
-          
-//           <Route path="/" element={<Navigate to="/jobsearch" replace />} />
-//           <Route path="/jobsearch" element={<Chatbot userId="User" />} />
-//           <Route path="/askasha" element={<Interview userId="User" />} />
-//         </Routes>
-//       </div>
-//     </Router>
-//   );
-// }
 
 function App() {
   return (
