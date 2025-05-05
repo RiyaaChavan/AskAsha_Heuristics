@@ -99,10 +99,12 @@ export const ProfileSetup = () => {
 
       const response = await apiService.createProfile(formDataToSend);
 
-      localStorage.setItem('profileCreated', 'true');
-      localStorage.setItem('userId', currentUser.uid);
-
-      navigate('/', { replace: true });
+      if (response.status === 'success') {
+        // Navigate to chatbot (home) page after successful profile creation
+        navigate('/', { replace: true });
+      } else {
+        setError(response.error || 'Failed to create profile');
+      }
     } catch (error) {
       console.error("Profile submission error:", error);
       setError('Error creating profile. Please try again.');

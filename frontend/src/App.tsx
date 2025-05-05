@@ -15,7 +15,6 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -25,28 +24,22 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${currentUser.uid}`);
         if (response.ok) {
           setHasProfile(true);
-          setLoading(false);
         } else {
-          if (retryCount < 3) {
-            setRetryCount(retryCount + 1);
-            setTimeout(() => checkProfile(), 1000);
-          } else {
-            setHasProfile(false);
-            setLoading(false);
-          }
+          setHasProfile(false);
         }
       } catch (error) {
         console.error('Error checking profile:', error);
         setHasProfile(false);
+      } finally {
         setLoading(false);
       }
     };
 
     checkProfile();
-  }, [currentUser, retryCount]);
+  }, [currentUser]);
 
   if (loading) {
     return (
@@ -68,8 +61,18 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/profile-setup" element={<ProfileSetup />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          
+          <Route path="/" element={
+            <ProtectedRoute>
+              <ProfileRequiredRoute>
+                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+              </ProfileRequiredRoute>
+            </ProtectedRoute>
+          } />
+          
           <Route path="/chatbot" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
@@ -77,8 +80,7 @@ function App() {
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
-          <Route path="/profile-setup" element={<ProfileSetup />} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          
           <Route path="/interview" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
@@ -86,7 +88,14 @@ function App() {
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
-          <Route path="/jobsearch" element={<Navigate to="/" replace />} />
+          
+          <Route path="/jobsearch" element={
+            <ProtectedRoute>
+              <ProfileRequiredRoute>
+                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+              </ProfileRequiredRoute>
+            </ProtectedRoute>
+          } />
         </Routes>
       </Router>
     </AuthProvider>
