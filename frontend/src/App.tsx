@@ -74,12 +74,24 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<ProtectedRoute><ProfileRequiredRoute><Chatbot /></ProfileRequiredRoute></ProtectedRoute>} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <ProfileRequiredRoute>
+                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+              </ProfileRequiredRoute>
+            </ProtectedRoute>
+          } />
           <Route path="/login" element={<Login />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/interview" element={<ProtectedRoute><ProfileRequiredRoute><Interview /></ProfileRequiredRoute></ProtectedRoute>} />
-          {/* This route can be removed if you use '/' as the destination after profile completion */}
+          <Route path="/interview" element={
+            <ProtectedRoute>
+              <ProfileRequiredRoute>
+                <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
+              </ProfileRequiredRoute>
+            </ProtectedRoute>
+          } />
+          {/* This route redirects to home with the userId param */}
           <Route path="/jobsearch" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
