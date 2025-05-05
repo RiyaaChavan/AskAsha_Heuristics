@@ -1,195 +1,3 @@
-# from flask import Flask, jsonify, request, session
-# import time
-# import requests
-# from flask_cors import CORS
-# from agent import run_agent  # Assuming run_agent is defined in agent.py
-# from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
-# import os
-
-# app = Flask(__name__)
-# app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
-# CORS(app, supports_credentials=True)  # Enabling credentials for CORS
-
-# def get_session_id():
-#     """Get a session ID from the HerKey API"""
-#     response = requests.get('https://api-prod.herkey.com/api/v1/herkey/generate-session')
-#     if response.status_code == 200:
-#         return response.json()['body']['session_id']
-#     return None
-
-# @app.route('/health', methods=['GET'])
-# def health_check():
-#     return jsonify({
-#         "status": "ok",
-#         "message": "Server is running"
-#     })
-
-# # New routes for authentication
-# @app.route('/api/signup', methods=['POST'])
-# def signup():
-#     data = request.get_json()
-#     username = data.get('username')
-#     email = data.get('email')
-#     password = data.get('password')
-    
-#     # Validate input
-#     if not username or not email or not password:
-#         return jsonify({
-#             "status": "error",
-#             "message": "Missing required fields"
-#         }), 400
-    
-#     # Create user
-#     user_id = create_user(username, email, password)
-    
-#     if user_id:
-#         session['user_id'] = user_id
-#         return jsonify({
-#             "status": "success",
-#             "message": "User created successfully",
-#             "user_id": user_id
-#         })
-#     else:
-#         return jsonify({
-#             "status": "error",
-#             "message": "Email already exists"
-#         }), 409
-
-# @app.route('/api/login', methods=['POST'])
-# def login():
-#     data = request.get_json()
-#     email = data.get('email')
-#     password = data.get('password')
-    
-#     # Validate input
-#     if not email or not password:
-#         return jsonify({
-#             "status": "error",
-#             "message": "Missing required fields"
-#         }), 400
-    
-#     # Authenticate user
-#     user_id = authenticate_user(email, password)
-    
-#     if user_id:
-#         session['user_id'] = user_id
-#         return jsonify({
-#             "status": "success",
-#             "message": "Login successful",
-#             "user_id": user_id
-#         })
-#     else:
-#         return jsonify({
-#             "status": "error",
-#             "message": "Invalid email or password"
-#         }), 401
-
-# @app.route('/api/logout', methods=['POST'])
-# def logout():
-#     session.pop('user_id', None)
-#     return jsonify({
-#         "status": "success",
-#         "message": "Logout successful"
-#     })
-
-# @app.route('/api/user', methods=['GET'])
-# def get_user():
-#     user_id = session.get('user_id')
-    
-#     if not user_id:
-#         return jsonify({
-#             "status": "error",
-#             "message": "Not authenticated"
-#         }), 401
-    
-#     user = get_user_by_id(user_id)
-    
-#     if user:
-#         return jsonify({
-#             "status": "success",
-#             "user": user
-#         })
-#     else:
-#         return jsonify({
-#             "status": "error",
-#             "message": "User not found"
-#         }), 404
-
-# @app.route('/api/conversations', methods=['GET'])
-# def get_conversations():
-#     user_id = session.get('user_id')
-    
-#     if not user_id:
-#         return jsonify({
-#             "status": "error",
-#             "message": "Not authenticated"
-#         }), 401
-    
-#     conversations = get_user_conversations(user_id)
-    
-#     return jsonify({
-#         "status": "success",
-#         "conversations": conversations
-#     })
-
-# @app.route('/api/chat', methods=['POST'])
-# def chat():
-#     # Get message and userId from request
-#     data = request.get_json()
-#     message = data.get('message', '')
-#     user_id = data.get('userId', '')
-    
-#     # Check if user is authenticated for saving conversations
-#     is_authenticated = False
-#     if not user_id:
-#         user_id = session.get('user_id')
-    
-#     if user_id:
-#         is_authenticated = True
-#         # Fetch recent conversation history for context
-#         # Note: get_user_conversations returns conversations in reverse chronological order (newest first)
-#         # We need to reverse the list to get chronological order (oldest first)
-#         conversation_history = get_user_conversations(user_id, limit=5)
-#         conversation_history.reverse()  # Reverse to get chronological order (oldest first)
-#     else:
-#         conversation_history = []
-    
-#     # Log the incoming request
-#     response = run_agent(message, conversation_history)
-    
-#     if response['canvasType'] == 'job_search':
-#         # Generate link for job search with parameters encoded in the URL
-#         session_id = get_session_id()
-        
-#         # Get parameters from response if available
-#         params = response.get('canvasUtils', {}).get('param', {})
-        
-#         # Add the session token to the parameters
-#         if session_id:
-#             params['session_id'] = session_id
-        
-#         # Create query string from parameters
-#         import urllib.parse
-#         query_string = urllib.parse.urlencode(params)
-        
-#         # Append query string to the job link
-#         base_url = "https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs"
-#         response['canvasUtils']['job_link'] = f"{base_url}?{query_string}"
-        
-#         # Keep the job_api for backward compatibility if needed
-#         response['canvasUtils']['job_api'] = session_id
-    
-#     # Save the conversation if user is authenticated
-#     if is_authenticated:
-#         save_conversation(user_id, message, response)
-    
-#     # Add a short delay to simulate processing (optional)
-#     time.sleep(0.5)
-    
-#     return jsonify(response)
-
-# if __name__ == '__main__':
-#     app.run(host='0.0.0.0', port=5000, debug=True)
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import time
@@ -208,7 +16,7 @@ import PyPDF2
 import docx2txt
 import nltk
 from nltk.tokenize import word_tokenize
-
+import re
 
 # Import your internal logic
 from agent import run_agent  # Your run_agent logic
@@ -221,6 +29,9 @@ load_dotenv()
 from langchain_cohere import ChatCohere
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+# Import profanity check functions
+from profanity import check_profanity, get_profanity_response
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
@@ -241,7 +52,6 @@ def allowed_file(filename):
 
 # External API keys
 os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY")  # Replace with your actual API key
-# os.environ["COHERE_API_KEY"] = os.getenv("COHERE_API_KEY")  # Replace with your actual API key
 
 # Initialize internet search tool and LLM
 internet_search = TavilySearchResults()
@@ -253,8 +63,6 @@ llm = ChatCohere(
     model="command-r-plus",
     temperature=0.3
 )
-
-
 
 # Session storage for mock interview/career chats
 sessions = {}
@@ -445,7 +253,6 @@ def parse_resume(file_path):
     skills_data = extract_skills_from_text(text)
     
     return skills_data
-\
 
 # -------------- Health Check -------------- #
 @app.route('/api/health', methods=['GET'])
@@ -644,7 +451,7 @@ def chat():
     return jsonify(response)
 
 # -------------- LangChain Career Coach / Interview Bot -------------- #
-@app.route('/start-session', methods=['POST'])
+@app.route('/api/start-session', methods=['POST'])
 def start_session():
     data = request.json
     chat_type = data.get('chatType')
@@ -662,9 +469,7 @@ def start_session():
 
     return jsonify({"sessionId": session_id, "message": f"Started {chat_type} session"})
 
-import re
-
-@app.route('/send-message', methods=['POST'])
+@app.route('/api/send-message', methods=['POST'])
 def send_message():
     data = request.json
     session_id = data.get('sessionId')
@@ -675,6 +480,15 @@ def send_message():
     if not user_message:
         return jsonify({"error": "Message cannot be empty"}), 400
 
+    # Add profanity check before processing message
+    try:
+        if check_profanity(user_message):
+            response = get_profanity_response()
+            return jsonify({"message": response})
+    except Exception as e:
+        print(f"Profanity check error: {str(e)}")
+        # Continue with normal processing if profanity check fails
+    
     session_data = sessions[session_id]
     messages = session_data['messages']
     chat_type = session_data['chat_type']
@@ -689,18 +503,39 @@ def send_message():
             stage = session_data["interview_stage"]
 
             if stage == "ask_role":
+                # Check profanity for role input
+                try:
+                    if check_profanity(user_message):
+                        return jsonify({"message": get_profanity_response()})
+                except Exception as e:
+                    print(f"Profanity check error in ask_role: {str(e)}")
+                
                 session_data["role"] = user_message
-                session_data["interview_stage"] = "ask_experience"  # Move to next stage
+                session_data["interview_stage"] = "ask_experience"
                 return jsonify({"message": "How many years of experience do you have in this field?"})
 
             elif stage == "ask_experience":
+                # Check profanity for experience input
+                try:
+                    if check_profanity(user_message):
+                        return jsonify({"message": get_profanity_response()})
+                except Exception as e:
+                    print(f"Profanity check error in ask_experience: {str(e)}")
+                
                 session_data["experience"] = user_message
-                session_data["interview_stage"] = "ask_skills"  # Move to next stage
+                session_data["interview_stage"] = "ask_skills"
                 return jsonify({"message": "What are your key skills related to this role?"})
 
             elif stage == "ask_skills":
+                # Check profanity for skills input
+                try:
+                    if check_profanity(user_message):
+                        return jsonify({"message": get_profanity_response()})
+                except Exception as e:
+                    print(f"Profanity check error in ask_skills: {str(e)}")
+                
                 session_data["skills"] = user_message
-                session_data["interview_stage"] = "start_interview"  # Move to the interview stage
+                session_data["interview_stage"] = "start_interview"
                 # System prompt to guide the LLM
                 system_prompt = f"""
     ## Task and Context
@@ -765,44 +600,7 @@ def send_message():
         print(f"Error in processing message: {str(e)}")
         return jsonify({"error": "An error occurred while processing your request."}), 500
 
-# Function to call Cohere or LLM API for generating interview questions
-def generate_interview_question(role, experience, skills, messages):
-    # Create a prompt for the LLM based on the user's profile
-    prompt = f"""
-    The user is preparing for the role of {role} with {experience} years of experience. 
-    Their key skills include {skills}.
-    Ask one question at a time, and based on the user's answers, ask relevant follow-up questions. 
-Make the interview realistic by using contextual follow-up questions, similar to how a real interview would flow. 
-Ask follow up questions if the user seems to be struggling move to the next question.
-At the end of the interview, rate the user based on their performance and provide feedback.
-    """
-
-    # Add the system message with the context about the user's role, experience, and skills
-    system_message = SystemMessage(content=prompt)
-    messages.append(system_message)
-
-    try:
-        # Invoke the model to generate the question based on the updated conversation context
-        response = llm.invoke(messages)
-        model_reply = response.content.strip()
-
-        # Add the AI's reply (generated interview question) to the message history
-        messages.append(AIMessage(content=model_reply))
-
-        # Return the interview question as a JSON response
-        return {"message": model_reply, "didSearch": False}
-
-    except Exception as e:
-        # Handle any potential errors during the invocation of the model
-        print(f"Error invoking the model: {str(e)}")
-        return {"error": "Sorry, I couldn't generate a question right now."}
-
-
-
-
-  
-
-@app.route('/end-session', methods=['POST'])
+@app.route('/api/end-session', methods=['POST'])
 def end_session():
     data = request.json
     session_id = data.get('sessionId')
