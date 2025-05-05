@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import React, { Fragment } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, Transition } from '@headlessui/react';
+import { auth } from '../config/firebase';
+import { useAuth } from '../context/AuthContext';
 
 // Define interfaces for props
 interface NavItemProps {

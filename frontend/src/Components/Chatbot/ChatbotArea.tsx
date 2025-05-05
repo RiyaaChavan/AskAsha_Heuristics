@@ -99,7 +99,7 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
     
     setIsLoadingHistory(true);
     try {
-      const res = await fetch('https://askasha.onrender.com/api/conversations', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/conversations`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { MessageSquare, ArrowLeft, Search } from 'lucide-react';
 import './Chatbot/styles/Interview.css'; // Import the CSS file
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Interview() {
   const [currentChat, setCurrentChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -11,8 +13,6 @@ export default function Interview() {
   const [userId, setUserId] = useState('');
   const [showUserIdPrompt, setShowUserIdPrompt] = useState(false);
   
-  const API_URL = 'https://askasha.onrender.com/api';
-
   const chatOptions = [
     { id: 'career', title: 'Career Coach', description: 'Get guidance on career paths and growth opportunities' },
     { id: 'interview', title: 'Job Interview Prep', description: 'Practice interview questions and get feedback' },
