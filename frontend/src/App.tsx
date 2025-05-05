@@ -25,20 +25,14 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        console.log("Checking profile at:", `${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
         const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
-        console.log("Profile check response:", response.status);
-        
-        // If profile exists, proceed
         if (response.ok) {
           setHasProfile(true);
           setLoading(false);
         } else {
-          // Retry up to 3 times if the profile check fails
           if (retryCount < 3) {
-            console.log(`Retrying profile check (${retryCount + 1}/3)...`);
             setRetryCount(retryCount + 1);
-            setTimeout(() => checkProfile(), 1000); // Retry after 1 second
+            setTimeout(() => checkProfile(), 1000);
           } else {
             setHasProfile(false);
             setLoading(false);
@@ -74,14 +68,15 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/chatbot" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
                 <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
-          <Route path="/login" element={<Login />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/interview" element={
@@ -91,7 +86,6 @@ function App() {
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
-          {/* This route redirects to home with the userId param */}
           <Route path="/jobsearch" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
