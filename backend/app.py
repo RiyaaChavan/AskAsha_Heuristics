@@ -40,6 +40,8 @@ CORS(app,
      origins=[
          "http://localhost:5173",  # Local dev
          "https://ask-asha-heuristics-git-pushing-riyaas-projects.vercel.app",
+         "https://ask-asha-heuristics.vercel.app",
+         "https://ask-asha-heuristics-git-pushing2-riyaas-projects.vercel.app",
         #  "*"# Add your custom domain if any
      ],
      supports_credentials=True)
