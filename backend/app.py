@@ -34,9 +34,11 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from profanity import check_profanity, get_profanity_response
 
 app = Flask(__name__)
+
+# Fix CORS to allow requests from your Vercel domain
 CORS(app, origins=[
     "https://ask-asha-heuristics-git-pushing-riyaas-projects.vercel.app",
-    "http://localhost:5173"  # Keep localhost for development
+    "http://localhost:5173"  # Keep for local development
 ], supports_credentials=True)
 
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")

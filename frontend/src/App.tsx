@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import DebugInfo from './Components/DebugInfo';
+import KeepAlive from './Components/KeepAlive';
 
 const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
@@ -79,6 +80,7 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <AuthProvider>
+      <KeepAlive />
       <DebugInfo />
       <Router>
         <Routes>
