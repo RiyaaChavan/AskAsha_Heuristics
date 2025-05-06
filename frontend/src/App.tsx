@@ -5,35 +5,33 @@ import Chatbot from './Components/Chatbot';
 import Interview from './Components/Interview';
 import Header from './Components/Header';
 import Home from './pages/Home';
-import Loading from './Components/Loading';
+import ProfileSetup from './Components/ProfileSetup';
+import LoadingComp from './Components/LoadingComp';
 
 function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [showHeader, setShowHeader] = useState(false);
   
-  // Listen for route changes to determine when to show the header
-  useEffect(() => {
-    // This will hide the header on the home page and show it elsewhere
-    const path = window.location.pathname;
-    setShowHeader(path !== '/');
-  }, []);
-
   // Function to handle loading state
   const handleStartLoading = () => {
     setIsLoading(true);
     
-    // After 2 seconds, stop loading and show header
+    // After 2 seconds, stop loading
     setTimeout(() => {
       setIsLoading(false);
-      setShowHeader(true);
     }, 2000);
+  };
+
+  // Function to display header when profile setup is complete
+  const handleProfileComplete = () => {
+    setShowHeader(true);
   };
 
   return (
     <Router>
       <div className="app-container">
         {/* Show loading when isLoading is true */}
-        {isLoading && <Loading />}
+        {isLoading && <LoadingComp />}
         
         {/* Only show header when showHeader is true */}
         {showHeader && !isLoading && <Header userName="C" notificationCount={1} />}
@@ -44,6 +42,7 @@ function App() {
             <Route path="/" element={<Home onGetStarted={handleStartLoading} />} />
             <Route path="/jobsearch" element={<Chatbot userId="User" />} />
             <Route path="/askasha" element={<Interview userId="User" />} />
+            <Route path="/profile-setup" element={<ProfileSetup onProfileComplete={handleProfileComplete} />} />
           </Routes>
         )}
       </div>

@@ -3,3 +3,8 @@ venv/
 node_modules/
 __pycache__/
 *.pyc
+
+frontend/.env
+backend/.env
+heuristics_ashaai.env
+

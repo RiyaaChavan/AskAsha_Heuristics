@@ -36,7 +36,7 @@ export default function Home({ onGetStarted }: HomeProps) {
 
         // After 2 seconds, navigate to jobsearch (the loading will be handled in App.js)
         setTimeout(() => {
-            navigate('/jobsearch');
+            navigate('/profile-setup');
         }, 2000);
     };
 

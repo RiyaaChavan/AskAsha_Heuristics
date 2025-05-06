@@ -1,6 +1,9 @@
-import React from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import React, { Fragment } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, Transition } from '@headlessui/react';
+import { auth } from '../config/firebase';
+import { useAuth } from '../context/AuthContext';
 
 // Define interfaces for props
 interface NavItemProps {
@@ -17,14 +20,14 @@ interface HeaderProps {
 
 // Icon components
 const BriefcaseIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
     <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
   </svg>
 );
 
 const CalendarIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
     <line x1="16" y1="2" x2="16" y2="6"></line>
     <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -33,40 +36,33 @@ const CalendarIcon = () => (
 );
 
 const MessageCircleIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
   </svg>
 );
 
 const CompassIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"></circle>
     <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
   </svg>
 );
 
 const MapIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
     <line x1="8" y1="2" x2="8" y2="18"></line>
     <line x1="16" y1="6" x2="16" y2="22"></line>
   </svg>
 );
 
-const BellIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-  </svg>
-);
-
-// Styled components
+// Styled components with reduced font sizes
 const HeaderContainer = styled.header`
   background-color: #8a4a6f;
   color: white;
   padding: 0 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: 64px;
+  height: 56px;
   display: flex;
   align-items: center;
   position: fixed;
@@ -83,36 +79,36 @@ const HeaderInner = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  gap: 16px;
+  gap: 12px;
   
   @media (max-width: 640px) {
-    gap: 8px;
+    gap: 6px;
   }
 `;
 
 const Logo = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 120px;
+  gap: 6px;
+  min-width: 100px;
   h1 {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 600;
     letter-spacing: 0.025em;
     margin: 0;
   }
   
   @media (max-width: 640px) {
-    min-width: 80px;
+    min-width: 70px;
     h1 {
-      font-size: 1rem;
+      font-size: 0.875rem;
     }
   }
 `;
 
 const Navigation = styled.nav`
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
   overflow-x: auto;
   flex-grow: 1;
@@ -125,7 +121,7 @@ const Navigation = styled.nav`
   }
   
   @media (max-width: 640px) {
-    gap: 8px;
+    gap: 6px;
     justify-content: flex-start;
   }
 `;
@@ -133,13 +129,14 @@ const Navigation = styled.nav`
 const NavItem = styled.div<{ active?: boolean }>`
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 9999px;
   background-color: ${props => props.active ? '#9c4dcc' : 'rgba(241, 241, 241, 0.1)'};
   cursor: pointer;
   color: white;
   transition: all 0.2s ease-in-out;
   white-space: nowrap;
+  font-size: 0.75rem;
   
   &:hover {
     background-color: #9c4dcc;
@@ -149,17 +146,17 @@ const NavItem = styled.div<{ active?: boolean }>`
   svg {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 9999px;
-    padding: 4px;
+    padding: 3px;
   }
   
   @media (max-width: 640px) {
-    padding: 4px 8px;
-    font-size: 0.875rem;
+    padding: 3px 6px;
+    font-size: 0.7rem;
     
     svg {
-      width: 16px;
-      height: 16px;
-      padding: 3px;
+      width: 14px;
+      height: 14px;
+      padding: 2px;
     }
   }
 `;
@@ -167,67 +164,37 @@ const NavItem = styled.div<{ active?: boolean }>`
 const StyledLink = styled(Link)`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   text-decoration: none;
   color: inherit;
   
   @media (max-width: 640px) {
-    gap: 4px;
+    gap: 3px;
   }
 `;
 
 const ProfileSection = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 80px;
   justify-content: flex-end;
+  min-width: 40px; // Reduced since we removed the bell icon
   
   @media (max-width: 640px) {
-    min-width: 60px;
-    gap: 4px;
+    min-width: 30px;
   }
-`;
-
-const NotificationBell = styled.div`
-  position: relative;
-  cursor: pointer;
-  
-  svg {
-    opacity: 0.8;
-    transition: opacity 0.2s;
-  }
-  
-  &:hover svg {
-    opacity: 1;
-  }
-`;
-
-const NotificationBadge = styled.span`
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background-color: #ec4899;
-  color: white;
-  font-size: 0.75rem;
-  border-radius: 9999px;
-  height: 16px;
-  width: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `;
 
 const Avatar = styled.div`
-  background-color: #ec4899;
+  background-color: rgb(135, 192, 90); // Changed to the requested color
   border-radius: 9999px;
-  height: 32px;
-  width: 32px;
+  height: 28px;
+  width: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 500;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: transform 0.2s;
   
@@ -236,9 +203,9 @@ const Avatar = styled.div`
   }
   
   @media (max-width: 640px) {
-    height: 28px;
-    width: 28px;
-    font-size: 0.875rem;
+    height: 24px;
+    width: 24px;
+    font-size: 0.7rem;
   }
 `;
 
@@ -272,14 +239,6 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
         </Navigation>
 
         <ProfileSection>
-          <NotificationBell>
-            <BellIcon />
-            {notificationCount > 0 && (
-              <NotificationBadge>
-                {notificationCount}
-              </NotificationBadge>
-            )}
-          </NotificationBell>
           <Avatar>
             {userName.charAt(0)}
           </Avatar>

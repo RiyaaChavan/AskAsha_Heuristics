@@ -1,0 +1,236 @@
+/* Base Layout */
+.profile-setup-page {
+    min-height: 100vh;
+    background-color: #934f73;
+    display: flex;
+    flex-direction: column;
+    padding: 3rem 1.5rem;
+}
+
+/* Header Section */
+.profile-setup-header {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 28rem;
+}
+
+.setup-title {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 2rem;
+}
+
+/* Progress Bar */
+.progress-section {
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.progress-bar-container {
+    height: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #87c05a;
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+}
+
+.progress-label {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.progress-label.active {
+    color: white;
+    font-weight: 500;
+}
+
+/* Form Container */
+.form-wrapper {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 28rem;
+}
+
+.form-container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Elements */
+.form-field {
+    margin-bottom: 1.5rem;
+}
+
+.field-label {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #934f73;
+    margin-bottom: 0.5rem;
+}
+
+.field-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(147, 79, 115, 0.2);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    background-color: white;
+}
+
+.field-input:focus {
+    outline: none;
+    border-color: #934f73;
+    box-shadow: 0 0 0 2px rgba(147, 79, 115, 0.1);
+}
+
+.field-input:read-only {
+    background-color: #f9f9f9;
+}
+
+/* Select Input */
+select.field-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23934f73' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+}
+
+/* File Input */
+.file-input {
+    padding: 0.5rem;
+    background-color: white;
+}
+
+.file-input::before {
+    content: 'Choose file';
+    display: inline-block;
+    background-color: #934f73;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    margin-right: 0.5rem;
+}
+
+/* Navigation Buttons */
+.form-navigation {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+.nav-button {
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.next-button, .submit-button {
+    background-color: #934f73;
+    color: white;
+    border: none;
+}
+
+.next-button:hover, .submit-button:hover {
+    background-color: #833f63;
+}
+
+.prev-button {
+    background-color: white;
+    color: #934f73;
+    border: 1px solid #934f73;
+}
+
+.prev-button:hover {
+    background-color: rgba(147, 79, 115, 0.05);
+}
+
+/* Loading State */
+.loading-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #934f73;
+}
+
+.loading-spinner {
+    height: 4rem;
+    width: 4rem;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error States */
+.field-input.error {
+    border-color: #dc2626;
+}
+
+.error-message {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .profile-setup-page {
+        padding: 2rem 1rem;
+    }
+
+    .setup-title {
+        font-size: 2rem;
+    }
+
+    .form-container {
+        padding: 1.5rem;
+    }
+
+    .nav-button {
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .progress-bar,
+    .nav-button,
+    .field-input {
+        transition: none;
+    }
+
+    .loading-spinner {
+        animation: none;
+    }
+}
