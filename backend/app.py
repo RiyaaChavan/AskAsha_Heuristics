@@ -34,8 +34,14 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from profanity import check_profanity, get_profanity_response
 
 app = Flask(__name__)
+
+# Fix CORS to allow requests from your Vercel domain
+CORS(app, origins=[
+    "*",
+    "http://localhost:5173"  # Keep for local development
+], supports_credentials=False)
+
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
-CORS(app, supports_credentials=True)
 
 client = MongoClient(os.getenv('MONGODB_URI'))
 db = client.askasha_db

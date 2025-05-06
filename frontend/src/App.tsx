@@ -10,43 +10,57 @@ import { ProfileSetup } from './Components/ProfileSetup';
 import Profile from './pages/Profile';
 import { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
+import DebugInfo from './Components/DebugInfo';
+import KeepAlive from './Components/KeepAlive';
 
 const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const checkProfile = async () => {
+      // First check localStorage for the profileCreated flag
+      if (localStorage.getItem('profileCreated') === 'true') {
+        console.log("Found profile flag in localStorage");
+        setHasProfile(true);
+        setLoading(false);
+        return;
+      }
+
       if (!currentUser?.uid) {
         setLoading(false);
         return;
       }
 
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/profile/${currentUser.uid}`);
+        // Fix URL format - remove the extra /api in the path
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const url = apiUrl.endsWith('/api') 
+          ? `${apiUrl}/profile/${currentUser.uid}`
+          : `${apiUrl}/api/profile/${currentUser.uid}`;
+        
+        console.log("Checking profile at:", url);
+        const response = await fetch(url);
+        console.log("Profile check response:", response.status);
+        
         if (response.ok) {
+          localStorage.setItem('profileCreated', 'true');
+          localStorage.setItem('userId', currentUser.uid);
           setHasProfile(true);
-          setLoading(false);
         } else {
-          if (retryCount < 3) {
-            setRetryCount(retryCount + 1);
-            setTimeout(() => checkProfile(), 1000);
-          } else {
-            setHasProfile(false);
-            setLoading(false);
-          }
+          setHasProfile(false);
         }
       } catch (error) {
         console.error('Error checking profile:', error);
         setHasProfile(false);
+      } finally {
         setLoading(false);
       }
     };
 
     checkProfile();
-  }, [currentUser, retryCount]);
+  }, [currentUser]);
 
   if (loading) {
     return (
@@ -66,10 +80,25 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <AuthProvider>
+      <KeepAlive />
+      <DebugInfo />
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/profile-setup" element={<ProfileSetup />} />
+          
+          {/* Protected routes */}
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          
+          <Route path="/" element={
+            <ProtectedRoute>
+              <ProfileRequiredRoute>
+                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+              </ProfileRequiredRoute>
+            </ProtectedRoute>
+          } />
+          
           <Route path="/chatbot" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
@@ -77,8 +106,7 @@ function App() {
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
-          <Route path="/profile-setup" element={<ProfileSetup />} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          
           <Route path="/interview" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
@@ -86,7 +114,17 @@ function App() {
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
-          <Route path="/jobsearch" element={<Navigate to="/" replace />} />
+          
+          <Route path="/jobsearch" element={
+            <ProtectedRoute>
+              <ProfileRequiredRoute>
+                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+              </ProfileRequiredRoute>
+            </ProtectedRoute>
+          } />
+          
+          {/* Fallback route - redirect to home if no matching route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

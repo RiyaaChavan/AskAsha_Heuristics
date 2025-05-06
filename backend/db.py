@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # MongoDB connection
-mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+mongo_uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+print(f"Connecting to MongoDB at {mongo_uri}...")
 client = MongoClient(mongo_uri)
 db = client["herkey_db"]
 
@@ -86,7 +87,7 @@ def save_conversation(user_id, message, response):
     Returns conversation ID
     """
     conversation = {
-        "user_id": ObjectId(user_id),
+        "user_id": user_id,  # Store as string instead of ObjectId
         "message": message,
         "response": response,
         "timestamp": datetime.now()
@@ -101,10 +102,10 @@ def get_user_conversations(user_id, limit=10):
     """
     convo_list = []
     try:
-        cursor = conversations.find({"user_id": ObjectId(user_id)}).sort("timestamp", -1).limit(limit)
+        cursor = conversations.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
         for convo in cursor:
             convo["_id"] = str(convo["_id"])
-            convo["user_id"] = str(convo["user_id"])
+            # No need to convert user_id as it's already a string
             convo_list.append(convo)
         return convo_list
     except Exception as e:

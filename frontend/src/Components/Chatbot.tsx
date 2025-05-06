@@ -61,7 +61,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     
     setIsLoadingHistory(true);
     try {
-      const res = await fetch('https://askasha.onrender.com/api/conversations', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/conversations`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -121,7 +121,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
 
     const payload: Payload = { message: input, userId };
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/chat`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
