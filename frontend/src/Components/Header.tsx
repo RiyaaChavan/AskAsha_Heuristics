@@ -2,8 +2,6 @@ import styled from 'styled-components';
 import React, { Fragment } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
-import { auth } from '../config/firebase';
-import { useAuth } from '../context/AuthContext';
 
 // Define interfaces for props
 interface NavItemProps {
@@ -16,6 +14,7 @@ interface NavItemProps {
 interface HeaderProps {
   userName: string;
   notificationCount: number;
+  onLogout: () => void; // Added onLogout prop
 }
 
 // Icon components
@@ -53,6 +52,14 @@ const MapIcon = () => (
     <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
     <line x1="8" y1="2" x2="8" y2="18"></line>
     <line x1="16" y1="6" x2="16" y2="22"></line>
+  </svg>
+);
+
+const LogoutIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+    <polyline points="16 17 21 12 16 7"></polyline>
+    <line x1="21" y1="12" x2="9" y2="12"></line>
   </svg>
 );
 
@@ -177,7 +184,7 @@ const ProfileSection = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 40px; // Reduced since we removed the bell icon
+  min-width: 40px;
   
   @media (max-width: 640px) {
     min-width: 30px;
@@ -185,7 +192,7 @@ const ProfileSection = styled.div`
 `;
 
 const Avatar = styled.div`
-  background-color: rgb(135, 192, 90); // Changed to the requested color
+  background-color: rgb(135, 192, 90);
   border-radius: 9999px;
   height: 28px;
   width: 28px;
@@ -209,6 +216,45 @@ const Avatar = styled.div`
   }
 `;
 
+// User dropdown menu styles
+const MenuButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+`;
+
+const DropdownItems = styled.div`
+  position: absolute;
+  right: 0;
+  mt-2 w-48 py-1;
+  background-color: white;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  min-width: 150px;
+  margin-top: 0.5rem;
+`;
+
+const MenuItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: #f3f4f6;
+  }
+`;
+
 // NavItem Component
 const NavItemComponent: React.FC<NavItemProps> = ({ icon, label, active = false, to }) => {
   return (
@@ -222,7 +268,14 @@ const NavItemComponent: React.FC<NavItemProps> = ({ icon, label, active = false,
 };
 
 // Header Component
-const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }) => {
+const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1, onLogout }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    onLogout();
+    navigate('/login');
+  };
+
   return (
     <HeaderContainer>
       <HeaderInner>
@@ -233,15 +286,53 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
         <Navigation>
           <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" />
           <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/events" />
-          <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/interview" />
+          <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/askasha" />
           <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/career" />
           <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/roadmap" />
         </Navigation>
 
         <ProfileSection>
-          <Avatar>
-            {userName.charAt(0)}
-          </Avatar>
+          <Menu as="div" className="relative">
+            <Menu.Button as={MenuButton}>
+              <Avatar>
+                {userName.charAt(0)}
+              </Avatar>
+            </Menu.Button>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
+            >
+              <Menu.Items as={DropdownItems}>
+                <Menu.Item>
+                  {({ active }) => (
+                    <MenuItem onClick={() => navigate('/profile')}>
+                      Profile
+                    </MenuItem>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <MenuItem onClick={() => navigate('/settings')}>
+                      Settings
+                    </MenuItem>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <MenuItem onClick={handleLogout}>
+                      <LogoutIcon />
+                      Logout
+                    </MenuItem>
+                  )}
+                </Menu.Item>
+              </Menu.Items>
+            </Transition>
+          </Menu>
         </ProfileSection>
       </HeaderInner>
     </HeaderContainer>

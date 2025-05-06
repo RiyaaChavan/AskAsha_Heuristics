@@ -17,6 +17,16 @@ import docx2txt
 import nltk
 from nltk.tokenize import word_tokenize
 import re
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import bcrypt
+from bson.objectid import ObjectId
+import json
+from bson.json_util import dumps
+from config import Config
+from models import User
+from utils import generate_token, token_required
+
 
 # Import your internal logic
 from agent import run_agent  # Your run_agent logic
@@ -260,46 +270,192 @@ def parse_resume(file_path):
     
     return skills_data
 
-# -------------- Health Check -------------- #
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "ok", "message": "Server is running"})
+# # -------------- Health Check -------------- #
+# @app.route('/api/health', methods=['GET'])
+# def health_check():
+#     return jsonify({"status": "ok", "message": "Server is running"})
 
-# -------------- Authentication Routes -------------- #
-@app.route('/api/signup', methods=['POST'])
+# # -------------- Authentication Routes -------------- #
+# @app.route('/api/signup', methods=['POST'])
+# def signup():
+#     data = request.get_json()
+#     username, email, password = data.get('username'), data.get('email'), data.get('password')
+
+#     if not username or not email or not password:
+#         return jsonify({"status": "error", "message": "Missing fields"}), 400
+
+#     user_id = create_user(username, email, password)
+#     if user_id:
+#         session['user_id'] = user_id
+#         return jsonify({"status": "success", "user_id": user_id})
+#     else:
+#         return jsonify({"status": "error", "message": "Email already exists"}), 409
+
+# @app.route('/api/login', methods=['POST'])
+# def login():
+#     data = request.get_json()
+#     email, password = data.get('email'), data.get('password')
+
+#     if not email or not password:
+#         return jsonify({"status": "error", "message": "Missing fields"}), 400
+
+#     user_id = authenticate_user(email, password)
+#     if user_id:
+#         session['user_id'] = user_id
+#         return jsonify({"status": "success", "user_id": user_id})
+#     else:
+#         return jsonify({"status": "error", "message": "Invalid credentials"}), 401
+
+# @app.route('/api/logout', methods=['POST'])
+# def logout():
+#     session.pop('user_id', None)
+#     return jsonify({"status": "success", "message": "Logged out"})
+
+app.config.from_object(Config)
+
+# Helper function to convert MongoDB object to JSON
+def parse_json(data):
+    return json.loads(dumps(data))
+
+# Routes for authentication
+@app.route('/api/auth/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-    username, email, password = data.get('username'), data.get('email'), data.get('password')
+    
+    # Validate input data
+    if not data or not data.get('email') or not data.get('password') or not data.get('name'):
+        return jsonify({'message': 'Missing required fields'}), 400
+    
+    name = data.get('name')
+    email = data.get('email')
+    password = data.get('password')
+    
+    # Check if user already exists
+    existing_user = User.get_by_email(email)
+    if existing_user:
+        return jsonify({'message': 'User already exists with this email'}), 400
+    
+    # Create new user
+    user = User.create(name, email, password)
+    if not user:
+        return jsonify({'message': 'Error creating user'}), 500
+    
+    # Generate token
+    token = generate_token(user['_id'])
+    
+    # Return user data (excluding password) and token
+    user_data = {
+        'user_id': str(user['_id']),
+        'name': user['name'],
+        'email': user['email'],
+        'profile_completed': user['profile_completed'],
+        'token': token
+    }
+    
+    return jsonify(user_data), 201
 
-    if not username or not email or not password:
-        return jsonify({"status": "error", "message": "Missing fields"}), 400
-
-    user_id = create_user(username, email, password)
-    if user_id:
-        session['user_id'] = user_id
-        return jsonify({"status": "success", "user_id": user_id})
-    else:
-        return jsonify({"status": "error", "message": "Email already exists"}), 409
-
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
-    email, password = data.get('email'), data.get('password')
+    
+    # Validate input data
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'message': 'Missing email or password'}), 400
+    
+    email = data.get('email')
+    password = data.get('password')
+    
+    # Find user by email
+    user = User.get_by_email(email)
+    if not user:
+        return jsonify({'message': 'Invalid email or password'}), 401
+    
+    # Verify password
+    if not User.verify_password(user['password'], password):
+        return jsonify({'message': 'Invalid email or password'}), 401
+    
+    # Generate token
+    token = generate_token(user['_id'])
+    
+    # Return user data and token
+    user_data = {
+        'user_id': str(user['_id']),
+        'name': user['name'],
+        'email': user['email'],
+        'profile_completed': user.get('profile_completed', False),
+        'token': token
+    }
+    
+    return jsonify(user_data), 200
 
-    if not email or not password:
-        return jsonify({"status": "error", "message": "Missing fields"}), 400
+@app.route('/api/auth/profile', methods=['GET'])
+@token_required
+def get_profile():
+    # Get user ID from JWT token
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+    
+    import jwt
+    data = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
+    user_id = data['sub']
+    
+    # Get user data
+    user = User.get_by_id(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
+    # Return user data (excluding password)
+    user_data = {
+        'user_id': str(user['_id']),
+        'name': user['name'],
+        'email': user['email'],
+        'profile_completed': user.get('profile_completed', False),
+    }
+    
+    return jsonify(user_data), 200
 
-    user_id = authenticate_user(email, password)
-    if user_id:
-        session['user_id'] = user_id
-        return jsonify({"status": "success", "user_id": user_id})
-    else:
-        return jsonify({"status": "error", "message": "Invalid credentials"}), 401
-
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    session.pop('user_id', None)
-    return jsonify({"status": "success", "message": "Logged out"})
+@app.route('/api/auth/update-profile', methods=['PUT'])
+@token_required
+def update_profile():
+    # Get user ID from JWT token
+    auth_header = request.headers.get('Authorization')
+    token = auth_header.split(' ')[1]
+    
+    import jwt
+    data = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
+    user_id = data['sub']
+    
+    # Get request data
+    update_data = request.get_json()
+    if not update_data:
+        return jsonify({'message': 'No data provided'}), 400
+    
+    # Don't allow updating email or password through this endpoint
+    if 'email' in update_data or 'password' in update_data:
+        return jsonify({'message': 'Cannot update email or password through this endpoint'}), 400
+    
+    # Update user profile
+    from models import User
+    result = User.collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        return jsonify({'message': 'No changes made'}), 200
+    
+    # Get updated user data
+    updated_user = User.get_by_id(user_id)
+    
+    # Return updated user data
+    user_data = {
+        'user_id': str(updated_user['_id']),
+        'name': updated_user['name'],
+        'email': updated_user['email'],
+        'profile_completed': updated_user.get('profile_completed', False),
+    }
+    
+    return jsonify(user_data), 200
 
 @app.route('/api/user', methods=['GET'])
 def get_user():
