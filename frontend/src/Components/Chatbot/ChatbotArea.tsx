@@ -218,7 +218,7 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
 
     const payload = { message: input, userId };
     try {
-      const res = await fetch('https://askasha.onrender.com/api/chat', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
