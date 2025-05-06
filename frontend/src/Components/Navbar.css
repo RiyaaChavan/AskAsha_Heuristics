@@ -1,0 +1,66 @@
+.navbar {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #eaeaea;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 1.2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(79,140,255,0.04);
+}
+
+.navbar-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4f8cff;
+  cursor: pointer;
+  letter-spacing: 1px;
+  user-select: none;
+  transition: color 0.2s;
+}
+.navbar-logo:hover {
+  color: #2c6ed5;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.navbar-link {
+  background: none;
+  border: none;
+  color: #4f8cff;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.35rem 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.navbar-link:hover {
+  background: #f0f6ff;
+  color: #2c6ed5;
+}
+
+.navbar-logout {
+  background: linear-gradient(90deg, #e74c3c 60%, #ff7675 100%);
+  color: #fff;
+  border: none;
+  padding: 0.35rem 1.1rem;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s;
+  margin-left: 0.7rem;
+  box-shadow: 0 2px 8px rgba(231,76,60,0.08);
+}
+.navbar-logout:hover {
+  background: linear-gradient(90deg, #c0392b 60%, #e17055 100%);
+}

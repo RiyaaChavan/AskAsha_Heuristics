@@ -48,6 +48,8 @@ def create_user(username, email, password):
     
     # Insert user document
     result = users.insert_one(user)
+    # Add uid field to the user document for compatibility with profile setup
+    users.update_one({'_id': result.inserted_id}, {'$set': {'uid': str(result.inserted_id)}})
     return str(result.inserted_id)
 
 def authenticate_user(email, password):

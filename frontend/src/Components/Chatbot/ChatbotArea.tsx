@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import ChatWindow from './ChatWindow';
 import CanvasArea from './CanvasArea';
 import { Message as AppMessage } from './types';
+import ChatInput from './ChatInput';
 
 // Type declarations for Speech Recognition
 declare global {
@@ -258,43 +259,30 @@ const ChatbotArea: React.FC<ChatbotAreaProps> = ({ userId }) => {
   };
 
   return (
-    <div className="chatbot-container">
-      {isLoadingHistory && <div className="history-loading">Loading conversation history...</div>}
-      <div className="chatbot-main">
-        <div className="chat-container">
-          <ChatWindow 
-            messages={messages} 
-            selectMessage={selectMessage} 
-            selectedMessageId={selectedMessageId} 
-          />
-          <div className="input-area">
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendMessage()}
-              placeholder="Type your message..."
+    <div className="chatbot-container" style={{height: '100vh', display: 'flex', flexDirection: 'column'}}>
+      {/* If Navbar is present, it will be at the top */}
+      <div style={{flex: 1, display: 'flex', minHeight: 0}}>
+        {/* ...rest of chatbot-main and children... */}
+        <div className="chatbot-main">
+          {isLoadingHistory && <div className="history-loading">Loading conversation history...</div>}
+          <div className="chatbot-main">
+            <div className="chat-container">
+              <ChatWindow 
+                messages={messages} 
+                selectMessage={selectMessage} 
+                selectedMessageId={selectedMessageId} 
+              />
+              <ChatInput input={input} setInput={setInput} sendMessage={sendMessage} />
+            </div>
+            <CanvasArea 
+              messages={messages} 
+              selectedMessageId={selectedMessageId}
+              isOpen={isCanvasOpen}
+              toggleCanvas={toggleCanvas}
+              clearSelectedMessage={clearSelectedMessage}
             />
-            <button onClick={() => {
-              if (isListening) {
-                recognitionRef.current?.stop();
-                setIsListening(false);
-              } else {
-                startListening();
-              }
-            }} className={`mic-button ${isListening ? 'listening' : ''}`}>
-              {isListening ? '🎤 Listening...' : '🎤'}
-            </button>
-            <button onClick={sendMessage}>Send</button>
           </div>
         </div>
-        <CanvasArea 
-          messages={messages} 
-          selectedMessageId={selectedMessageId}
-          isOpen={isCanvasOpen}
-          toggleCanvas={toggleCanvas}
-          clearSelectedMessage={clearSelectedMessage}
-        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 /* Main container */
 .chatbot-container {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--background);
@@ -9,8 +10,10 @@
 
 .chatbot-main {
   display: flex;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
+  height: 95vh;
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, var(--background), var(--surface));
@@ -23,6 +26,7 @@
   flex-direction: column;
   height: 100%;
   position: relative;
+  min-height: 0;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition: flex 0.3s var(--transition-function);
@@ -38,6 +42,9 @@
   gap: 20px;
   scroll-behavior: smooth;
   position: relative;
+  min-height: 0;
+  max-height: 200px;
+  
 }
 
 .chat-window::before {
@@ -69,7 +76,8 @@
   background: var(--surface);
   border-top: 1px solid var(--border-color);
   box-shadow: 0 -4px 16px var(--shadow-color);
-  position: relative;
+  position: sticky;
+  bottom: 0;
   z-index: 10;
   align-items: center;
 }

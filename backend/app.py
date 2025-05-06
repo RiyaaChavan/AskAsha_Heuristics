@@ -35,11 +35,14 @@ from profanity import check_profanity, get_profanity_response
 
 app = Flask(__name__)
 
-# Fix CORS to allow requests from your Vercel domain
-CORS(app, origins=[
-    "*",
-    "http://localhost:5173"  # Keep for local development
-], supports_credentials=False)
+# Fix CORS for local dev and production (Render backend, Vercel frontend)
+CORS(app,
+     origins=[
+         "http://localhost:5173",  # Local dev
+         "https://ask-asha-heuristics-git-pushing-riyaas-projects.vercel.app",
+        #  "*"# Add your custom domain if any
+     ],
+     supports_credentials=True)
 
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
 
@@ -315,7 +318,8 @@ def get_user():
 
 @app.route('/api/conversations', methods=['GET'])
 def get_conversations():
-    user_id = session.get('user_id')
+    user_id = request.args.get('user_id')
+    print(f"User ID from param: {user_id}")
     if not user_id:
         return jsonify({"status": "error", "message": "Not authenticated"}), 401
 

@@ -61,12 +61,12 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     
     setIsLoadingHistory(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/conversations`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/conversations?user_id=${userId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.status === 'success' && data.conversations) {

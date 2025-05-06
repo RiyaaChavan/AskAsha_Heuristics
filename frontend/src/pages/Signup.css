@@ -1,0 +1,102 @@
+/* Signup page uses the same layout and style as Login */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to bottom right, #a35a79, #854d6d, #6d3f59);
+    padding: 1rem;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 72rem;
+    display: flex;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+}
+
+.right-section {
+    width: 100%;
+    background-color: white;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .right-section {
+        width: 50%;
+        padding: 3rem;
+    }
+}
+
+.welcome-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    color: #6b46c1;
+    margin-bottom: 2rem;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.input-field:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #9f7aea33;
+    border-color: #9f7aea;
+}
+
+.signin-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #87c05a;
+    color: white;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.signin-button:disabled {
+    background: #b3d1ff;
+    cursor: not-allowed;
+}
+
+.signup-text {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #4b5563;
+}
+
+.signup-link {
+    color: #6b46c1;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.signup-link:hover {
+    color: #553c9a;
+}

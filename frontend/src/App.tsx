@@ -1,5 +1,5 @@
 import './App.css';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import Chatbot from './Components/Chatbot';
 import Interview from './Components/Interview';
 import Header from './Components/Header';
@@ -12,6 +12,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import DebugInfo from './Components/DebugInfo';
 import KeepAlive from './Components/KeepAlive';
+import Signup from './pages/Signup';
+import Navbar from './Components/Navbar';
 
 const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
@@ -77,55 +79,54 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+function AppWithNavbar() {
+  const location = useLocation();
+  const hideNavbar = ['/login', '/signup', '/profile-setup'].includes(location.pathname);
+  return (
+    <>
+      <KeepAlive />
+      <DebugInfo />
+      {!hideNavbar && <Navbar />}
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="/signup" element={<Signup />} />
+        {/* Protected routes */}
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/" element={<Navigate to="/jobsearch" replace />} />
+        <Route path="/chatbot" element={
+          <ProtectedRoute>
+            <ProfileRequiredRoute>
+              <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+            </ProfileRequiredRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/interview" element={
+          <ProtectedRoute>
+            <ProfileRequiredRoute>
+              <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
+            </ProfileRequiredRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/jobsearch" element={
+          <ProtectedRoute>
+            <ProfileRequiredRoute>
+              <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+            </ProfileRequiredRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
-      <KeepAlive />
-      <DebugInfo />
       <Router>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/profile-setup" element={<ProfileSetup />} />
-          
-          {/* Protected routes */}
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          
-          <Route path="/" element={
-            <ProtectedRoute>
-              <ProfileRequiredRoute>
-                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
-              </ProfileRequiredRoute>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/chatbot" element={
-            <ProtectedRoute>
-              <ProfileRequiredRoute>
-                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
-              </ProfileRequiredRoute>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/interview" element={
-            <ProtectedRoute>
-              <ProfileRequiredRoute>
-                <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
-              </ProfileRequiredRoute>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/jobsearch" element={
-            <ProtectedRoute>
-              <ProfileRequiredRoute>
-                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
-              </ProfileRequiredRoute>
-            </ProtectedRoute>
-          } />
-          
-          {/* Fallback route - redirect to home if no matching route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AppWithNavbar />
       </Router>
     </AuthProvider>
   );

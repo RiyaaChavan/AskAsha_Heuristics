@@ -1,7 +1,7 @@
 /* Main container */
 .chatbot-container {
   display: flex;
-  height: 100vh;
+  height: 95vh;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--background);
   overflow: hidden;

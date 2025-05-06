@@ -1,21 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import './ProfileSetup.css';
 import { apiService } from '../services/apiService';
+import Navbar from './Navbar';
 
 export const ProfileSetup = () => {
-    const { currentUser } = useAuth();
     const navigate = useNavigate();
+
+    // Get userId and email from localStorage (set after signup/login)
+    const userId = localStorage.getItem('userId') || '';
+    const storedEmail = localStorage.getItem('email') || '';
 
     const [loading, setLoading] = useState(true);
     const [step, setStep] = useState(1);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
-        name: currentUser?.displayName || '',
-        email: currentUser?.email || '',
+        name: '',
+        email: storedEmail,
         phone: '',
         location: '',
         locationPreference: '',
@@ -28,14 +31,13 @@ export const ProfileSetup = () => {
     useEffect(() => {
         // Check if the profile already exists; if yes, navigate to /jobsearch immediately
         const checkProfile = async () => {
-            if (!currentUser?.uid) {
+            if (!userId) {
                 setLoading(false);
                 return;
             }
             try {
-                const data = await apiService.getProfile(currentUser.uid);
+                const data = await apiService.getProfile(userId);
                 if (data && data.name) {
-                    // Profile exists – redirect to the main chat area (/jobsearch)
                     navigate('/jobsearch', { replace: true });
                 }
             } catch (err) {
@@ -45,7 +47,7 @@ export const ProfileSetup = () => {
             }
         };
         checkProfile();
-    }, [currentUser, navigate]);
+    }, [userId, navigate]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -76,7 +78,7 @@ export const ProfileSetup = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!currentUser?.uid) {
+        if (!userId) {
             setError("User not authenticated");
             return;
         }
@@ -93,17 +95,13 @@ export const ProfileSetup = () => {
             if (formData.resume instanceof File) {
                 formDataToSend.append('resume', formData.resume);
             }
-            formDataToSend.append('uid', currentUser.uid);
+            formDataToSend.append('uid', userId);
 
-            console.log("Submitting profile to:", `${import.meta.env.VITE_API_URL}/api/create-profile`);
             const response = await apiService.createProfile(formDataToSend);
-            console.log("Profile creation response:", response);
 
             if (response.status === 'success' || response.message === 'Profile created successfully') {
-                // Store flags in localStorage if necessary
                 localStorage.setItem('profileCreated', 'true');
-                localStorage.setItem('userId', currentUser.uid);
-                // Redirect to the main chat area (/jobsearch)
+                localStorage.setItem('userId', userId);
                 navigate('/jobsearch', { replace: true });
             } else {
                 setError(response.error || response.message || 'Failed to create profile');
@@ -128,6 +126,7 @@ export const ProfileSetup = () => {
 
     return (
         <div className="profile-setup-page">
+            <Navbar />
             <div className="profile-setup-header">
                 <h2 className="setup-title">Complete Your Profile</h2>
             </div>
@@ -142,7 +141,7 @@ export const ProfileSetup = () => {
                                 </div>
                                 <div className="form-field">
                                     <label className="field-label">Email</label>
-                                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="field-input" required readOnly />
+                                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="field-input" required />
                                 </div>
                                 <div className="form-field">
                                     <label className="field-label">Phone</label>
