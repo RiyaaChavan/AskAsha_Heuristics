@@ -121,9 +121,11 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
 
     const payload: Payload = { message: input, userId };
     try {
-      const res = await fetch('https://askasha.onrender.com/api/chat', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+        'Accept': 'application/json', },
+        
         credentials: 'include',
         body: JSON.stringify(payload),
       });

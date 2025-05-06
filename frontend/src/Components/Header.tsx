@@ -15,7 +15,7 @@ interface HeaderProps {
   notificationCount: number;
 }
 
-// Icon components (simplified)
+// Icon components
 const BriefcaseIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -52,6 +52,7 @@ const MapIcon = () => (
     <line x1="16" y1="6" x2="16" y2="22"></line>
   </svg>
 );
+
 const BellIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -59,13 +60,20 @@ const BellIcon = () => (
   </svg>
 );
 
-
-// Styled components (no change)
+// Styled components
 const HeaderContainer = styled.header`
   background-color: #8a4a6f;
   color: white;
-  padding: 16px;
+  padding: 0 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 `;
 
 const HeaderInner = styled.div`
@@ -74,20 +82,97 @@ const HeaderInner = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  gap: 16px;
+  
+  @media (max-width: 640px) {
+    gap: 8px;
+  }
 `;
 
 const Logo = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 120px;
   h1 {
     font-size: 1.25rem;
     font-weight: 600;
     letter-spacing: 0.025em;
     margin: 0;
   }
-  span {
-    font-size: 1.25rem;
+  
+  @media (max-width: 640px) {
+    min-width: 80px;
+    h1 {
+      font-size: 1rem;
+    }
+  }
+`;
+
+const Navigation = styled.nav`
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  overflow-x: auto;
+  flex-grow: 1;
+  justify-content: center;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  @media (max-width: 640px) {
+    gap: 8px;
+    justify-content: flex-start;
+  }
+`;
+
+const NavItem = styled.div<{ active?: boolean }>`
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background-color: ${props => props.active ? '#9c4dcc' : 'rgba(241, 241, 241, 0.1)'};
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  
+  &:hover {
+    background-color: #9c4dcc;
+    transform: translateY(-1px);
+  }
+
+  svg {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    padding: 4px;
+  }
+  
+  @media (max-width: 640px) {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+      padding: 3px;
+    }
+  }
+`;
+
+const StyledLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  
+  @media (max-width: 640px) {
+    gap: 4px;
   }
 `;
 
@@ -95,13 +180,26 @@ const ProfileSection = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 80px;
+  justify-content: flex-end;
+  
+  @media (max-width: 640px) {
+    min-width: 60px;
+    gap: 4px;
+  }
 `;
 
 const NotificationBell = styled.div`
   position: relative;
   cursor: pointer;
+  
   svg {
     opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+  
+  &:hover svg {
+    opacity: 1;
   }
 `;
 
@@ -130,53 +228,33 @@ const Avatar = styled.div`
   justify-content: center;
   color: white;
   font-weight: 500;
-`;
-
-const Navigation = styled.nav`
-  max-width: 1200px;
-  margin: 16px auto 0;
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  background-color: #8a4a6f;
-`;
-
-const NavItem = styled.div<{ active?: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  background-color: ${props => props.active ? '#9c4dcc' : 'rgba(241, 241, 241, 0.1)'};
   cursor: pointer;
-  color: white;
-  transition: background-color 0.2s;
-  white-space: nowrap;
+  transition: transform 0.2s;
   
   &:hover {
-    background-color:rgb(245, 241, 247);
+    transform: scale(1.05);
   }
-
-  svg {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 9999px;
-    padding: 4px;
+  
+  @media (max-width: 640px) {
+    height: 28px;
+    width: 28px;
+    font-size: 0.875rem;
   }
 `;
 
-// NavItem Component with routing
+// NavItem Component
 const NavItemComponent: React.FC<NavItemProps> = ({ icon, label, active = false, to }) => {
   return (
     <NavItem active={active}>
-      <Link to={to} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+      <StyledLink to={to}>
         {icon}
         <span>{label}</span>
-      </Link>
+      </StyledLink>
     </NavItem>
   );
 };
 
+// Header Component
 const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }) => {
   return (
     <HeaderContainer>
@@ -184,6 +262,14 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
         <Logo>
           <h1>Ask Asha</h1>
         </Logo>
+
+        <Navigation>
+          <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" />
+          <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/events" />
+          <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/interview" />
+          <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/career" />
+          <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/roadmap" />
+        </Navigation>
 
         <ProfileSection>
           <NotificationBell>
@@ -194,20 +280,11 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
               </NotificationBadge>
             )}
           </NotificationBell>
-
           <Avatar>
             {userName.charAt(0)}
           </Avatar>
         </ProfileSection>
       </HeaderInner>
-
-      <Navigation>
-        <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" />
-        <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/jobsearch" />
-        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/askasha" />
-        <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/askasha" />
-        <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/jobsearch" />
-      </Navigation>
     </HeaderContainer>
   );
 };
