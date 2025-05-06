@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import React, { Fragment } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, Transition } from '@headlessui/react';
-import { auth } from '../config/firebase';
-import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 // Define interfaces for props
 interface NavItemProps {
@@ -12,7 +8,7 @@ interface NavItemProps {
   label: string;
   active?: boolean;
   to: string;
-  baseColor: string;  // Added as required prop
+  baseColor: string;  
 }
 
 interface HeaderProps {
@@ -65,21 +61,17 @@ const BellIcon = () => (
   </svg>
 );
 
-const UserIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-    <circle cx="12" cy="7" r="4"></circle>
-  </svg>
-);
-
 // Styled components
 const HeaderContainer = styled.header`
   background: linear-gradient(135deg, #c770a0, #a35a79, #854d6d, #6d3f59);
   color: white;
   padding: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   overflow: hidden;
+  width: 100%;
   
   &::before {
     content: '';
@@ -269,7 +261,7 @@ const Navigation = styled.nav`
 
 const NavItem = styled.div<{ 
   active?: boolean; 
-  baseColor: string;  // Changed from optional to required
+  baseColor: string;
   isHovered?: boolean; 
   isClicked?: boolean;
 }>`
@@ -330,7 +322,7 @@ const NavItem = styled.div<{
 `;
 
 // NavItem Component with routing and hover/click effects
-const NavItemComponent: React.FC<NavItemProps & { baseColor?: string }> = ({ icon, label, active = false, to, baseColor }) => {
+const NavItemComponent: React.FC<NavItemProps> = ({ icon, label, active = false, to, baseColor }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
   
@@ -365,6 +357,9 @@ const NavItemComponent: React.FC<NavItemProps & { baseColor?: string }> = ({ ico
 };
 
 const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }) => {
+  // Determine which route is active based on current path
+  const currentPath = window.location.pathname;
+  
   return (
     <HeaderContainer>
       <HeaderInner>
@@ -383,17 +378,47 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
           </NotificationBell>
 
           <Avatar>
-            {userName.charAt(0)}
+            {userName}
           </Avatar>
         </ProfileSection>
       </HeaderInner>
 
       <Navigation>
-        <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" baseColor="#966FD6" />
-        <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/jobsearch" baseColor="#6395EE" />
-        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/askasha" baseColor="#feff51" /> {/* Changed from yellow to orange */}
-        <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/askasha" baseColor="#E85BB1" /> {/* Changed from pink to better shade */}
-        <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/jobsearch" baseColor="#4CAF70" /> {/* Changed from green to better shade */}
+        <NavItemComponent 
+          icon={<BriefcaseIcon />} 
+          label="Job Hunt" 
+          to="/jobsearch" 
+          baseColor="#966FD6" 
+          active={currentPath === '/jobsearch'}
+        />
+        <NavItemComponent 
+          icon={<CalendarIcon />} 
+          label="Events Hub" 
+          to="/events" 
+          baseColor="#6395EE" 
+          active={currentPath === '/events'}
+        />
+        <NavItemComponent 
+          icon={<MessageCircleIcon />} 
+          label="Interview Assistant" 
+          to="/interview" 
+          baseColor="#FF8547" 
+          active={currentPath === '/interview'}
+        />
+        <NavItemComponent 
+          icon={<CompassIcon />} 
+          label="Career Coach" 
+          to="/chatbot" 
+          baseColor="#E85BB1" 
+          active={currentPath === '/chatbot' || currentPath === '/'}
+        />
+        <NavItemComponent 
+          icon={<MapIcon />} 
+          label="My Roadmap" 
+          to="/roadmap" 
+          baseColor="#4CAF70" 
+          active={currentPath === '/roadmap'}
+        />
       </Navigation>
     </HeaderContainer>
   );

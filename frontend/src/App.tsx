@@ -77,6 +77,21 @@ const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Layout component that includes the Header
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  const { currentUser } = useAuth();
+  const userName = currentUser?.displayName || currentUser?.email?.charAt(0) || 'U';
+  
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header userName={userName.charAt(0)} notificationCount={1} />
+      <div className="flex-grow">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -89,12 +104,20 @@ function App() {
           <Route path="/profile-setup" element={<ProfileSetup />} />
           
           {/* Protected routes */}
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Layout>
+                <Profile />
+              </Layout>
+            </ProtectedRoute>
+          } />
           
           <Route path="/" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
-                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+                <Layout>
+                  <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+                </Layout>
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
@@ -102,7 +125,9 @@ function App() {
           <Route path="/chatbot" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
-                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+                <Layout>
+                  <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+                </Layout>
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
@@ -110,7 +135,9 @@ function App() {
           <Route path="/interview" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
-                <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
+                <Layout>
+                  <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
+                </Layout>
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
@@ -118,7 +145,9 @@ function App() {
           <Route path="/jobsearch" element={
             <ProtectedRoute>
               <ProfileRequiredRoute>
-                <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+                <Layout>
+                  <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+                </Layout>
               </ProfileRequiredRoute>
             </ProtectedRoute>
           } />
