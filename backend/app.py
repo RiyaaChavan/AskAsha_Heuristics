@@ -271,6 +271,9 @@ def health_check():
     return jsonify({"status": "ok", "message": "Server is running"})
 
 # -------------- Authentication Routes -------------- #
+JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'dev-secret-key')
+JWT_ALGORITHM = 'HS256'
+
 @app.route('/api/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -282,7 +285,9 @@ def signup():
     user_id = create_user(username, email, password)
     if user_id:
         session['user_id'] = user_id
-        return jsonify({"status": "success", "user_id": user_id})
+        # Generate JWT token
+        token = jwt.encode({'uid': user_id, 'email': email}, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+        return jsonify({"status": "success", "user_id": user_id, "token": token})
     else:
         return jsonify({"status": "error", "message": "Email already exists"}), 409
 
@@ -297,7 +302,9 @@ def login():
     user_id = authenticate_user(email, password)
     if user_id:
         session['user_id'] = user_id
-        return jsonify({"status": "success", "user_id": user_id})
+        # Generate JWT token
+        token = jwt.encode({'uid': user_id, 'email': email}, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+        return jsonify({"status": "success", "user_id": user_id, "token": token})
     else:
         return jsonify({"status": "error", "message": "Invalid credentials"}), 401
 
