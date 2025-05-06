@@ -22,8 +22,13 @@ export default function Signup() {
       });
       const data = await response.json();
       if (response.ok && data.status === 'success') {
-        // Optionally store user id or token here if backend returns it
         localStorage.setItem('userId', data.user_id || '');
+        localStorage.setItem('profileCreated', 'true');
+        
+        if (data.token) {
+          localStorage.setItem('jwt', data.token);
+          localStorage.setItem('userId', data.user_id || '');
+        }
         navigate('/profile-setup');
       } else {
         setError(data.message || 'Signup failed');

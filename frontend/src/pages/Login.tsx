@@ -59,6 +59,9 @@ export default function Login() {
       if (response.ok && data.status === 'success') {
         localStorage.setItem('userId', data.user_id || '');
         localStorage.setItem('email', email);
+        if (data.token) {
+          localStorage.setItem('jwt', data.token);
+        }
         navigate('/profile-setup');
       } else {
         setError(data.message || 'Login failed');

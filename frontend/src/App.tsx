@@ -15,70 +15,6 @@ import KeepAlive from './Components/KeepAlive';
 import Signup from './pages/Signup';
 import Navbar from './Components/Navbar';
 
-const ProfileRequiredRoute = ({ children }: { children: React.ReactNode }) => {
-  const { currentUser } = useAuth();
-  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkProfile = async () => {
-      // First check localStorage for the profileCreated flag
-      if (localStorage.getItem('profileCreated') === 'true') {
-        console.log("Found profile flag in localStorage");
-        setHasProfile(true);
-        setLoading(false);
-        return;
-      }
-
-      if (!currentUser?.uid) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Fix URL format - remove the extra /api in the path
-        const apiUrl = import.meta.env.VITE_API_URL || '';
-        const url = apiUrl.endsWith('/api') 
-          ? `${apiUrl}/profile/${currentUser.uid}`
-          : `${apiUrl}/api/profile/${currentUser.uid}`;
-        
-        console.log("Checking profile at:", url);
-        const response = await fetch(url);
-        console.log("Profile check response:", response.status);
-        
-        if (response.ok) {
-          localStorage.setItem('profileCreated', 'true');
-          localStorage.setItem('userId', currentUser.uid);
-          setHasProfile(true);
-        } else {
-          setHasProfile(false);
-        }
-      } catch (error) {
-        console.error('Error checking profile:', error);
-        setHasProfile(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkProfile();
-  }, [currentUser]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#934f73]">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
-      </div>
-    );
-  }
-
-  if (!hasProfile) {
-    return <Navigate to="/profile-setup" replace />;
-  }
-
-  return <>{children}</>;
-};
-
 function AppWithNavbar() {
   const location = useLocation();
   const hideNavbar = ['/login', '/signup', '/profile-setup'].includes(location.pathname);
@@ -97,23 +33,17 @@ function AppWithNavbar() {
         <Route path="/" element={<Navigate to="/jobsearch" replace />} />
         <Route path="/chatbot" element={
           <ProtectedRoute>
-            <ProfileRequiredRoute>
-              <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
-            </ProfileRequiredRoute>
+            <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
           </ProtectedRoute>
         } />
         <Route path="/interview" element={
           <ProtectedRoute>
-            <ProfileRequiredRoute>
-              <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
-            </ProfileRequiredRoute>
+            <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
           </ProtectedRoute>
         } />
         <Route path="/jobsearch" element={
           <ProtectedRoute>
-            <ProfileRequiredRoute>
-              <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
-            </ProfileRequiredRoute>
+            <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/login" replace />} />
