@@ -39,7 +39,7 @@ app = Flask(__name__)
 CORS(app, origins=[
     "*",
     "http://localhost:5173"  # Keep for local development
-], supports_credentials=True)
+], supports_credentials=False)
 
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
 
