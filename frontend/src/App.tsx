@@ -14,6 +14,8 @@ import DebugInfo from './Components/DebugInfo';
 import KeepAlive from './Components/KeepAlive';
 import Signup from './pages/Signup';
 import Navbar from './Components/Navbar';
+import CareerCoach from './Components/CareerCoach';
+import InterviewAssistant from './Components/InterviewAssistant';
 
 function AppWithNavbar() {
   const location = useLocation();
@@ -39,6 +41,16 @@ function AppWithNavbar() {
         <Route path="/interview" element={
           <ProtectedRoute>
             <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
+          </ProtectedRoute>
+        } />
+        <Route path="/career-coach" element={
+          <ProtectedRoute>
+            <CareerCoach />
+          </ProtectedRoute>
+        } />
+        <Route path="/interview-assistant" element={
+          <ProtectedRoute>
+            <InterviewAssistant />
           </ProtectedRoute>
         } />
         <Route path="/jobsearch" element={

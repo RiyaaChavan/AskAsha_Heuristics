@@ -43,7 +43,7 @@
   position: relative;
   line-height: 1.6;
   align-self: flex-start;
-  background: var(--secondary-light);
+  background: white; /* Changed from var(--secondary-light) to white to match Career Coach */
   border: 1px solid var(--border-color);
   border-bottom-left-radius: 4px;
   transition: transform var(--transition-speed) var(--transition-function), box-shadow var(--transition-speed)
@@ -138,19 +138,20 @@
 
 .message-bubble.user-message {
   align-self: flex-end;
-  background: var(--primary);
-  color: var(--text-primary);
+  background: #8a4a6f; /* Updated to match the Career Coach's user message color */
+  color: white;
   border: none;
   border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 8px rgba(138, 74, 111, 0.2);
 }
 
 .message-bubble.user-message p {
-  color: var(--text-primary);
+  color: white; /* Updated to white text for better readability on purple background */
 }
 
 .message-bubble.with-canvas {
-  background: var(--secondary-light);
-  border: 1px solid rgba(255, 214, 224, 0.3);
+  background: white;
+  border: 1px solid var(--border-color);
   border-bottom-left-radius: 4px;
 }
 

@@ -432,7 +432,7 @@ def format_response(query_type: str, query: str, result) -> dict:
         
         
         return {
-            "text": "I can help you find events or workshops related to your query. Please provide more details.",
+            "text": "I can help you find events or workshops related to your query. Please click on the toggle to view",
             "canvasType": "sessions",
             "canvasUtils": {
                 "session_link":session_link,

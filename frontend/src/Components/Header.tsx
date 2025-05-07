@@ -65,7 +65,7 @@ const BellIcon = () => (
 
 // Styled components (no change)
 const HeaderContainer = styled.header`
-  background-color: #8a4a6f;
+  background-color: #934f73;
   color: white;
   padding: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -142,7 +142,7 @@ const Navigation = styled.nav`
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 8px;
-  background-color: #8a4a6f;
+  background-color: #934f73;
 `;
 
 const NavItem = styled.div<{ active?: boolean }>`
@@ -159,6 +159,7 @@ const NavItem = styled.div<{ active?: boolean }>`
   
   &:hover {
     background-color:rgb(245, 241, 247);
+    color: #934f73;
   }
 
   svg {
@@ -207,8 +208,8 @@ const Header: React.FC<HeaderProps> = ({ userName = 'C', notificationCount = 1 }
       <Navigation>
         <NavItemComponent icon={<BriefcaseIcon />} label="Job Hunt" to="/jobsearch" />
         <NavItemComponent icon={<CalendarIcon />} label="Events Hub" to="/jobsearch" />
-        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/askasha" />
-        <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/askasha" />
+        <NavItemComponent icon={<MessageCircleIcon />} label="Interview Assistant" to="/interview-assistant" />
+        <NavItemComponent icon={<CompassIcon />} label="Career Coach" to="/career-coach" />
         <NavItemComponent icon={<MapIcon />} label="My Roadmap" to="/jobsearch" />
       </Navigation>
     </HeaderContainer>

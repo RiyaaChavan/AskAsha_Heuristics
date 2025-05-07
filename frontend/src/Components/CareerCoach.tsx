@@ -1,0 +1,246 @@
+import React, { useState, FormEvent, ChangeEvent } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import './Chatbot/styles/Interview.css';
+import './Chatbot/styles/ChatInput.css';
+
+// Define types here since they're not imported
+interface Message {
+  id: number;
+  text: string;
+  sender: string;
+  isSearchNotification?: boolean;
+}
+
+interface SessionResponse {
+  sessionId: string;
+  messageHistory?: Message[];
+}
+
+interface MessageResponse {
+  message: string;
+  didSearch?: boolean;
+}
+
+// Use environment variable API_URL
+const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+
+export default function CareerCoach() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState<string>('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>('');
+  const [showUserIdPrompt, setShowUserIdPrompt] = useState<boolean>(false);
+
+  const startCareerSession = async (): Promise<void> => {
+    if (!userId) {
+      setShowUserIdPrompt(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/start-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatType: 'career',
+          userId,
+        }),
+      });
+
+      const data: SessionResponse = await response.json();
+      if (response.ok) {
+        setSessionId(data.sessionId);
+        setMessages([{
+          id: Date.now(),
+          text: 'Hello! I\'m your career coach specializing in women\'s empowerment. I can help you with career planning, salary negotiation, professional development, and more. What would you like to discuss today?',
+          sender: 'bot',
+        }]);
+      }
+    } catch (error) {
+      console.error('Error starting session:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendMessage = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (!inputText.trim() || !sessionId) return;
+
+    const userMessage: Message = {
+      id: Date.now(),
+      text: inputText,
+      sender: 'user',
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/send-message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          message: inputText,
+        }),
+      });
+      
+      const data: MessageResponse = await response.json();
+      if (response.ok) {
+        if (data.didSearch) {
+          setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            text: '🔍 Searching for relevant career information...',
+            sender: 'system',
+            isSearchNotification: true
+          }]);
+        }
+
+        setTimeout(() => {
+          setMessages(prev => [
+            ...prev.filter(m => !m.isSearchNotification),
+            {
+              id: Date.now() + 2,
+              text: formatBotResponse(data.message),
+              sender: 'bot',
+            }
+          ]);
+        }, data.didSearch ? 1000 : 0);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 2,
+        text: 'Sorry, I encountered an error. Please try again.',
+        sender: 'system',
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatBotResponse = (response: string): string => {
+    let formattedResponse = response;
+    
+    // Format bold text
+    formattedResponse = formattedResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Format italic text
+    formattedResponse = formattedResponse.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Format bullet points and numbered lists
+    formattedResponse = formattedResponse.replace(/^\s*(\d+\.|-\s)(.*)$/gm, (match, p1, p2) => {
+      if (p1.includes('.')) {
+        return `<li style="margin-left: 20px; list-style-type: decimal;">${p2}</li>`;
+      }
+      return `<li style="margin-left: 20px; list-style-type: disc;">${p2}</li>`;
+    });
+
+    // Wrap lists in <ul> tags
+    if (formattedResponse.includes('<li>')) {
+      formattedResponse = `<ul style="list-style-position: inside; padding-left: 0;">${formattedResponse}</ul>`;
+    }
+
+    // Format links
+    formattedResponse = formattedResponse.replace(
+      /$$([^$$]+)\]$$(https?:\/\/[^$$]+)\)/g,
+      '<a href="$2" target="_blank" style="color: #6b46c1; text-decoration: none;">$1</a>'
+    );
+
+    return formattedResponse;
+  };
+
+  const UserIdPrompt: React.FC = () => (
+    <div className="user-id-prompt-interview">
+      <div className="modal-content">
+        <h3>What's your name?</h3>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          setShowUserIdPrompt(false);
+          startCareerSession();
+        }}>
+          <input
+            type="text"
+            value={userId}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setUserId(e.target.value)}
+            placeholder="Enter your name"
+            className="name-input"
+            required
+            autoFocus
+          />
+          <button type="submit" className="continue-button">
+            Continue
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="chat-container-interview asha-theme">
+      {showUserIdPrompt && <UserIdPrompt />}
+      <div className="chat-box-interview">
+        <div className="header-main-interview">
+          <h2>Career Coach</h2>
+        </div>
+
+        <div className="message-container-interview">
+          {messages.map((message) => (
+            <div 
+              className={message.sender === 'user' ? 'user-message-interview' : 'bot-message-interview'} 
+              key={message.id}
+            >
+              <div 
+                className="message-box-interview" 
+                dangerouslySetInnerHTML={{ __html: message.text }} 
+              />
+            </div>
+          ))}
+          {isLoading && (
+            <div className="bot-message-interview">
+              <div className="message-box-interview">⏳ Analyzing your query...</div>
+            </div>
+          )}
+        </div>
+
+        {!sessionId && (
+          <button 
+            onClick={startCareerSession} 
+            className="button-interview"
+          >
+            Start Career Coaching Session
+          </button>
+        )}
+
+        {sessionId && (
+          <form onSubmit={handleSendMessage} className="chat-input-form">
+            <div className="input-container">
+              <input
+                type="text"
+                placeholder="Ask about career growth, salary negotiation, or professional development..."
+                value={inputText}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setInputText(e.target.value)}
+                className="input-interview"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !inputText.trim()}
+                className="send-button"
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

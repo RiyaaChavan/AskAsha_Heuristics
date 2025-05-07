@@ -73,6 +73,28 @@
   background-color: rgba(165, 216, 255, 0.1);
 }
 
+/* Voice input button styling */
+.voice-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  transition: all 0.2s var(--transition-function);
+  padding: 0;
+  margin-right: 10px;
+}
+
+.voice-button:hover {
+  color: var(--primary);
+  background-color: rgba(165, 216, 255, 0.1);
+}
+
 .send-button {
   padding: 12px 24px;
   border: none;
