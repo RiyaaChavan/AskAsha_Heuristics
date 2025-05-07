@@ -1,4 +1,4 @@
-import React, { useState, FormEvent, ChangeEvent } from 'react';
+import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import './Chatbot/styles/Interview.css';
 import './Chatbot/styles/ChatInput.css';
@@ -24,20 +24,46 @@ interface MessageResponse {
 // Use environment variable API_URL
 const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 
+// Key for localStorage
+const CAREER_SESSION_KEY = 'career_session_data';
+
 export default function CareerCoach() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState<string>('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [userId, setUserId] = useState<string>('');
-  const [showUserIdPrompt, setShowUserIdPrompt] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>('anonymous_user'); // Default user ID
+
+  // Load saved session data on component mount
+  useEffect(() => {
+    const savedSessionData = localStorage.getItem(CAREER_SESSION_KEY);
+    if (savedSessionData) {
+      try {
+        const { messages: savedMessages, sessionId: savedSessionId } = JSON.parse(savedSessionData);
+        if (savedMessages && savedSessionId) {
+          setMessages(savedMessages);
+          setSessionId(savedSessionId);
+        }
+      } catch (error) {
+        console.error('Error parsing saved session data:', error);
+        // If there's an error parsing, clear the saved data
+        localStorage.removeItem(CAREER_SESSION_KEY);
+      }
+    }
+  }, []);
+
+  // Save session data whenever it changes
+  useEffect(() => {
+    if (sessionId && messages.length > 0) {
+      const sessionData = {
+        sessionId,
+        messages,
+      };
+      localStorage.setItem(CAREER_SESSION_KEY, JSON.stringify(sessionData));
+    }
+  }, [sessionId, messages]);
 
   const startCareerSession = async (): Promise<void> => {
-    if (!userId) {
-      setShowUserIdPrompt(true);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/start-session`, {
@@ -158,38 +184,27 @@ export default function CareerCoach() {
     return formattedResponse;
   };
 
-  const UserIdPrompt: React.FC = () => (
-    <div className="user-id-prompt-interview">
-      <div className="modal-content">
-        <h3>What's your name?</h3>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          setShowUserIdPrompt(false);
-          startCareerSession();
-        }}>
-          <input
-            type="text"
-            value={userId}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setUserId(e.target.value)}
-            placeholder="Enter your name"
-            className="name-input"
-            required
-            autoFocus
-          />
-          <button type="submit" className="continue-button">
-            Continue
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+  // Add method to clear session history
+  const clearSessionHistory = () => {
+    localStorage.removeItem(CAREER_SESSION_KEY);
+    setSessionId(null);
+    setMessages([]);
+  };
 
   return (
     <div className="chat-container-interview asha-theme">
-      {showUserIdPrompt && <UserIdPrompt />}
       <div className="chat-box-interview">
         <div className="header-main-interview">
           <h2>Career Coach</h2>
+          {sessionId && (
+            <button 
+              onClick={clearSessionHistory}
+              className="clear-history-button"
+              title="Start a new coaching session"
+            >
+              New Session
+            </button>
+          )}
         </div>
 
         <div className="message-container-interview">

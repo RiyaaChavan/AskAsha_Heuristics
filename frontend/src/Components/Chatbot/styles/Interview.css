@@ -10,9 +10,9 @@
 
 .chat-container-interview {
   width: 100%;
-  margin: 80px auto 0;
-  padding: 20px 40px;
-  height: calc(100vh - 100px);
+  margin: 20px auto 0; /* Reduced top margin from 80px to 20px */
+  padding: 10px 40px 20px; /* Adjusted padding: reduced top padding */
+  height: calc(100vh - 40px); /* Adjusted height to accommodate the reduced margin */
   display: flex;
   background-color: var(--background-color);
 }
@@ -33,6 +33,7 @@
   padding: 20px 30px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 15px;
 }
 
@@ -41,6 +42,21 @@
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: 0.5px;
+}
+
+.clear-history-button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clear-history-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 .message-container-interview {
