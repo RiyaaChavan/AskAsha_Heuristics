@@ -61,7 +61,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         text: 'How can I help you find relevant events or workshops? I can suggest upcoming sessions based on your interests.',
         isUser: false,
         isUserMessage: false,
-        canvasType: 'sessions', // This should match the canvas type for SessionCanvas
+        canvasType: 'session_search', // Changed from 'sessions' to 'session_search' to match type definition
         canvasUtils: {
           session_link: 'https://api-prod.herkey.com/api/v1/discussions/filter/top?page_number=1&page_size=20',
         }
