@@ -38,11 +38,52 @@ export default function Login() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
-        navigate('/profile-setup');
+        // Get user info and create a manual session
+        const { displayName, email, uid, photoURL } = result.user;
+        const userData = {
+          username: displayName || email?.split('@')[0] || 'User',
+          email: email || '',
+          uid: uid
+        };
+        
+        // Store the user data in localStorage
+        localStorage.setItem('userId', uid);
+        if (email) localStorage.setItem('email', email);
+        
+        // Check if profile exists for this user
+        try {
+          const checkResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/check-user`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ uid })
+          });
+          
+          if (!checkResponse.ok) throw new Error('Failed to check user profile');
+          
+          const checkData = await checkResponse.json();
+          if (checkData.exists) {
+            // User already has profile, navigate to chatbot
+            navigate('/chatbot');
+          } else {
+            // New user, navigate to profile setup
+            navigate('/profile-setup');
+          }
+        } catch (fetchError) {
+          console.error('Error checking user profile:', fetchError);
+          // Default to profile setup if we can't check
+          navigate('/profile-setup');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in with Google:', error);
-      setError('Failed to sign in with Google');
+      
+      // Check specifically for the unauthorized domain error
+      if (error.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for Google Sign-In. Please use email/password login instead.');
+      } else {
+        setError('Failed to sign in with Google. Please try again or use email/password login.');
+      }
     }
   };
 

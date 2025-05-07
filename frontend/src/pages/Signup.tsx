@@ -9,6 +9,8 @@ export default function Signup() {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,22 +29,44 @@ export default function Signup() {
       
       if (!response.ok) {
         if (response.status === 0) {
-          throw new Error('Network error: Unable to connect to the server. Please check your internet connection and try again.');
+          // Network error - could be CORS or connectivity issue
+          if (retryCount < MAX_RETRIES) {
+            setRetryCount(prev => prev + 1);
+            setError(`Connection issue. Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+            setLoading(false);
+            
+            // Wait a moment before retrying
+            setTimeout(() => {
+              handleSignup(e);
+            }, 1500);
+            return;
+          } else {
+            throw new Error('Network error: Unable to connect to the server. This might be due to a temporary server issue or a CORS configuration problem. Please try again later.');
+          }
         }
         
-        const errorData = await response.json();
+        // Try to parse error response
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
         throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
       if (data.status === 'success') {
         localStorage.setItem('userId', data.user_id || '');
+        localStorage.setItem('email', email);
         localStorage.setItem('profileCreated', 'true');
         
         if (data.token) {
           localStorage.setItem('jwt', data.token);
-          localStorage.setItem('userId', data.user_id || '');
         }
+        
+        // Success - redirect to profile setup
         navigate('/profile-setup');
       } else {
         setError(data.message || 'Signup failed');

@@ -7,7 +7,7 @@ export const apiService = {
       const response = await fetch(`${API_BASE_URL}/api/create-profile`, {
         method: 'POST',
         body: formData,
-        credentials: 'include',
+        
       });
       
       if (!response.ok) {
