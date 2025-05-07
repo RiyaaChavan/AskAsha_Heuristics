@@ -45,7 +45,7 @@ CORS(app,
          # Add Render URL from environment variable if available
          os.getenv("FRONTEND_URL", "")
      ],
-     supports_credentials=True)
+     supports_credentials=False)
 
 app.secret_key = os.getenv("SECRET_KEY", "herkey-secret-key-change-in-production")
 

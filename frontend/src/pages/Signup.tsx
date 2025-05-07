@@ -14,14 +14,28 @@ export default function Signup() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/signup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({ username, email, password })
       });
+      
+      if (!response.ok) {
+        if (response.status === 0) {
+          throw new Error('Network error: Unable to connect to the server. Please check your internet connection and try again.');
+        }
+        
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
-      if (response.ok && data.status === 'success') {
+      if (data.status === 'success') {
         localStorage.setItem('userId', data.user_id || '');
         localStorage.setItem('profileCreated', 'true');
         
@@ -34,7 +48,8 @@ export default function Signup() {
         setError(data.message || 'Signup failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Signup failed');
+      console.error('Signup error:', err);
+      setError(err.message || 'Network error: Failed to connect to server. Please try again.');
     } finally {
       setLoading(false);
     }

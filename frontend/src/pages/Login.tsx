@@ -53,10 +53,21 @@ export default function Login() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       });
+      
+      if (!response.ok) {
+        if (response.status === 0) {
+          throw new Error('Network error: Unable to connect to the server. Please check your internet connection and try again.');
+        }
+        
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
-      if (response.ok && data.status === 'success') {
+      if (data.status === 'success') {
         localStorage.setItem('userId', data.user_id || '');
         localStorage.setItem('email', email);
         if (data.token) {
@@ -67,7 +78,8 @@ export default function Login() {
         setError(data.message || 'Login failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      console.error('Login error:', err);
+      setError(err.message || 'Network error: Failed to connect to server. Please try again.');
     }
   };
 

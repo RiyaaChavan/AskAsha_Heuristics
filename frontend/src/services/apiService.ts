@@ -7,6 +7,7 @@ export const apiService = {
       const response = await fetch(`${API_BASE_URL}/api/create-profile`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -22,7 +23,9 @@ export const apiService = {
 
   getProfile: async (uid: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/${uid}`);
+      const response = await fetch(`${API_BASE_URL}/api/profile/${uid}`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -42,6 +45,7 @@ export const apiService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       
@@ -57,16 +61,22 @@ export const apiService = {
   },
 
   async chat(message: string, userId: string) {
-    const response = await fetch(`${API_BASE_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, userId })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Server responded with status: ${response.status}`);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message, userId })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Error in chat API:', error);
+      throw error;
     }
-    
-    return response.json();
   },
 };
