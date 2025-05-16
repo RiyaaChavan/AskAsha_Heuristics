@@ -23,12 +23,41 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     }
   };
 
+  // Format message text to highlight @resume tags
+  const formatMessageText = (text: string) => {
+    if (!text) return '';
+    
+    // Check if the text contains @resume
+    if (text.includes('@resume')) {
+      // Split by @resume and wrap it in highlighted span
+      const parts = text.split('@resume');
+      return (
+        <>
+          {parts.map((part, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <span className="resume-tag">@resume</span>}
+              {part}
+            </React.Fragment>
+          ))}
+        </>
+      );
+    }
+    
+    return text;
+  };
   return (
     <div 
-      className={`message-bubble ${message.canvasType !== 'none' ? 'with-canvas clickable' : ''} ${isUserMessage ? 'user-message' : ''} ${isSelected ? 'selected' : ''}`}
+      className={`message-bubble ${message.canvasType !== 'none' ? 'with-canvas clickable' : ''} ${isUserMessage ? 'user-message' : ''} ${isSelected ? 'selected' : ''} ${message.isLoading ? 'loading-message' : ''}`}
       onClick={handleClick}
     >
-      <p>{message.text}</p>
+      {message.isLoading ? (
+        <div className="loading-content">
+          <p>{formatMessageText(message.text)}</p>
+          <div className="loading-spinner"></div>
+        </div>
+      ) : (
+        <p>{formatMessageText(message.text)}</p>
+      )}
       
       {isSelected && message.canvasType !== 'none' && (
         <button 

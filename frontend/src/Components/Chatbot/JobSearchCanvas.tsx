@@ -16,6 +16,7 @@ interface JobData {
   job_types?: string[] | string;
   boosted?: boolean;
   expires_on?: string;
+  skillMatchScore?: number; // Added skill match score property
 }
 
 interface JobDetailData {
@@ -41,6 +42,7 @@ interface JobDetailData {
   job_types?: string[] | string;
   url?: string;
   company_logo?: string;
+  skillMatchScore?: number; // Add skill match score for job details
 }
 
 interface JobResponse {
@@ -94,12 +96,46 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     { value: "hybrid", label: "Hybrid" },
     { value: "freelance", label: "Freelance" }
   ];
+  // Function to calculate skill match score for a job (0-100%)
+  const calculateSkillMatchScore = (jobSkills: string[] | string | undefined, userSkills: string[] = []): number => {
+    if (!jobSkills || userSkills.length === 0) return 0;
+    
+    // Normalize job skills to array
+    const normalizedJobSkills = Array.isArray(jobSkills) 
+      ? jobSkills 
+      : jobSkills.split(',').map(s => s.trim().toLowerCase());
+    
+    // Normalize user skills to lowercase
+    const normalizedUserSkills = userSkills.map(s => s.trim().toLowerCase());
+    
+    // Count matching skills
+    const matchingSkills = normalizedJobSkills.filter(skill => 
+      normalizedUserSkills.some(userSkill => userSkill.includes(skill) || skill.includes(userSkill))
+    );
+    
+    // Calculate match percentage (based on job skills)
+    return Math.round((matchingSkills.length / normalizedJobSkills.length) * 100);
+  };
 
   useEffect(() => {
     // First check if we have job_results provided directly from backend
     if (message.canvasUtils?.job_results && Array.isArray(message.canvasUtils.job_results)) {
-      setJobs(message.canvasUtils.job_results);
-      setFilteredJobs(message.canvasUtils.job_results);
+      // Get user skills from resume data if available
+      const userSkills: string[] = message.canvasUtils.resumeData?.skills || [];
+      
+      // Add skill match score to each job
+      const scoredJobs = message.canvasUtils.job_results.map(job => ({
+        ...job,
+        skillMatchScore: calculateSkillMatchScore(job.skills, userSkills)
+      }));
+      
+      // Sort jobs by skill match score (highest first)
+      const sortedJobs = [...scoredJobs].sort((a, b) => 
+        (b.skillMatchScore || 0) - (a.skillMatchScore || 0)
+      );
+      
+      setJobs(sortedJobs);
+      setFilteredJobs(sortedJobs);
       return;
     }
     
@@ -139,8 +175,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
         if (jobData.response_code !== 10100) {
           throw new Error(`API Error: ${jobData.message}`);
         }
-        
-        // Filter out expired jobs
+          // Filter out expired jobs
         const currentDate = new Date();
         const validJobs = jobData.body.filter(job => {
           // If job has an expires_on field, check if it's still valid
@@ -151,8 +186,22 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
           return true; // If no expiry date, include the job
         });
         
-        setJobs(validJobs);
-        setFilteredJobs(validJobs);
+        // Get user skills from resume data if available
+        const userSkills: string[] = message.canvasUtils.resumeData?.skills || [];
+        
+        // Add skill match score to each job
+        const scoredJobs = validJobs.map(job => ({
+          ...job,
+          skillMatchScore: calculateSkillMatchScore(job.skills, userSkills)
+        }));
+        
+        // Sort jobs by skill match score (highest first)
+        const sortedJobs = [...scoredJobs].sort((a, b) => 
+          (b.skillMatchScore || 0) - (a.skillMatchScore || 0)
+        );
+        
+        setJobs(sortedJobs);
+        setFilteredJobs(sortedJobs);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
       } finally {
@@ -403,9 +452,31 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                 />
               </div>
             )}
-            
-            <h2 className="job-detail-title">{jobDetail.title}</h2>
+              <h2 className="job-detail-title">{jobDetail.title}</h2>
             <div className="job-detail-company">{jobDetail.company_name || jobDetail.company?.name}</div>
+            
+            {/* Skill match indicator for selected job */}
+            {jobDetail.skillMatchScore !== undefined && jobDetail.skillMatchScore > 0 && (
+              <div className="job-detail-match">
+                <h4>Skill Match</h4>
+                <div className="detail-match-container">
+                  <div className="detail-match-progress">
+                    <div 
+                      className="detail-match-bar" 
+                      style={{
+                        width: `${jobDetail.skillMatchScore}%`, 
+                        backgroundColor: jobDetail.skillMatchScore > 70 ? '#4caf50' : 
+                                       jobDetail.skillMatchScore > 40 ? '#ff9800' : '#f44336'
+                      }}
+                    />
+                  </div>
+                  <div className="detail-match-percentage">{jobDetail.skillMatchScore}%</div>
+                </div>
+                {jobDetail.skillMatchScore >= 80 && <div className="match-note">Your skills are an excellent match for this position!</div>}
+                {jobDetail.skillMatchScore >= 50 && jobDetail.skillMatchScore < 80 && <div className="match-note">Your skills are a good match for this position.</div>}
+                {jobDetail.skillMatchScore < 50 && <div className="match-note">You may need to develop additional skills for this role.</div>}
+              </div>
+            )}
             
             <div className="job-detail-meta">
               <div className="job-detail-location">
@@ -439,17 +510,30 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                   {ensureArray(jobDetail.work_mode).map(formatJobType).join(', ')}
                 </div>
               )}
-            </div>
-
-            {jobDetail.skills && (
+            </div>            {jobDetail.skills && (
               <div className="job-detail-skills">
-                <h4>Skills</h4>
+                <h4>Required Skills</h4>
                 <div className="skill-tags">
-                  {ensureArray(jobDetail.skills).join(',').split(',').map((skill, i) => (
-                    <span key={i} className="skill-tag">
-                      {skill.trim()}
-                    </span>
-                  ))}
+                  {ensureArray(jobDetail.skills).join(',').split(',').map((skill, i) => {
+                    const userSkills = message.canvasUtils.resumeData?.skills || [];
+                    const isMatch = userSkills.some(userSkill => 
+                      userSkill.toLowerCase().includes(skill.trim().toLowerCase()) || 
+                      skill.trim().toLowerCase().includes(userSkill.toLowerCase())
+                    );
+                    
+                    return (
+                      <span 
+                        key={i} 
+                        className={`skill-tag ${isMatch ? 'skill-match' : ''}`}
+                        title={isMatch ? "You have this skill in your resume" : ""}
+                      >
+                        {skill.trim()}
+                        {isMatch && (
+                          <span className="skill-check">✓</span>
+                        )}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -502,8 +586,42 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                   dangerouslySetInnerHTML={formatHTMLContent(jobDetail.company.about_us)} 
                 />
               </div>
+            )}            {jobDetail.skillMatchScore !== undefined && jobDetail.skillMatchScore < 60 && (
+              <div className="job-detail-section skill-recommendations">
+                <h4>Skill Development Recommendations</h4>
+                <p>To improve your chances for this role, consider developing these skills:</p>
+                <div className="skill-recommendation-list">
+                  {ensureArray(jobDetail.skills)
+                    .join(',')
+                    .split(',')
+                    .filter(skill => {
+                      const userSkills = message.canvasUtils.resumeData?.skills || [];
+                      const isMatch = userSkills.some(userSkill => 
+                        userSkill.toLowerCase().includes(skill.trim().toLowerCase()) || 
+                        skill.trim().toLowerCase().includes(userSkill.toLowerCase())
+                      );
+                      return !isMatch && skill.trim();
+                    })
+                    .slice(0, 5)
+                    .map((skill, i) => (
+                      <div key={i} className="skill-recommendation-item">
+                        <span className="skill-recommendation-name">{skill.trim()}</span>
+                        <a 
+                          href={`https://www.herkey.com/learn/${encodeURIComponent(skill.trim())}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="learn-skill-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Learn more
+                        </a>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
             )}
-
+            
             <button 
               className="apply-button" 
               onClick={handleOpenJobLink}
@@ -545,11 +663,15 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
           )}
           
           <div className="job-list">
-            {filteredJobs.map((job, index) => (
-              <div 
+            {filteredJobs.map((job, index) => (              <div 
                 key={index} 
                 className="job-card job-card-compact" 
                 onClick={() => job.id && handleJobSelect(job.id)}
+                data-match-score={
+                  job.skillMatchScore >= 70 ? "high" : 
+                  job.skillMatchScore >= 40 ? "medium" : 
+                  job.skillMatchScore > 0 ? "low" : "none"
+                }
               >
                 {job.company_logo && (
                   <div className="job-logo">
@@ -587,8 +709,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                     {ensureArray(job.work_mode).map(formatJobType).join(', ')}
                   </div>
                 )}
-                
-                {job.skills && (
+                  {job.skills && (
                   <div className="job-skills">
                     {ensureArray(job.skills).slice(0, 2).map((skill, i) => (
                       <span key={i} className="skill-tag">
@@ -603,9 +724,30 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                   </div>
                 )}
                 
+                {/* Display skill match score if available */}
+                {job.skillMatchScore !== undefined && job.skillMatchScore > 0 && (
+                  <div className="skill-match-score">
+                    <div className="match-label">Match score:</div>
+                    <div className="match-progress">
+                      <div 
+                        className="match-bar" 
+                        style={{
+                          width: `${job.skillMatchScore}%`, 
+                          backgroundColor: job.skillMatchScore > 70 ? '#4caf50' : 
+                                         job.skillMatchScore > 40 ? '#ff9800' : '#f44336'
+                        }}
+                      />
+                    </div>
+                    <div className="match-percentage">{job.skillMatchScore}%</div>
+                  </div>
+                )}
+                
                 <div className="job-status">
                   {job.status}
                   {job.boosted && <span className="boosted-badge">Featured</span>}
+                  {job.skillMatchScore !== undefined && job.skillMatchScore >= 80 && (
+                    <span className="skill-match-badge">Top Match</span>
+                  )}
                 </div>
                 
                 <div className="job-actions">

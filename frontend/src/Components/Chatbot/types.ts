@@ -8,6 +8,7 @@ export type Message = {
   canvasUtils?: Record<string, any>;
   isUserMessage?: boolean; // Indicates if the message is from the user
   isHistory?: boolean; // Existing property for history messages
+  isLoading?: boolean; // Indicates if this is a loading state message
 };
 
 export type Payload = {

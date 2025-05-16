@@ -8,6 +8,63 @@
   --bot-message-bg: #f3f4f6;
 }
 
+/* Add Resume Tag Styling */
+.resume-tag {
+  background-color: var(--secondary-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-block;
+  margin: 0 2px;
+  animation: pulse 2s infinite;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.resume-tag:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(156, 77, 204, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(156, 77, 204, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(156, 77, 204, 0);
+  }
+}
+
+/* Loading message styling */
+.loading-message {
+  background-color: rgba(248, 249, 252, 0.8) !important;
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(138, 74, 111, 0.2);
+  border-top-color: var(--secondary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .chat-container-interview {
   width: 100%;
   margin: 10px auto 0; /* Reduced top margin from 20px to 10px */

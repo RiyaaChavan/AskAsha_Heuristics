@@ -8,6 +8,7 @@ import { ProtectedRoute } from './Components/ProtectedRoute';
 import Login from './pages/Login';
 import { ProfileSetup } from './Components/ProfileSetup';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 import { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import DebugInfo from './Components/DebugInfo';
@@ -31,7 +32,8 @@ function AppWithNavbar() {
         <Route path="/profile-setup" element={<ProfileSetup />} />
         <Route path="/signup" element={<Signup />} />
         {/* Protected routes */}
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/old-profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/jobsearch" replace />} />
         <Route path="/chatbot" element={
           <ProtectedRoute>

@@ -1,4 +1,7 @@
-/* Job search canvas */
+/* Job search canvas - imports */
+@import url('./skillMatch.css');
+
+/* Main container */
 .job-search-canvas {
   background-color: var(--surface);
   border-radius: 16px;
@@ -333,6 +336,12 @@
 
 .job-detail-section {
   margin-bottom: 30px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .job-detail-section h4 {

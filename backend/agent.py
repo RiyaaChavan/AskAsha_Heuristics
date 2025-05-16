@@ -22,7 +22,7 @@ def get_herkey_token() -> str:
     return resp.json()["body"]["session_id"]
 
 # Job search function - extracts parameters from a query
-def extract_job_search_params(query: str, conversation_history=None) -> dict:
+def extract_job_search_params(query: str, conversation_history=None, resume_data=None) -> dict:
     """
     Extract job search parameters from a natural language query.
     Returns a dictionary of parameters for the Herkey API.
@@ -30,6 +30,7 @@ def extract_job_search_params(query: str, conversation_history=None) -> dict:
     Args:
         query (str): The user's current query/message
         conversation_history (list, optional): Previous conversations in chronological order
+        resume_data (dict, optional): User's resume data including skills and work experience
     """
     system_prompt = """
     You are a job search parameter extractor for the Herkey API.
@@ -51,6 +52,7 @@ def extract_job_search_params(query: str, conversation_history=None) -> dict:
     3. For general queries like "find me a job", use broader terms based on context or previous user messages.
     4. Include exact technical skills mentioned (e.g., Python, SQL, React) in both keyword and job_skills parameters.
     5. Consider the conversation history for additional context when extracting parameters.
+    6. If resume data is provided, incorporate those skills and work experiences into your search parameters.
     
     Omit any parameter that is not clearly specified in the query, except for page_no, page_size, and is_global_query.
     
@@ -61,9 +63,46 @@ def extract_job_search_params(query: str, conversation_history=None) -> dict:
         SystemMessage(content=system_prompt),
     ]
     
+    # Prepare context with conversation history and resume data if available
+    context = ""
+    
+    # Add resume data if available (when @resume tag is used)
+    if resume_data:
+        resume_context = "User's resume information:\n"
+        
+        # Add skills from resume
+        skills = resume_data.get('skills', [])
+        if skills:
+            resume_context += "Skills: " + ", ".join(skills) + "\n"
+            
+        # Add work experience from resume
+        work_experience = resume_data.get('workExperience', [])
+        if work_experience:
+            resume_context += "Work Experience:\n"
+            for exp in work_experience:
+                company = exp.get('company', '')
+                role = exp.get('role', '')
+                description = exp.get('description', '')
+                if company and role:
+                    resume_context += f"- {role} at {company}\n"
+                    if description:
+                        resume_context += f"  Description: {description}\n"
+        
+        # Add education if available
+        education = resume_data.get('education', [])
+        if education:
+            resume_context += "Education:\n"
+            for edu in education:
+                degree = edu.get('degree', '')
+                institution = edu.get('institution', '')
+                if degree and institution:
+                    resume_context += f"- {degree} from {institution}\n"
+        
+        context += resume_context + "\n"
+    
     # Add conversation history context if available
     if conversation_history and len(conversation_history) > 0:
-        context = "Previous messages (in chronological order):\n"
+        context += "Previous messages (in chronological order):\n"
         # The history is already in chronological order from oldest to newest
         # Include the last 3 messages for context
         recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
@@ -75,11 +114,9 @@ def extract_job_search_params(query: str, conversation_history=None) -> dict:
                 context += f"User: {user_message}\n"
             if bot_response:
                 context += f"Assistant: {bot_response}\n"
-        
-        context += "\nCurrent query:\n"
-        messages.append(HumanMessage(content=f"{context}{query}"))
-    else:
-        messages.append(HumanMessage(content=query))
+    
+    context += "\nCurrent query:\n"
+    messages.append(HumanMessage(content=f"{context}{query}"))
     
     response = chat_model(messages)
     content = response.content.strip()
@@ -97,7 +134,15 @@ def extract_job_search_params(query: str, conversation_history=None) -> dict:
         
         # Ensure keyword is set and fallback if not provided
         if "keyword" not in params or params["keyword"].strip() == "":
-            params["keyword"] = query.strip()
+            # If we have resume skills, use them for the keyword
+            if resume_data and resume_data.get('skills'):
+                params["keyword"] = ", ".join(resume_data.get('skills', [])[:5])  # Use first 5 skills
+            else:
+                params["keyword"] = query.strip()
+                
+        # If we have resume skills but no job_skills were extracted, add them from the resume
+        if resume_data and resume_data.get('skills') and ("job_skills" not in params or not params["job_skills"]):
+            params["job_skills"] = ", ".join(resume_data.get('skills', []))
         
         # Clean up parameters - remove any/all values
         for key in list(params.keys()):
@@ -320,13 +365,14 @@ def classify_query(query: str) -> str:
     return classification
 
 # Generate a text response for normal conversation
-def generate_text_response(query: str, conversation_history=None) -> str:
+def generate_text_response(query: str, conversation_history=None, resume_data=None) -> str:
     """
     Generate a conversational response for general inquiries.
     
     Args:
         query (str): The user's current query/message
         conversation_history (list, optional): Previous conversations in chronological order
+        resume_data (dict, optional): User's resume data including skills and work experience
     """
     system_prompt = """
     You are a helpful assistant for job seekers and career advancers.
@@ -336,15 +382,53 @@ def generate_text_response(query: str, conversation_history=None) -> str:
     
     Use the conversation history to provide more personalized and contextually relevant responses.
     Refer to previous information that the user has shared when appropriate.
+    
+    If the user mentions @resume in their query, consider their resume information when providing advice.
     """
     
     messages = [
         SystemMessage(content=system_prompt),
     ]
     
+    context = ""
+    
+    # Add resume data if available (when @resume tag is used)
+    if resume_data and "@resume" in query:
+        resume_context = "User's resume information:\n"
+        
+        # Add skills from resume
+        skills = resume_data.get('skills', [])
+        if skills:
+            resume_context += "Skills: " + ", ".join(skills) + "\n"
+            
+        # Add work experience from resume
+        work_experience = resume_data.get('workExperience', [])
+        if work_experience:
+            resume_context += "Work Experience:\n"
+            for exp in work_experience:
+                company = exp.get('company', '')
+                role = exp.get('role', '')
+                description = exp.get('description', '')
+                if company and role:
+                    resume_context += f"- {role} at {company}\n"
+                    if description:
+                        resume_context += f"  Description: {description[:100]}...\n"
+        
+        # Add education if available
+        education = resume_data.get('education', [])
+        if education:
+            resume_context += "Education:\n"
+            for edu in education:
+                degree = edu.get('degree', '')
+                institution = edu.get('institution', '')
+                if degree and institution:
+                    resume_context += f"- {degree} from {institution}\n"
+        
+        context += resume_context + "\n"
+    
     # Add conversation history context if available
     if conversation_history and len(conversation_history) > 0:
-        context = "Previous messages (in chronological order):\n"
+        context += "Previous messages (in chronological order):\n"
         # The history is already in chronological order from oldest to newest
         # Include the last 3 messages for context
         recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
@@ -356,11 +440,9 @@ def generate_text_response(query: str, conversation_history=None) -> str:
                 context += f"User: {user_message}\n"
             if bot_response:
                 context += f"Assistant: {bot_response}\n"
-        
-        context += "\nCurrent query:\n"
-        messages.append(HumanMessage(content=f"{context}{query}"))
-    else:
-        messages.append(HumanMessage(content=query))
+    
+    context += "\nCurrent query:\n"
+    messages.append(HumanMessage(content=f"{context}{query}"))
     
     response = chat_model(messages)
     return response.content.strip()
@@ -390,18 +472,32 @@ def format_response(query_type: str, query: str, result) -> dict:
         # Create a more human-like response based on the search parameters
         location = job_params.get("location_name", "")
         role = job_params.get("keyword", "jobs")
+          # Check if this was a resume-based search
+        is_resume_search = "@resume" in query
         
         # Create a natural language response based on search results
         if job_count > 0:
-            if location:
-                response_text = f"I found {job_count} {role} opportunities in {location}! Here are some matches that might interest you."
+            if is_resume_search:
+                if location:
+                    response_text = f"Based on your resume, I found {job_count} {role} opportunities in {location} that match your skills! Here are some matches that might interest you."
+                else:
+                    response_text = f"Great news! Using your resume skills, I found {job_count} relevant {role} openings that match your profile."
             else:
-                response_text = f"Great news! I found {job_count} relevant {role} openings that match your criteria."
+                if location:
+                    response_text = f"I found {job_count} {role} opportunities in {location}! Here are some matches that might interest you."
+                else:
+                    response_text = f"Great news! I found {job_count} relevant {role} openings that match your criteria."
         else:
-            if location:
-                response_text = f"I couldn't find any {role} opportunities in {location} at the moment."
+            if is_resume_search:
+                if location:
+                    response_text = f"I couldn't find any {role} opportunities in {location} that match your resume skills at the moment."
+                else:
+                    response_text = f"I couldn't find exact matches for '{role}' based on your resume skills. Try broadening your search or adding more skills to your profile."
             else:
-                response_text = f"I couldn't find exact matches for '{role}'"
+                if location:
+                    response_text = f"I couldn't find any {role} opportunities in {location} at the moment."
+                else:
+                    response_text = f"I couldn't find exact matches for '{role}'"
         
         return {
             "text": response_text,
@@ -448,7 +544,7 @@ def format_response(query_type: str, query: str, result) -> dict:
             "canvasUtils": {}
         }
 
-def run_agent(prompt: str, conversation_history=None) -> dict:
+def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
     """
     Process a user prompt and return an appropriate response.
     Returns a dictionary in the format expected by the frontend.
@@ -456,24 +552,25 @@ def run_agent(prompt: str, conversation_history=None) -> dict:
     Args:
         prompt (str): The user's current query/message
         conversation_history (list, optional): Previous conversation messages for context
+        resume_data (dict, optional): User's resume data including skills and work experience
     """
     # Step 1: Classify the query
     query_type = classify_query(prompt)
-    
-    # Step 2: Handle based on classification
+      # Step 2: Handle based on classification
     if query_type == "job_search":
-        # Handle job search
-        job_params = extract_job_search_params(prompt, conversation_history)
+        # Handle job search with resume data if available
+        job_params = extract_job_search_params(prompt, conversation_history, resume_data)
         return format_response(query_type, prompt, job_params)
     
     elif query_type == "roadmap":
-        # Handle roadmap
+        # Handle roadmap (using resume data in the future for better personalization)
+        # For now, we're not passing resume_data to generate_roadmap
         roadmap_items = generate_roadmap(prompt, conversation_history)
         return format_response(query_type, prompt, roadmap_items)
     
     else:
-        # Handle normal text
-        text_response = generate_text_response(prompt, conversation_history)
+        # Handle normal text with resume context if available
+        text_response = generate_text_response(prompt, conversation_history, resume_data)
         return format_response(query_type, prompt, text_response)
 
 def get_events_links():

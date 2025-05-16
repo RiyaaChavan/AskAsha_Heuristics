@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 import time
 import requests
@@ -17,13 +17,27 @@ import docx2txt
 import nltk
 from nltk.tokenize import word_tokenize
 import re
+import base64
+import google.generativeai as genai
+import json
+import mimetypes
+import io
+from pathlib import Path
 
 # Import your internal logic
 from agent import run_agent  # Your run_agent logic
 from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
 
+# Import our external resume parser
+from parse_resume_gemini import parse_resume_with_gemini
+
 from dotenv import load_dotenv
 load_dotenv()
+
+# Configure Gemini API
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # LangChain, Tavily, Cohere imports
 from langchain_cohere import ChatCohere
@@ -75,6 +89,13 @@ llm = ChatCohere(
     model="command-r-plus",
     temperature=0.3
 )
+
+# Configure Google Gemini API
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+else:
+    print("WARNING: GEMINI_API_KEY not set in environment variables")
 
 # Session storage for mock interview/career chats
 sessions = {}
@@ -277,15 +298,48 @@ def extract_skills_from_text(text):
         "categorized_skills": categorized_skills
     }
 
+# Update the parse_resume function to use Gemini
 def parse_resume(file_path):
-    """Main function to parse resume and extract skills"""
-    # Extract text from the file
-    text = extract_text_from_file(file_path)
-    
-    # Extract skills from the text
-    skills_data = extract_skills_from_text(text)
-    
-    return skills_data
+    """Main function to parse resume and extract skills and work experience"""
+    try:
+        # Try parsing with Gemini first (modern AI approach)
+        print("Attempting to parse resume with Gemini API...")
+        gemini_data = parse_resume_with_gemini(file_path)
+        
+        # Check if Gemini returned valid data
+        if (gemini_data and 
+            isinstance(gemini_data, dict) and 
+            (gemini_data.get("skills") or gemini_data.get("work_experience"))):
+            print("Successfully parsed resume with Gemini API")
+            return gemini_data
+            
+        # If Gemini fails or returns empty data, fall back to traditional parsing
+        print("Falling back to traditional resume parsing...")
+        # Extract text from the file
+        text = extract_text_from_file(file_path)
+        
+        # Extract skills from the text
+        skills_data = extract_skills_from_text(text)
+        
+        # Add an empty work experience list for backward compatibility
+        skills_data["work_experience"] = []
+        
+        return skills_data
+    except Exception as e:
+        print(f"Error in parse_resume: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {"skills": [], "categorized_skills": {}, "work_experience": []}
+
+# -------------- File Access Routes -------------- #
+@app.route('/uploads/<filename>', methods=['GET'])
+def serve_file(filename):
+    """Serve uploaded files (like resumes)"""
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except Exception as e:
+        print(f"Error serving file {filename}: {str(e)}")
+        return jsonify({"error": "File not found"}), 404
 
 # -------------- Health Check -------------- #
 @app.route('/api/health', methods=['GET'])
@@ -384,18 +438,25 @@ def create_profile():
         
         if 'resume' in request.files and request.files['resume'].filename:
             resume_file = request.files['resume']
-            if allowed_file(resume_file.filename):
+            if allowed_file(resume_file.filename):                
                 try:
                     filename = secure_filename(f"{uid}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume_file.filename}")
                     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     resume_file.save(filepath)
+                    print(f"Resume saved to: {filepath}")
                     
-                    # Parse resume and extract skills
+                    # Parse resume and extract skills and work experience using Gemini
+                    print("Starting resume parsing with Gemini API...")
                     skills_data = parse_resume(filepath)
+                    
+                    # Log the extracted data
+                    print(f"Skills extracted: {skills_data.get('skills', [])}")
+                    print(f"Work experience extracted: {skills_data.get('work_experience', [])}")
+                    
                 except Exception as e:
                     print(f"Error saving or parsing resume: {str(e)}")
-        
-        # Create user profile
+                    traceback.print_exc()
+          # Create user profile
         profile_data = {
             'uid': uid,
             'name': data.get('name', ''),
@@ -409,6 +470,7 @@ def create_profile():
             'resume_file': filename,
             'skills': skills_data.get('skills', []),
             'categorized_skills': skills_data.get('categorized_skills', {}),
+            'work_experience': skills_data.get('work_experience', []),
             'created_at': datetime.utcnow()
         }
         
@@ -468,18 +530,26 @@ def chat():
     data = request.get_json()
     message = data.get('message', '')
     user_id = data.get('userId', '')
+    resume_data = data.get('resumeData', {})  # Get resume data if provided
 
     if not user_id:
         user_id = session.get('user_id')
 
     is_authenticated = bool(user_id)
+    
+    # Check if resume data is present from the request
+    has_resume_context = bool(resume_data and message and '@resume' in message)
 
     conversation_history = []
     if is_authenticated:
         conversation_history = get_user_conversations(user_id, limit=5)
         conversation_history.reverse()  # chronological order
-
-    response = run_agent(message, conversation_history)
+    
+    # If @resume is in the message and we have resume data, pass it to the agent
+    if has_resume_context:
+        response = run_agent(message, conversation_history, resume_data)
+    else:
+        response = run_agent(message, conversation_history)
 
     if response.get('canvasType') == 'job_search':
         session_id = get_session_id()
