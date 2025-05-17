@@ -68,7 +68,7 @@ def extract_job_search_params(query: str, conversation_history=None, resume_data
     
     # Add resume data if available (when @resume tag is used)
     if resume_data:
-        resume_context = "User's resume information:\n"
+        resume_context = "User's resume information(This is the information the user is requesting when they say @resume):\n"
         
         # Add skills from resume
         skills = resume_data.get('skills', [])
@@ -99,7 +99,7 @@ def extract_job_search_params(query: str, conversation_history=None, resume_data
                     resume_context += f"- {degree} from {institution}\n"
         
         context += resume_context + "\n"
-    
+        # return context
     # Add conversation history context if available
     if conversation_history and len(conversation_history) > 0:
         context += "Previous messages (in chronological order):\n"
@@ -308,6 +308,10 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
             user_message = convo.get("message", "")
             if user_message:
                 context += f"User: {user_message}\n"
+                if '@resume' in user_message:
+                    resume_data = convo.get("resume_data", {})
+                    if resume_data:
+                        context += f"Resume data user attached by mentioning @resume: {json.dumps(resume_data, indent=2)}\n"
         
         context += "\nCurrent request:\n"
         messages.append(HumanMessage(content=f"{context}Create a learning roadmap for: {topic}"))
@@ -393,7 +397,9 @@ def generate_text_response(query: str, conversation_history=None, resume_data=No
     context = ""
     
     # Add resume data if available (when @resume tag is used)
-    if resume_data and "@resume" in query:
+    if "@resume" in query:
+
+
         resume_context = "User's resume information:\n"
         
         # Add skills from resume

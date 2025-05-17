@@ -530,8 +530,8 @@ def chat():
     data = request.get_json()
     message = data.get('message', '')
     user_id = data.get('userId', '')
-    resume_data = data.get('resumeData', {})  # Get resume data if provided
-
+    
+    resume_data = (db.users.find_one({'uid': user_id}))
     if not user_id:
         user_id = session.get('user_id')
 

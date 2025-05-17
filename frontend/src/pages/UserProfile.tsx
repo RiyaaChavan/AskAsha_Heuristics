@@ -40,7 +40,9 @@ export default function UserProfile() {
     const fetchProfile = async () => {
       try {
         if (!currentUser?.uid) {
+          
           setError("User not authenticated");
+          console.log(currentUser);
           setLoading(false);
           return;
         }
@@ -56,6 +58,7 @@ export default function UserProfile() {
         }
         
         setProfile(data);
+        console.log(profile);
         setError(null);
       } catch (error) {
         console.error('Error fetching profile:', error);

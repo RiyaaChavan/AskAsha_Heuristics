@@ -59,9 +59,14 @@ def parse_resume_with_gemini(file_path):
                 "other": ["Skill7", "Skill8", ...]
               },
               "work_experience": [
-                "Position at Company, Duration",
-                "• Responsibility or achievement 1",
-                "• Responsibility or achievement 2",
+                \{"duration:"A year"\,
+                "position": "Position at Company",
+                "company": "Company Name",
+                "description": "",
+                  ...
+                
+                
+                }
                 ...
               ]
             }

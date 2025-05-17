@@ -22,12 +22,14 @@ export default function Profile() {
   const { currentUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        if (!currentUser?.uid) return;
-        const data = await apiService.getProfile(currentUser.uid);
+        // Try to get userId from currentUser or from localStorage as fallback
+        const userId = currentUser?.uid || localStorage.getItem('userId');
+        
+        if (!userId) return;
+        const data = await apiService.getProfile(userId);
         setProfile(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -36,9 +38,8 @@ export default function Profile() {
       }
     };
 
-    if (currentUser) {
-      fetchProfile();
-    }
+    // Always attempt to fetch the profile, even if currentUser is null
+    fetchProfile();
   }, [currentUser]);
 
   if (loading) {
