@@ -44,6 +44,7 @@ export interface RoadmapItem {
   title: string;
   description: string;
   link: string;
+  calendar_event?: string; // Make it optional since we have a fallback
 }
 
 export interface ChatMessageProps {

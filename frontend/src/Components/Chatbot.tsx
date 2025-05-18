@@ -256,7 +256,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
 
   return (
     <div className="chatbot-container">
-      {isLoadingHistory && <div className="history-loading">Loading conversation history...</div>}
+      {isLoadingHistory && <div className="history-loading">...</div>}
       <div className="chatbot-main">
         <div className="chat-container">
           <ChatWindow 

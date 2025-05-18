@@ -202,9 +202,180 @@
   box-shadow: 0 6px 16px var(--shadow-color);
 }
 
+/* Calendar Service Dialog Styles */
+.calendar-service-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(3px);
+}
+
+.calendar-service-dialog {
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 10000;
+}
+
+.calendar-service-dialog h3 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--text-primary, #333);
+}
+
+.calendar-service-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calendar-service-button {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.calendar-service-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-service-button.google {
+  color: #4285F4;
+}
+
+.calendar-service-button.outlook {
+  color: #0078D4;
+}
+
+.calendar-service-button.ics {
+  color: #555555;
+}
+
+.calendar-service-close {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  color: var(--text-secondary, #666);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-service-close:hover {
+  background-color: #e5e5e5;
+}
+
+/* Existing Roadmap Canvas Styles */
+.roadmap-canvas {
+  padding: 20px;
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.add-to-calendar-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background-color: var(--primary, #4285F4);
+  color: var(--text-on-primary, white);
+  border: none;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.add-to-calendar-button:hover:not(:disabled) {
+  background-color: var(--primary-dark, #3367d6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.add-to-calendar-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .roadmap-item-content {
     width: 90%;
   }
+  
+  .calendar-service-dialog-content {
+    width: 90%;
+    padding: 16px;
+  }
+}
+
+/* Google Calendar Integration */
+const addToGoogleCalendar = async (startDate: Date) => {
+  // Process one event at a time to avoid browser blocking
+  for (let i = 0; i < roadmapItems.length; i++) {
+    // ... code to set up the event ...
+    window.open(googleUrl.toString(), '_blank');
+    // Small delay between opening windows
+    if (i < roadmapItems.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+};
+
+/* Add these new styles */
+.calendar-dialog-description {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+}
+
+.recommended {
+  background-color: #f0f9ff !important;
+  border: 1px solid #cce5ff;
+  position: relative;
+}
+
+.recommended-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #28a745;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
 }

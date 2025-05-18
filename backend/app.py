@@ -531,7 +531,17 @@ def chat():
     message = data.get('message', '')
     user_id = data.get('userId', '')
     
-    resume_data = (db.users.find_one({'uid': user_id}))
+    # Properly extract resume data from MongoDB
+    resume_data = None
+    if user_id:
+        user_doc = db.users.find_one({'uid': user_id})
+        if user_doc:
+            resume_data = {
+                'skills': user_doc.get('skills', []),
+                'work_experience': user_doc.get('work_experience', []),
+                'education': user_doc.get('education', '')
+            }
+    
     if not user_id:
         user_id = session.get('user_id')
 
@@ -551,21 +561,55 @@ def chat():
     else:
         response = run_agent(message, conversation_history)
 
+    # Fix job search API integration
     if response.get('canvasType') == 'job_search':
+        # Get a proper session ID from HerKey
         session_id = get_session_id()
         params = response.get('canvasUtils', {}).get('param', {})
+        
         if session_id:
+            # Ensure params is a dictionary
+            if not params:
+                params = {}
+            
+            # Add the session ID to the params
             params['session_id'] = session_id
-
-        query_string = urllib.parse.urlencode(params)
-        job_url = f"https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs?{query_string}"
-        response['canvasUtils']['job_link'] = job_url
-        response['canvasUtils']['job_api'] = session_id
+            
+            # Update the params in the response
+            if 'canvasUtils' not in response:
+                response['canvasUtils'] = {}
+            response['canvasUtils']['param'] = params
+            
+            # Build the correct job URL
+            query_string = urllib.parse.urlencode(params)
+            job_url = f"https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs?{query_string}"
+            
+            # Add both job_link and job_api to the response
+            response['canvasUtils']['job_link'] = job_url
+            response['canvasUtils']['job_api'] = session_id
+            
+            # Log the job URL for debugging
+            print(f"Job API URL: {job_url}")
+            print(f"Session ID: {session_id}")
+            
+            # Pre-fetch some jobs to verify the API is working
+            try:
+                headers = {'Content-Type': 'application/json'}
+                job_response = requests.get(job_url, headers=headers)
+                
+                if job_response.status_code == 200:
+                    job_data = job_response.json()
+                    job_count = len(job_data.get('body', {}).get('jobs', []))
+                    print(f"Successfully fetched {job_count} jobs from API")
+                else:
+                    print(f"Error fetching jobs: {job_response.status_code}")
+                    print(job_response.text)
+            except Exception as e:
+                print(f"Exception when testing job API: {str(e)}")
 
     if is_authenticated:
         save_conversation(user_id, message, response)
 
-    time.sleep(0.5)
     return jsonify(response)
 
 # -------------- LangChain Career Coach / Interview Bot -------------- #
@@ -722,8 +766,7 @@ def send_message():
                 # Step 1: Let the model think
                 response = llm.invoke(messages)
                 model_reply = response.content.strip()
-
-                # Step 2: Check if model wants to search the internet
+                           
                 search_match = re.search(r"Action:\s*Search\[(.*?)\]", model_reply, re.IGNORECASE)
 
                 if search_match:

@@ -207,137 +207,194 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
     """
     Generate a structured learning roadmap for the given topic.
     Returns a list of roadmap items.
-    
-    Args:
-        topic (str): The topic to generate a roadmap for
-        conversation_history (list, optional): Previous conversations in chronological order
     """
     system_prompt = """
-    Create a detailed career guidance roadmap specifically tailored for women in professional settings. The roadmap should address one of these three user personas:
-    
-    1. FRESHERS: Women just beginning their career, seeking guidance on entry-level positions and early career development
-    2. RISERS: Women with 3-8 years of experience looking to advance to leadership positions
-    3. REJOINERS: Women returning to the workforce after a career break (maternity, caregiving, etc.)
-    
-    Based on the user's query, determine which persona they best align with, and create a comprehensive roadmap with 5-8 well-structured steps that progress logically.
+    Create a detailed learning roadmap for the user's requested topic. The roadmap must be practical, actionable, and include ONLY VERIFIED EXISTING resources.
 
-    For each step in the roadmap, provide:
-    1. A clear, actionable title that communicates the specific goal of this career development phase
-    2. A detailed description (3-5 sentences) with specific advice tailored for women in the workforce that explains the WHY, HOW, and EXPECTED OUTCOME of this step
-    3. A real, functioning URL to relevant resources from recognized organizations like LinkedIn Learning, Coursera, Udemy, or women-focused career sites like HerKey, Lean In, or Women Who Code
+    IMPORTANT ROADMAP STRUCTURE:
+    1. Create 5-8 sequential PHASE-BASED roadmap steps that build progressively
+    2. DO NOT use "Week 1", "Day 2" or ANY time-specific headers - use descriptive phase titles only
+    3. DO NOT use day-specific language like "Monday", "Tuesday" in descriptions
+    4. ADAPT THE TIMELINE to fit exactly within the user's requested timeframe
+    5. Use headers like "Foundation Building", "Core Concepts", "Practical Application" instead
 
-    Focus on addressing these key challenges women face in the workplace:
-    - Skill development relevant to the specified field or role, including both technical and soft skills
-    - Networking and mentorship opportunities specifically designed for women's advancement
-    - Work-life balance strategies and overcoming gender-specific workplace challenges like impostor syndrome
-    - Confidence building, assertiveness training, and leadership development paths
-    - Resume/CV enhancement, personal branding, and interview preparation with emphasis on salary negotiation
-    - Navigating workplace biases and creating allies across organizational hierarchies
+    FOR EACH ROADMAP STEP INCLUDE:
+    - "title": Clear focus area based on user's topic (e.g., "Python Fundamentals: Data Types")
+    - "description": Detailed guidance with:
+        * Specific activities to complete (e.g., "Complete exercises on variables & data types")
+        * Concrete topics with examples
+        * Measurable milestones
+        * Practical mini-projects to apply learning
+        * DO NOT reference specific days of the week
+        * If user specified a timeframe, portion activities accordingly (e.g., "Spend 25% of your time on...")
+    - "link": ONLY verified working URLs to free or low-cost resources directly relevant to this phase
+    - "calendar_event": A short description for calendar integration
 
-    For FRESHERS, emphasize:
-    - Building foundational skills and identifying strengths
-    - Creating a professional presence online and offline
-    - Finding entry-level positions that offer growth potential
-    - Establishing mentorship relationships early in career
-    - Understanding workplace dynamics and communication styles
+    SPECIAL FOCUS FOR WOMEN IN THE WORKFORCE:
+    - For WOMEN RETURNERS (after career break): Include confidence-building exercises, skills refreshers, return-to-work programs, and relevant communities. Focus on translating past experience to current market needs.
+    - For WOMEN RESTARTING CAREERS: Emphasize transferable skills, flexible work options, and networking strategies. Include resources for balancing family responsibilities.
+    - For WOMEN STARTING CAREERS: Focus on entry points, mentorship opportunities, and building professional presence. Include women-specific career development resources.
+    - For WORKING MOTHERS: Highlight flexible learning options, time management, and resources that acknowledge family responsibilities.
 
-    For RISERS, emphasize:
-    - Strategic visibility and influence building
-    - Developing leadership capabilities and executive presence
-    - Creating a personal leadership brand and style
-    - Negotiation tactics for promotions and additional responsibilities
-    - Building networks that support advancement opportunities
-    - Work-life integration strategies for sustainable career growth
+    RESOURCE LINKS - MUST FOLLOW THESE RULES:
+    1. USE ONLY these GUARANTEED working resources:
+       - For women returners/restarting careers:
+         * "https://www.returnship.com/resources"
+         * "https://www.jobsforher.com/"
+         * "https://www.womenreturners.com/returners/"
+         * "https://www.themuse.com/advice/9-job-search-tips-for-women-returning-to-work"
+         * "https://www.linkedin.com/learning/returning-to-work-after-a-career-break"
+         * "https://www.indeed.com/career-advice/finding-a-job/resume-tips-women-returning-to-workforce"
+       - For women starting careers:
+         * "https://www.womenwhocode.com/resources"
+         * "https://girlswhocode.com/programs"
+         * "https://www.hiretechladies.com/resources"
+         * "https://www.ellevatenetwork.com/articles"
+         * "https://www.leanin.org/tips/mentorship"
+       - For career development:
+         * "https://www.linkedin.com/learning"
+         * "https://www.indeed.com/career-advice"
+         * "https://www.glassdoor.com/blog/"
+         * "https://www.themuse.com/advice/"
+       - For interview preparation:
+         * "https://www.interviewcake.com/"
+         * "https://leetcode.com/"
+         * "https://www.pramp.com/"
+         * "https://www.themuse.com/advice/interview-questions-and-answers"
+       - For technical skills:
+         * "https://www.freecodecamp.org/learn"
+         * "https://developer.mozilla.org/en-US/docs/Learn"
+         * "https://www.w3schools.com/"
+         * "https://www.codecademy.com/catalog"
+         * "https://github.com/microsoft/Web-Dev-For-Beginners"
 
-    For REJOINERS, emphasize:
-    - Skills assessment and targeted upskilling opportunities
-    - Confidence rebuilding and addressing imposter syndrome 
-    - Explaining career gaps effectively in applications and interviews
-    - Flexible work arrangements and setting boundaries
-    - Leveraging past experience while demonstrating current relevance
-    - Accelerated reintegration strategies
+    2. MATCH LINKS TO CONTENT - each resource must be SPECIFICALLY relevant to the phase it's attached to
+    3. DO NOT use links you're uncertain about or that don't specifically match the content
+    4. For topic-specific resources, link to the exact documentation page (not just homepage)
 
-    Format your response as a JSON array where each item has the keys:
-    - title: The name of the step (be specific and action-oriented)
-    - description: A comprehensive explanation with actionable advice
-    - link: A URL to learn more (use REAL, EXISTING resources from trusted sites)
-    
-    Example for a FRESHER in technology:
-    [
-      {
-        "title": "Assess Your Technical and Soft Skill Foundation",
-        "description": "Begin by conducting a thorough self-assessment of your current skills, interests, and career aspirations within the technology field. Identify gaps between your current abilities and entry-level job requirements by analyzing job postings and speaking with professionals. Use structured assessment tools to understand your technical proficiencies, communication styles, and areas where targeted development would bring the greatest career benefits.",
-        "link": "https://www.herkey.com/resources/herkey-skill-assessment-tool"
-      },
-      {
-        "title": "Build a Technical Foundation Through Structured Learning",
-        "description": "Develop essential technical skills through structured courses focused specifically on women entering tech fields. Prioritize learning paths that combine theoretical knowledge with practical application opportunities to build your portfolio. Consider completing industry-recognized certifications that validate your skills to employers while providing structured learning objectives.",
-        "link": "https://www.coursera.org/collections/women-building-careers-tech"
-      }
-    ]
-    
-    Example for a REJOINER in finance:
-    [
-      {
-        "title": "Update Industry Knowledge and Technical Skills",
-        "description": "The financial industry evolves rapidly with new regulations, technologies, and practices emerging during even short career breaks. Identify specific knowledge gaps by researching current job descriptions and industry publications to understand what's changed since your departure. Take targeted courses focusing on the most critical updates in your finance specialty, particularly around financial technology and compliance changes that have occurred during your absence.",
-        "link": "https://www.linkedin.com/learning/paths/return-to-work-in-financial-services-after-a-career-break"
-      },
-      {
-        "title": "Leverage Return-to-Work Programs in Finance",
-        "description": "Many financial institutions now offer specialized returnship programs designed specifically for professionals returning after career breaks. These structured programs typically combine refresher training, mentorship, and project work to ease the transition back to full-time employment. Application processes are often less focused on recent work history and more on your entire career experience and transferable skills.",
-        "link": "https://www.jpmorgan.com/impact/people/returntoworkprogams"
-      }
-    ]
-    
-    Return ONLY the JSON array without any additional text, explanations, or markdown formatting.
+    FORMAT YOUR RESPONSE AS A JSON ARRAY with 5-8 objects.
+    Each object MUST have these fields:
+    - "title": string (Clear focus area without time references)
+    - "description": string (Detailed guidance without specific days/weeks)
+    - "link": string (VERIFIED working URL to relevant resource)
+    - "calendar_event": string (Short summary for calendar)
+
+    RETURN ONLY THE JSON ARRAY. No introductions or other text.
     """
     
-    messages = [
-        SystemMessage(content=system_prompt),
+    # Extract any timeframe from the user's query
+    timeframe_patterns = [
+        r'(\d+)\s*(day|days|week|weeks|month|months)',  # numeric: "2 weeks", "1 month"
+        r'(one|two|three|four|five|six|seven|eight|nine|ten)\s+(day|days|week|weeks|month|months)',  # text: "one week"
+        r'(a|an)\s+(day|week|month)'  # "a week", "a month"
     ]
     
-    # Add conversation history context if available
-    if conversation_history and len(conversation_history) > 0:
-        context = "Previous messages (in chronological order):\n"
-        # The history is already in chronological order from oldest to newest
-        # Include the last 3 messages for context
-        recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
-        
-        for convo in recent_history:
-            user_message = convo.get("message", "")
-            if user_message:
-                context += f"User: {user_message}\n"
-                if '@resume' in user_message:
-                    resume_data = convo.get("resume_data", {})
-                    if resume_data:
-                        context += f"Resume data user attached by mentioning @resume: {json.dumps(resume_data, indent=2)}\n"
-        
-        context += "\nCurrent request:\n"
-        messages.append(HumanMessage(content=f"{context}Create a learning roadmap for: {topic}"))
-    else:
-        messages.append(HumanMessage(content=f"Create a learning roadmap for: {topic}"))
+    timeframe = None
+    for pattern in timeframe_patterns:
+        match = re.search(pattern, topic, re.IGNORECASE)
+        if match:
+            if match.group(1).isdigit():
+                number = int(match.group(1))
+            elif match.group(1).lower() in ['a', 'an']:
+                number = 1
+            else:
+                number_map = {
+                    'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+                    'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10
+                }
+                number = number_map.get(match.group(1).lower(), 1)
+                
+            unit = match.group(2).lower() if len(match.groups()) > 1 else 'week'
+            if 'day' in unit:
+                timeframe = f"{number} day{'s' if number > 1 else ''}"
+            elif 'week' in unit:
+                timeframe = f"{number} week{'s' if number > 1 else ''}"
+            elif 'month' in unit:
+                timeframe = f"{number} month{'s' if number > 1 else ''}"
+            break
     
+    # Also check for words that imply timeframes without explicit numbers
+    if not timeframe:
+        if any(word in topic.lower() for word in ['quick', 'fast', 'rapid', 'short', 'brief']):
+            timeframe = "short-term (1-2 weeks)"
+        elif any(word in topic.lower() for word in ['thorough', 'comprehensive', 'complete', 'in-depth']):
+            timeframe = "comprehensive (1-2 months)"
+    
+    # Build context from the user's query
+    context = f"Topic: {topic}\n"
+    if timeframe:
+        context += f"Requested timeframe: {timeframe}\n"
+        context += "Important: Adjust the roadmap to fit exactly within this timeframe.\n"
+    
+    # Check for women-specific career needs
+    women_career_patterns = {
+        "returner": "This user is a woman returning to the workforce after a career break. Include resources specifically for returners, addressing confidence rebuilding and skills refreshers.",
+        "rejoining": "This user is a woman rejoining the workforce after a break. Focus on translating past experience to current market needs.",
+        "restart": "This user is a woman restarting her career. Emphasize transferable skills and flexible work options.",
+        "returning": "This user is a woman returning to professional work. Include return-to-work programs and relevant communities.",
+        "starting": "This user is a woman starting her career. Focus on entry points and building professional presence.",
+        "beginning": "This user is a woman beginning her career journey. Include foundational skills and mentorship opportunities.",
+        "mother": "This user is a working mother. Highlight flexible options and resources that acknowledge family responsibilities.",
+        "married": "This user is balancing career with family responsibilities. Include strategies for work-life integration.",
+        "balance": "This user needs resources that support work-life balance. Include efficient learning strategies."
+    }
+    
+    for keyword, description in women_career_patterns.items():
+        if keyword in topic.lower():
+            context += f"\nSpecial audience: {description}\n"
+    
+    # Initialize messages with system prompt
+    messages = [SystemMessage(content=system_prompt)]
+    
+    # Add the context and topic as a human message
+    context += "\nCurrent request:\n"
+    messages.append(HumanMessage(content=f"{context}Create a learning roadmap for: {topic}"))
+    
+    # Generate response from the model
     response = chat_model(messages)
     content = response.content.strip()
     
     # Extract JSON from the response if it's wrapped in code fences
     if content.startswith("```") and content.endswith("```"):
         content = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content).group(1)
-    
+
     try:
-        roadmap = json.loads(content)
-        return roadmap
+        roadmap_items = json.loads(content)
+        return roadmap_items
     except json.JSONDecodeError:
-        # If parsing fails, return a simple error roadmap
+        print("Failed to parse JSON. Using fallback roadmap.")
         return [
             {
-                "title": "Error Creating Roadmap",
-                "description": f"We couldn't create a roadmap for '{topic}'. Please try a different topic or phrase your request differently to get personalized career guidance.",
-                "link": "https://www.herkey.com/resources"
+                "title": "Understanding Your Career Goals",
+                "description": "Begin by assessing your current skills, interests, and career objectives. Create a document that outlines your strengths, areas for growth, and specific goals you want to achieve.",
+                "link": "https://www.themuse.com/advice/how-to-figure-out-what-you-want-next-in-your-career",
+                "calendar_event": "Career Goals Assessment"
+            },
+            {
+                "title": "Skill Enhancement Planning",
+                "description": "Identify the key skills needed for your target role. Research industry requirements and create a prioritized list of skills to develop.",
+                "link": "https://www.indeed.com/career-advice/finding-a-job/resume-tips-women_returning_to_workforce",
+                "calendar_event": "Skills Planning Session"
+            },
+            {
+                "title": "Networking and Community Building",
+                "description": "Connect with professional networks in your field. Join relevant online communities, attend virtual events, and reach out to former colleagues.",
+                "link": "https://www.ellevatenetwork.com/articles",
+                "calendar_event": "Networking Strategy Session"
+            },
+            {
+                "title": "Application Materials Preparation",
+                "description": "Update your resume and LinkedIn profile to highlight relevant skills and experiences. Create templates for cover letters and prepare your portfolio.",
+                "link": "https://www.linkedin.com/learning",
+                "calendar_event": "Resume and Profile Updates"
+            },
+            {
+                "title": "Interview Preparation",
+                "description": "Research common interview questions in your field and prepare thoughtful responses. Practice answering questions confidently and concisely.",
+                "link": "https://www.themuse.com/advice/interview-questions-and-answers",
+                "calendar_event": "Interview Practice"
             }
         ]
-
 # Classify user query
 def classify_query(query: str) -> str:
     """
@@ -478,7 +535,7 @@ def format_response(query_type: str, query: str, result) -> dict:
         # Create a more human-like response based on the search parameters
         location = job_params.get("location_name", "")
         role = job_params.get("keyword", "jobs")
-          # Check if this was a resume-based search
+        # Check if this was a resume-based search
         is_resume_search = "@resume" in query
         
         # Create a natural language response based on search results
@@ -520,25 +577,30 @@ def format_response(query_type: str, query: str, result) -> dict:
         # Roadmap response
         roadmap_items = result
         
+        # Add calendar_event to each item if not present
+        for item in roadmap_items:
+            if "calendar_event" not in item:
+                item["calendar_event"] = item.get("title", "Learning session")
+        
         return {
-            "text": f"Generated this roadmap for you.",
+            "text": f"I've created a day-by-day roadmap for learning {query}. Each step includes daily activities and resources. You can add these to your calendar using the 'Add to Calendar' button.",
             "canvasType": "roadmap",
             "canvasUtils": {
-                "roadmap": roadmap_items
+                "roadmap": roadmap_items,
+                "enableCalendarIntegration": True  # Flag to enable calendar integration in frontend
             }
         }
     elif query_type == "events":
         # Events response
         
-        session_link,session_api=get_events_links()
-        
+        session_link, session_api = get_events_links()
         
         return {
             "text": "I can help you find events or workshops related to your query. Please click on the toggle to view",
             "canvasType": "sessions",
             "canvasUtils": {
-                "session_link":session_link,
-                "session_api":session_api# Placeholder for events data
+                "session_link": session_link,
+                "session_api": session_api  # Placeholder for events data
             }
         }
         

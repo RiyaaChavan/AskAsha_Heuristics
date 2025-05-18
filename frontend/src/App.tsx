@@ -17,7 +17,6 @@ import Signup from './pages/Signup';
 import Navbar from './Components/Navbar';
 import CareerCoach from './Components/CareerCoach';
 import InterviewAssistant from './Components/InterviewAssistant';
-// import AuthDebug from './Components/AuthDebug';
 
 function AppWithNavbar() {
   const location = useLocation();
@@ -26,7 +25,6 @@ function AppWithNavbar() {
     <>
       <KeepAlive />
       <DebugInfo />
-      {/* <AuthDebug /> */}
       {!hideNavbar && <Navbar />}
       <Routes>
         {/* Public routes */}

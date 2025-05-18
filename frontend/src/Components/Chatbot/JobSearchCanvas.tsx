@@ -510,7 +510,8 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                   {ensureArray(jobDetail.work_mode).map(formatJobType).join(', ')}
                 </div>
               )}
-            </div>            {jobDetail.skills && (
+            </div>            
+            {jobDetail.skills && (
               <div className="job-detail-skills">
                 <h4>Required Skills</h4>
                 <div className="skill-tags">
