@@ -238,6 +238,13 @@
   color: var(--text-primary, #333);
 }
 
+.calendar-dialog-description {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+}
+
 .calendar-service-buttons {
   display: flex;
   flex-direction: column;
@@ -273,6 +280,24 @@
 
 .calendar-service-button.ics {
   color: #555555;
+}
+
+.recommended {
+  background-color: #f0f9ff !important;
+  border: 1px solid #cce5ff;
+  position: relative;
+}
+
+.recommended-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #28a745;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
 }
 
 .calendar-service-close {
@@ -339,43 +364,4 @@
     width: 90%;
     padding: 16px;
   }
-}
-
-/* Google Calendar Integration */
-const addToGoogleCalendar = async (startDate: Date) => {
-  // Process one event at a time to avoid browser blocking
-  for (let i = 0; i < roadmapItems.length; i++) {
-    // ... code to set up the event ...
-    window.open(googleUrl.toString(), '_blank');
-    // Small delay between opening windows
-    if (i < roadmapItems.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  }
-};
-
-/* Add these new styles */
-.calendar-dialog-description {
-  margin: 0;
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--text-secondary, #666);
-}
-
-.recommended {
-  background-color: #f0f9ff !important;
-  border: 1px solid #cce5ff;
-  position: relative;
-}
-
-.recommended-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background-color: #28a745;
-  color: white;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: bold;
 }

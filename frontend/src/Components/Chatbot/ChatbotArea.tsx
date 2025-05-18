@@ -66,30 +66,36 @@ const ChatbotArea: React.FC = () => {
     }
   };
   
+  // Update the addToGoogleCalendar function to only open one tab
   const addToGoogleCalendar = async (startDate: Date, items: RoadmapItem[]) => {
     try {
-      // Use first item with comprehensive description
-      const item = items[0];
+      // Create a single event with a comprehensive description of all roadmap items
+      const firstItem = items[0];
       
       const eventDate = new Date(startDate);
       const endDate = new Date(eventDate);
-      endDate.setHours(endDate.getHours() + 2); // 2 hour event
       
+      // Set the end date to cover the entire roadmap period
+      endDate.setDate(endDate.getDate() + items.length - 1);
+      endDate.setHours(17, 0, 0, 0); // End at 5 PM on the last day
+      
+      // Create the Google Calendar URL
       const googleUrl = new URL('https://calendar.google.com/calendar/render');
       googleUrl.searchParams.append('action', 'TEMPLATE');
-      googleUrl.searchParams.append('text', `${item.title} (${items.length}-part roadmap)`);
+      googleUrl.searchParams.append('text', `Career Roadmap: ${firstItem.title.split(':')[0]}`);
       
       // Create a comprehensive description that includes all roadmap items
-      let fullDetails = `${item.description}\n\nResource: ${item.link}\n\n`;
-      fullDetails += "FULL ROADMAP:\n";
-      items.forEach((roadmapItem, index) => {
-        fullDetails += `\nPHASE ${index + 1}: ${roadmapItem.title}`;
+      let fullDetails = "Career Development Roadmap\n\n";
+      items.forEach((item, index) => {
+        fullDetails += `PHASE ${index + 1}: ${item.title}\n`;
+        fullDetails += `${item.description}\n`;
+        fullDetails += `Resource: ${item.link}\n\n`;
       });
-      fullDetails += "\n\nNote: You might want to download the full ICS file instead to add all phases as separate events.";
       
       googleUrl.searchParams.append('details', fullDetails);
       googleUrl.searchParams.append('dates', `${formatDate(eventDate).replace(/[-:]/g, '')}/${formatDate(endDate).replace(/[-:]/g, '')}`);
       
+      // Open only one tab
       window.open(googleUrl.toString(), '_blank');
     } catch (error) {
       console.error("Error creating Google Calendar event:", error);
@@ -97,33 +103,38 @@ const ChatbotArea: React.FC = () => {
     }
   };
   
+  // Update the addToOutlookCalendar function similarly
   const addToOutlookCalendar = async (startDate: Date, items: RoadmapItem[]) => {
     try {
-      // Similar approach for Outlook - just one event
-      const item = items[0];
+      // Similar approach, one event with all roadmap phases
+      const firstItem = items[0];
       
       const eventDate = new Date(startDate);
       const endDate = new Date(eventDate);
-      endDate.setHours(endDate.getHours() + 2); // 2 hour event
+      
+      // Set the end date to cover the entire roadmap period
+      endDate.setDate(endDate.getDate() + items.length - 1);
+      endDate.setHours(17, 0, 0, 0); // End at 5 PM on the last day
       
       const outlookUrl = new URL('https://outlook.office.com/calendar/0/deeplink/compose');
       const params = new URLSearchParams();
       
-      params.append('subject', `${item.title} (${items.length}-part roadmap)`);
+      params.append('subject', `Career Roadmap: ${firstItem.title.split(':')[0]}`);
       
       // Create a comprehensive description that includes all roadmap items
-      let fullDetails = `${item.description}\n\nResource: ${item.link}\n\n`;
-      fullDetails += "FULL ROADMAP:\n";
-      items.forEach((roadmapItem, index) => {
-        fullDetails += `\nPHASE ${index + 1}: ${roadmapItem.title}`;
+      let fullDetails = "Career Development Roadmap\n\n";
+      items.forEach((item, index) => {
+        fullDetails += `PHASE ${index + 1}: ${item.title}\n`;
+        fullDetails += `${item.description}\n`;
+        fullDetails += `Resource: ${item.link}\n\n`;
       });
-      fullDetails += "\n\nNote: You might want to download the full ICS file instead to add all phases as separate events.";
       
       params.append('body', fullDetails);
       params.append('startdt', formatDate(eventDate));
       params.append('enddt', formatDate(endDate));
       params.append('path', '/calendar/action/compose');
       
+      // Open only one tab
       window.open(`${outlookUrl}?${params.toString()}`, '_blank');
     } catch (error) {
       console.error("Error creating Outlook event:", error);
@@ -177,68 +188,68 @@ const ChatbotArea: React.FC = () => {
       const url = URL.createObjectURL(blob);
       
       // Create a hidden link element to trigger download
-      const link = document.createElement('a');
+      const link = document.createElement('a');ck();
       link.style.display = 'none';
       link.href = url;
-      link.download = 'career_roadmap.ics';
+      link.download = 'career_roadmap.ics';> {
       document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
       }, 100);
-      
-      return Promise.resolve();
-    } catch (error) {
+       }, 100);
+      return Promise.resolve();  
+    } catch (error) {      return Promise.resolve();
       console.error("Error creating ICS file:", error);
-      return Promise.reject(error);
-    }
+      return Promise.reject(error);    console.error("Error creating ICS file:", error);
+    }rn Promise.reject(error);
   };
 
   // ... rest of the ChatbotArea component remains the same
-  
+  a component remains the same
   return (
     <div className="chatbot-area">
-      {/* Calendar Dialog appears at the top level */}
-      {showCalendarDialog && (
-        <CalendarServiceDialog 
+      {/* Calendar Dialog appears at the top level */}lassName="chatbot-area">
+      {showCalendarDialog && (* Calendar Dialog appears at the top level */}
+        <CalendarServiceDialog {showCalendarDialog && (
           onClose={() => setShowCalendarDialog(false)} 
-          onSelect={handleCalendarServiceSelect} 
-        />
+          onSelect={handleCalendarServiceSelect} log(false)} 
+        />ndleCalendarServiceSelect} 
       )}
       
       <div className="messages-container" id="messages-container">
-        {messages.map((message, index) => (
+        {messages.map((message, index) => (ges-container">
           <ChatMessage
             key={index}
-            message={message}
-            index={index}
+            message={message}key={index}
+            index={index} message={message}
             selectMessage={setSelectedMessageIndex}
-            isSelected={selectedMessageIndex === index}
+            isSelected={selectedMessageIndex === index}selectMessage={setSelectedMessageIndex}
             isUserMessage={message.isUser || false}
-          />
+          />erMessage={message.isUser || false}
         ))}
         <div ref={messagesEndRef} />
-      </div>
-      {selectedMessageIndex !== null && messages[selectedMessageIndex] && (
-        <Canvas 
+      </div>iv ref={messagesEndRef} />
+      {selectedMessageIndex !== null && messages[selectedMessageIndex] && (div>
+        <Canvas essageIndex !== null && messages[selectedMessageIndex] && (
           message={messages[selectedMessageIndex]} 
-          onCalendarRequest={handleCalendarRequest}
-        />
+          onCalendarRequest={handleCalendarRequest}[selectedMessageIndex]} 
+        />uest={handleCalendarRequest}
       )}
       <ChatInput
         value={input}
         onChange={setInput}
-        onSend={() => {
-          /* existing send message functionality */
-        }}
-        onResize={() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }}
+        onSend={() => {Change={setInput}
+          /* existing send message functionality */onSend={() => {
+        }}/* existing send message functionality */
+        onResize={() => {    }}
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });      onResize={() => {
+        }}          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       />
-    </div>
+    </div>      />
+
+
+
+
+
+export default ChatbotArea;};  );    </div>
   );
 };
 
