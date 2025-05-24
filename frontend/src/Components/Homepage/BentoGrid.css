@@ -1,0 +1,241 @@
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+@media (min-width: 768px) {
+    .bento-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.bento-grid-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.bento-grid-item:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.bento-content {
+    transition: transform 0.2s ease;
+}
+
+.bento-grid-item:hover .bento-content {
+    transform: translateX(8px);
+}
+
+.bento-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin: 8px 0;
+}
+
+.bento-description {
+    font-size: 14px;
+    color: #666;
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+    color: #666;
+}
+
+/* Skeleton One */
+.skeleton-one {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    background: radial-gradient(rgba(0, 0, 0, 0.2) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 9999px;
+}
+
+.skeleton-row-reverse {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 9999px;
+    margin-left: auto;
+    width: 75%;
+}
+
+.gradient-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #ff69b4, #9370db);
+    flex-shrink: 0;
+}
+
+.skeleton-line {
+    height: 16px;
+    width: 100%;
+    background: #f0f0f0;
+    border-radius: 9999px;
+}
+
+/* Skeleton Two */
+.skeleton-two {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    padding: 8px;
+    background: radial-gradient(rgba(0, 0, 0, 0.2) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Skeleton Three */
+.skeleton-three {
+    height: 100%;
+    border-radius: 12px;
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+}
+
+/* Skeleton Four */
+.skeleton-four {
+    display: flex;
+    gap: 8px;
+    height: 100%;
+}
+
+.profile-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.profile-text {
+    font-size: 14px;
+    text-align: center;
+    color: #666;
+    margin: 16px 0;
+}
+
+.profile-tag {
+    padding: 4px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+}
+
+.delusional {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff0000;
+    border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.sensible {
+    background: rgba(0, 255, 0, 0.1);
+    color: #008000;
+    border: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+.helpless {
+    background: rgba(255, 165, 0, 0.1);
+    color: #ffa500;
+    border: 1px solid rgba(255, 165, 0, 0.2);
+}
+
+/* Skeleton Five */
+.skeleton-five {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    padding: 8px;
+}
+
+.chat-message {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+}
+
+.chat-response {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 9999px;
+    margin-left: auto;
+    width: 75%;
+}
+
+.chat-message p,
+.chat-response p {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+    .bento-grid-item,
+    .skeleton-row,
+    .skeleton-row-reverse,
+    .profile-card,
+    .chat-message,
+    .chat-response {
+        background: #1a1a1a;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .bento-title {
+        color: #e0e0e0;
+    }
+
+    .bento-description,
+    .profile-text,
+    .chat-message p,
+    .chat-response p,
+    .icon {
+        color: #a0a0a0;
+    }
+
+    .skeleton-line {
+        background: #2a2a2a;
+    }
+}
