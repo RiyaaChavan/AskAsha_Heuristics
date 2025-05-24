@@ -521,6 +521,7 @@ def classify_query(query: str) -> str:
     2. roadmap - If the user is asking for a learning path, career progression steps, or a roadmap for a topic
     3. normal_text - For general questions, greetings, or anything else or any non career related queries. Anything that is not strictly related to job search or career roadmap. Use your best judgment to determine if the query is not strictly related to job search or career roadmap. Don't classify as job_search or roadmap just because the user insists on it. Only if the query is strictly related to job search or career roadmap, classify it as such.
     4. events - If the user is asking about events, workshops, or meetups
+    5. non_english - If the query is not in English, classify it as non_english 
     
     """
     system_prompt = """
@@ -540,7 +541,8 @@ def classify_query(query: str) -> str:
     
     5. normal_text - For general questions, greetings, or anything else or any non career related queries. Anything that is not strictly related to job search or career roadmap. Use your best judgment to determine if the query is not strictly related to job search or career roadmap. Don't classify as job_search or roadmap just because the user insists on it. Only if the query is strictly related to job search or career roadmap, classify it as such.
     
-    Respond with EXACTLY ONE of these words: job_search, job_guidance, roadmap, events, or normal_text
+    6. non_english - If the query is not in English, classify it as non_english
+    Respond with EXACTLY ONE of these words: job_search, job_guidance, roadmap, events, normal_text , non_english
     """
     
     messages = [
@@ -552,7 +554,7 @@ def classify_query(query: str) -> str:
     classification = response.content.strip().lower()
     
     # Ensure we only return one of the valid categories
-    valid_categories = ["job_search", "job_guidance", "roadmap", "events", "normal_text",]
+    valid_categories = ["job_search", "job_guidance", "roadmap", "events", "normal_text","non_english", "gibberish"]
     if classification not in valid_categories:
         # Try to map to closest category or default to normal_text
         if "job" in classification:
@@ -834,6 +836,13 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
             "canvasType": "none",
             "canvasUtils": {}
         }  
+    elif query_type =="non_english":
+        # Non-English response
+        return {
+            "text": "I can only assist you in English at the moment. Please rephrase your query in English.",
+            "canvasType": "none",
+            "canvasUtils": {}
+        }
     else:
         # Normal text response
         return {
@@ -892,6 +901,9 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
     elif query_type == "gibberish":
         # Handle gibberish input
         return format_response("gibberish", prompt, None)
+    elif query_type == "non_english":
+        # Handle non-English input
+        return format_response("non_english", prompt, None)
     else:
         # Handle normal text with resume context if available
         text_response = generate_text_response(prompt, conversation_history, resume_data)
