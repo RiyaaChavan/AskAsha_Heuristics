@@ -57,11 +57,7 @@ def generate_text_response(query: str, conversation_history=None, resume_data=No
         education = resume_data.get('education', [])
         if education:
             resume_context += "Education:\n"
-            for edu in education:
-                degree = edu.get('degree', '')
-                institution = edu.get('institution', '')
-                if degree and institution:
-                    resume_context += f"- {degree} from {institution}\n"
+            resume_context += education
         
         context += resume_context + "\n"
     

@@ -135,3 +135,240 @@
   text-align: center;
   font-size: 14px;
 }
+.navbar {
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  border-bottom: 1px solid var(--primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+}
+
+.navbar-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-on-primary);
+  letter-spacing: 1px;
+  user-select: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.nav-link {
+  background: transparent;
+  border: none;
+  color: var(--text-on-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link:active {
+  transform: translateY(0);
+}
+
+.nav-link svg {
+  opacity: 0.9;
+  transition: opacity var(--transition-fast);
+}
+
+.nav-link:hover svg {
+  opacity: 1;
+}
+
+.navbar-profile {
+  position: relative;
+}
+
+.profile-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-on-primary);
+}
+
+.profile-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-sm));
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  min-width: 180px;
+  z-index: 1000;
+  animation: dropdown-fade-in 0.2s ease-out;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--surface-elevated);
+  color: var(--primary);
+}
+
+.dropdown-item.logout {
+  border-top: 1px solid var(--border-light);
+  color: var(--error);
+}
+
+.dropdown-item.logout:hover {
+  background: rgba(245, 101, 101, 0.1);
+  color: var(--error);
+}
+
+.dropdown-item svg {
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.dropdown-item:hover svg {
+  opacity: 1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .navbar {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .navbar-nav {
+    gap: 0;
+  }
+
+  .nav-link {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+  }
+
+  .nav-link span {
+    display: none;
+  }
+
+  .navbar-logo {
+    font-size: 1.25rem;
+  }
+
+  .profile-button {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-nav {
+    display: none;
+  }
+
+  .navbar {
+    justify-content: space-between;
+  }
+}
+
+/* Focus States */
+.nav-link:focus-visible,
+.profile-button:focus-visible {
+  outline: 2px solid var(--text-on-primary);
+  outline-offset: 2px;
+}
+
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+/* Loading State */
+.navbar.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .navbar {
+    border-bottom: 2px solid var(--text-on-primary);
+  }
+
+  .nav-link,
+  .profile-button {
+    border: 1px solid var(--text-on-primary);
+  }
+}

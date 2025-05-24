@@ -36,25 +36,31 @@ def extract_job_search_params(query: str, conversation_history=None, resume_data
     You are a job search parameter extractor for the Herkey API.
     Extract job search parameters from the user's query and return them in a JSON format.
     
-    Parameters to extract:  
+    IMPORTANT: Keep searches BROAD to ensure results. Avoid overparameterization.
+    
+    Parameters to extract (only include if explicitly mentioned):
     - page_no: Always set to 1 for initial search
-    - page_size: Always set to 15 for initial search
-    - work_mode: One of ["work_from_home", "work_from_office", "hybrid", "freelance"] or omit if not specified
-    - job_types: One of ["full_time", "freelance", "part_time", "returnee_program", "volunteer"] or omit if not specified
-    - location_name: The city or location mentioned, or omit if not specified
-    - keyword: The job title, role, skills, or keywords mentioned (ALWAYS include this and make it as specific as possible)
-    - job_skills: Specific skills mentioned by the user, use comma-separated values
+    - page_size: Always set to 15 for initial search  
+    - keyword: The main job title, role, or broad skill area (REQUIRED - keep it broad and simple)
+    - location_name: Only include if user specifically mentions a city/location
+    - work_mode: Only if explicitly mentioned: "work_from_home", "work_from_office", "hybrid", or "freelance"
+    - job_types: Only if explicitly mentioned: "full_time", "part_time", "freelance", "returnee_program", or "volunteer"
+    - job_skills: Only include 1-3 most important/specific skills mentioned (don't over-specify)
     - is_global_query: Always set to "false"
+    - platforms: Default ["herkey", "linkedin", "glassdoor"]
     
-    IMPORTANT: 
-    1. Be very specific with the 'keyword' parameter. This is the most important parameter for finding relevant jobs.
-    2. Include all job titles, roles, and skill areas mentioned in the query.
-    3. For general queries like "find me a job", use broader terms based on context or previous user messages.
-    4. Include exact technical skills mentioned (e.g., Python, SQL, React) in both keyword and job_skills parameters.
-    5. Consider the conversation history for additional context when extracting parameters.
-    6. If resume data is provided, incorporate those skills and work experiences into your search parameters.
+    CRITICAL RULES:
+    1. Keep 'keyword' broad and simple (e.g., "data scientist", "software engineer", "marketing")
+    2. Do NOT include overly specific parameters that could eliminate good matches
+    3. Do NOT extract: industries, company_name, salary ranges, years of experience
+    4. Limit job_skills to maximum 3 core skills only if explicitly mentioned
+    5. For general queries like "find me a job", use broad terms like "software", "data", "marketing" based on context
+    6. Prefer broader searches over narrow ones - it's better to get more results than none
     
-    Omit any parameter that is not clearly specified in the query, except for page_no, page_size, and is_global_query.
+    Examples:
+    - "Find data science jobs" → {"keyword": "data scientist", "job_skills": "data analysis"}
+    - "Software engineer remote" → {"keyword": "software engineer", "work_mode": "work_from_home"}
+    - "Marketing jobs in Mumbai" → {"keyword": "marketing", "location_name": "Mumbai"}
     
     Return ONLY the JSON object with no additional text, explanations, or markdown formatting.
     """
@@ -92,12 +98,7 @@ def extract_job_search_params(query: str, conversation_history=None, resume_data
         education = resume_data.get('education', [])
         if education:
             resume_context += "Education:\n"
-            for edu in education:
-                degree = edu.get('degree', '')
-                institution = edu.get('institution', '')
-                if degree and institution:
-                    resume_context += f"- {degree} from {institution}\n"
-        
+            resume_context += education
         context += resume_context + "\n"
         # return context
     # Add conversation history context if available
@@ -131,76 +132,179 @@ def extract_job_search_params(query: str, conversation_history=None, resume_data
         params.setdefault("page_no", 1)
         params.setdefault("page_size", 15)
         params.setdefault("is_global_query", "false")
+        params.setdefault("platforms", ["herkey", "linkedin", "glassdoor"])
         
-        # Ensure keyword is set and fallback if not provided
+        # Ensure keyword is broad and simple
         if "keyword" not in params or params["keyword"].strip() == "":
-            # If we have resume skills, use them for the keyword
+            # Use resume skills as broad keywords if available
             if resume_data and resume_data.get('skills'):
-                params["keyword"] = ", ".join(resume_data.get('skills', [])[:5])  # Use first 5 skills
+                # Take first 2-3 skills and make them broad
+                top_skills = resume_data.get('skills', [])[:2]
+                params["keyword"] = " ".join(top_skills)
             else:
-                params["keyword"] = query.strip()
-                
-        # If we have resume skills but no job_skills were extracted, add them from the resume
-        if resume_data and resume_data.get('skills') and ("job_skills" not in params or not params["job_skills"]):
-            params["job_skills"] = ", ".join(resume_data.get('skills', []))
+                # Extract a simple keyword from the query
+                query_lower = query.lower()
+                if any(word in query_lower for word in ['data', 'analyst', 'science']):
+                    params["keyword"] = "data"
+                elif any(word in query_lower for word in ['software', 'developer', 'engineer', 'programming']):
+                    params["keyword"] = "software"
+                elif any(word in query_lower for word in ['marketing', 'digital', 'social']):
+                    params["keyword"] = "marketing"
+                elif any(word in query_lower for word in ['design', 'ui', 'ux']):
+                    params["keyword"] = "design"
+                else:
+                    params["keyword"] = "jobs"  # Very broad fallback
         
-        # Clean up parameters - remove any/all values
+        # Simplify job_skills - limit to 3 max and make them broad
+        if "job_skills" in params and params["job_skills"]:
+            skills_str = params["job_skills"]
+            if isinstance(skills_str, str):
+                skill_list = [s.strip() for s in skills_str.split(',')][:3]  # Max 3 skills
+                params["job_skills"] = ', '.join(skill_list)
+        elif resume_data and resume_data.get('skills'):
+            # Add top 3 resume skills as job_skills if none extracted
+            top_skills = resume_data.get('skills', [])[:3]
+            params["job_skills"] = ', '.join(top_skills)
+        
+        # Clean up parameters - remove empty or overly specific values
         for key in list(params.keys()):
-            if params[key] == "any" or params[key] == "all" or (isinstance(params[key], str) and params[key].strip() == ""):
+            if isinstance(params[key], str) and (
+                params[key].strip() == "" or 
+                params[key] in ["any", "all", "none", "not specified"]
+            ):
                 del params[key]
         
+        # Remove overly restrictive parameters that could cause no results
+        restrictive_params = ['industries', 'company_name', 'min_year', 'max_year', 'salary_min', 'salary_max']
+        for param in restrictive_params:
+            if param in params:
+                del params[param]
+        
+        # Ensure platforms is a list
+        if "platforms" in params and isinstance(params["platforms"], str):
+            params["platforms"] = [params["platforms"]]
+        
+        print(f"Final job search params: {params}")
         return params
     except json.JSONDecodeError:
-        # If JSON parsing fails, return basic parameters with query as keyword
+        # If JSON parsing fails, return very basic parameters
+        basic_keyword = "jobs"
+        
+        # Try to extract a simple keyword from the query
+        query_lower = query.lower()
+        if any(word in query_lower for word in ['data', 'analyst', 'science']):
+            basic_keyword = "data"
+        elif any(word in query_lower for word in ['software', 'developer', 'engineer']):
+            basic_keyword = "software"
+        elif any(word in query_lower for word in ['marketing', 'digital']):
+            basic_keyword = "marketing"
+        elif any(word in query_lower for word in ['design', 'ui', 'ux']):
+            basic_keyword = "design"
+        
         return {
             "page_no": 1,
             "page_size": 15,
-            "keyword": query.strip(),
-            "is_global_query": "false"
+            "keyword": basic_keyword,
+            "is_global_query": "false",
+            "platforms": ["herkey", "linkedin", "glassdoor"]
         }
 
 # Get job search results from the Herkey API
-def get_job_search_results(params: dict) -> dict:
+def get_job_search_results(params: dict, platforms=None) -> dict:
     """
-    Search for jobs on the Herkey API with the given parameters.
-    Returns a dictionary with the search results.
-    """
-    token = get_herkey_token()
-    headers = {"Authorization": f"Token {token}"}
+    Search for jobs across multiple platforms with the given parameters.
     
+    Args:
+        params (dict): Job search parameters
+        platforms (list): List of platforms to search on. If None, searches on all platforms.
+    
+    Returns:
+        dict: Dictionary with combined search results from all platforms.
+    """
+    # Default to all platforms if none specified
+    if platforms is None:
+        platforms = ["herkey", "linkedin", "glassdoor"]
+    elif isinstance(platforms, str):
+        platforms = [platforms]
+    
+    # Import the job client factory
     try:
-        resp = requests.get(
-            "https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs",
-            params=params,
-            headers=headers,
-        )
-        resp.raise_for_status()
-        response_data = resp.json()
+        from tools.api_client import get_job_client
+    except ImportError:
+        # If import fails, fallback to just Herkey
+        platforms = ["herkey"]
         
+        # Define a simple factory function for Herkey only
+        def get_job_client(platform="herkey"):
+            from tools.api_client import HerkeyAPIClient
+            return HerkeyAPIClient()
+    
+    all_results = []
+    error_messages = []
+    
+    # Search for jobs on each platform
+    for platform in platforms:
+        try:
+            # Get the appropriate client for this platform
+            client = get_job_client(platform)
+            
+            # Search for jobs
+            platform_results = client.search_jobs(params)
+            
+            # If successful, add to all_results
+            if "body" in platform_results and isinstance(platform_results["body"], list):
+                # Add platform identifier if not already present
+                for job in platform_results["body"]:
+                    if "platform" not in job:
+                        job["platform"] = platform
+                
+                all_results.extend(platform_results["body"])
+            else:
+                error_messages.append(f"Error searching on {platform}: No results found")
+        except Exception as e:
+            error_messages.append(f"Error searching on {platform}: {str(e)}")
+    
+    # Create a combined result
+    if all_results:
         # Filter out expired jobs
-        if response_data.get("body"):
-            current_date = datetime.now()
-            valid_jobs = []
-            
-            for job in response_data["body"]:
-                # If job has an expires_on field, check if it's still valid
-                if "expires_on" in job:
-                    try:
-                        expiry_date = datetime.strptime(job["expires_on"], "%Y-%m-%d %H:%M:%S")
-                        if expiry_date > current_date:
-                            valid_jobs.append(job)
-                    except (ValueError, TypeError):
-                        # If date parsing fails, include the job anyway
+        current_date = datetime.now()
+        valid_jobs = []
+        
+        for job in all_results:
+            # If job has an expires_on field, check if it's still valid
+            if "expires_on" in job:
+                try:
+                    expiry_date = datetime.strptime(job["expires_on"], "%Y-%m-%d %H:%M:%S")
+                    if expiry_date > current_date:
                         valid_jobs.append(job)
-                else:
-                    # If no expiry date, include the job
+                except (ValueError, TypeError):
+                    # If date parsing fails, include the job anyway
                     valid_jobs.append(job)
-            
-            response_data["body"] = valid_jobs
-            
-        return response_data
-    except Exception as e:
-        return {"error": f"Error searching for jobs: {str(e)}"}
+            else:
+                # If no expiry date, include the job
+                valid_jobs.append(job)
+        
+        # Sort jobs: First prioritize Herkey jobs, then by match score if available
+        # This ensures Herkey jobs are shown first in the frontend
+        sorted_jobs = sorted(valid_jobs, key=lambda job: (
+            0 if job.get("platform") == "herkey" else 1,  # Herkey jobs first
+            -1 * job.get("skillMatchScore", 0) if "skillMatchScore" in job else 0  # Then by skill match score
+        ))
+        
+        return {
+            "response_code": 10100,
+            "message": "Success",
+            "body": sorted_jobs,
+            "platforms_searched": platforms
+        }
+    else:
+        # If no results, return error
+        return {
+            "response_code": 400,
+            "message": " | ".join(error_messages) if error_messages else "No job results found",
+            "body": [],
+            "platforms_searched": platforms
+        }
 
 # Generate a roadmap for a given topic
 def generate_roadmap(topic: str, conversation_history=None) -> list:
@@ -217,6 +321,7 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
     3. DO NOT use day-specific language like "Monday", "Tuesday" in descriptions
     4. ADAPT THE TIMELINE to fit exactly within the user's requested timeframe
     5. Use headers like "Foundation Building", "Core Concepts", "Practical Application" instead
+    6. Do not give any generic advice, all the milestones should be specific and actionable to the user.
 
     FOR EACH ROADMAP STEP INCLUDE:
     - "title": Clear focus area based on user's topic (e.g., "Python Fundamentals: Data Types")
@@ -395,6 +500,7 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
                 "calendar_event": "Interview Practice"
             }
         ]
+
 # Classify user query
 def classify_query(query: str) -> str:
     """
@@ -483,9 +589,9 @@ def generate_text_response(query: str, conversation_history=None, resume_data=No
         
         # Customize system prompt based on query type
         if query_type == "job_guidance":
-            system_prompt = f"You are a professional career coach helping with job and career guidance. The user is asking for career advice or guidance about: {query}\n\nRespond in a friendly but professional tone. Be specific and actionable in your advice. Provide 2-3 key suggestions that are practical and immediately useful. Keep your response concise (150-200 words maximum).\n\nIf appropriate, suggest resources or next steps the user could take. Use conversational, encouraging language that motivates the user.\n\nWhen referring to the job market or industry trends, be current and accurate."
+            system_prompt = f"You are a professional career coach helping with job and career guidance. The user is asking for career advice or guidance about: {query}\n\nRespond in a friendly but professional tone. Be specific and actionable in your advice. Provide 2-3 key suggestions that are practical and immediately useful. Keep your response concise (150-200 words maximum).\n\nIf appropriate, suggest resources or next steps the user could take. Use conversational, encouraging language that motivates the user.\n\nWhen referring to the job market or industry trends, be current and accurate. Do not answer questions that are not related to the user's query or are not related to a person's career growth."
         else:
-            system_prompt = f"You are a helpful assistant for job seekers and career advancers named Asha. The current query is: {query}\n\nRespond in a friendly, conversational manner. Start with a brief acknowledgment. Keep responses focused and under 150 words. Make your response personalized and specific to the query. Use varied sentence structures and natural language patterns. Avoid repetitive phrases or generic responses.\n\nIf the user seems to be asking about jobs or careers but not requesting specific listings, suggest they can ask for job listings or a career roadmap.\n\nUse the conversation history to maintain context and provide relevant responses. If the user mentions @resume in their query, prioritize that information in your advice."
+            system_prompt = f"You are a helpful assistant for job seekers and career advancers named Asha. The current query is: {query}\n\nRespond in a friendly, conversational manner. Start with a brief acknowledgment. Keep responses focused and under 150 words. Make your response personalized and specific to the query. Use varied sentence structures and natural language patterns. Avoid repetitive phrases or generic responses.\n\nIf the user seems to be asking about jobs or careers but not requesting specific listings, suggest they can ask for job listings or a career roadmap.\n\nUse the conversation history to maintain context and provide relevant responses. If the user mentions @resume in their query, prioritize that information in your advice. Do not answer questions that are not related to the user's query or are not related to a person's career growth."
         
         messages = [
             SystemMessage(content=system_prompt),
@@ -518,11 +624,7 @@ def generate_text_response(query: str, conversation_history=None, resume_data=No
         education = resume_data.get('education', [])
         if education:
             resume_context += "Education:\n"
-            for edu in education:
-                degree = edu.get('degree', '')
-                institution = edu.get('institution', '')
-                if degree and institution:
-                    resume_context += f"- {degree} from {institution}\n"
+            resume_context += education
         
         context += resume_context + "\n"
         
@@ -554,39 +656,48 @@ def generate_text_response(query: str, conversation_history=None, resume_data=No
 # Format the response for the frontend
 def format_response(query_type: str, query: str, result, topic=None) -> dict:
     """
-    Format the response based on the query type.
+    Format the agent response into a standardized dictionary for the frontend.
     
     Args:
-        query_type (str): Type of query (job_search, roadmap, etc.)
+        query_type (str): The type of query (job_search, roadmap, etc.)
         query (str): The original user query
-        result: The result data from processing
-        topic (str, optional): The extracted topic from the query
+        result: The result to format (depends on query_type)
+        topic (str, optional): The topic for context in some response types
         
     Returns:
-        dict: A dictionary in the format expected by the frontend
-    """# Import response templates - use absolute import path
+        dict: Formatted response with text, canvasType, and canvasUtils
+    """
+    # Import response templates if available
     try:
         from response_templates import (
             get_job_search_response,
-            get_roadmap_response, 
-            get_events_response, 
+            get_roadmap_response,
+            get_events_response,
             get_job_guidance_response,
             get_greeting
         )
     except ImportError:
         # Fallback if module not found or import error
-        def get_job_search_response(job_count, role, location, is_resume_search):
+        def get_job_search_response(job_count, role, location, is_resume_search, platforms=None):
+            platform_str = ""
+            if platforms:
+                if len(platforms) == 1:
+                    platform_str = f" on {platforms[0].capitalize()}"
+                elif len(platforms) > 1:
+                    platform_names = [p.capitalize() for p in platforms]
+                    platform_str = f" across {', '.join(platform_names[:-1])} and {platform_names[-1]}"
+                    
             location_str = f" in {location}" if location else ""
             if job_count > 0:
                 if is_resume_search:
-                    return f"Based on your resume, I found {job_count} {role} opportunities{location_str} that match your skills!"
+                    return f"Based on your resume, I found {job_count} {role} opportunities{location_str}{platform_str} that match your skills!"
                 else:
-                    return f"I found {job_count} {role} opportunities{location_str}! Here are some matches that might interest you."
+                    return f"I found {job_count} {role} opportunities{location_str}{platform_str}! Here are some matches that might interest you."
             else:
                 if is_resume_search:
-                    return f"I couldn't find any {role} opportunities{location_str} that match your resume skills at the moment."
+                    return f"I couldn't find any {role} opportunities{location_str}{platform_str} that match your resume skills at the moment."
                 else:
-                    return f"I couldn't find any {role} opportunities{location_str} at the moment."
+                    return f"I couldn't find any {role} opportunities{location_str}{platform_str} at the moment."
                 
         def get_roadmap_response(topic):
             return f"I've created a step-by-step roadmap for learning {topic}. Each stage includes activities and resources to help you progress."
@@ -603,17 +714,18 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
     if query_type == "job_search":
         # Job search response
         job_params = result
+        platforms = job_params.get("platforms", ["herkey", "linkedin", "glassdoor"])
         
         # Get fresh token for job API
         token = get_herkey_token()
         
-        # Create query string for job_link
-        query_string = urllib.parse.urlencode(job_params)
+        # Create query string for job_link (fallback to Herkey if needed)
+        query_string = urllib.parse.urlencode({k: v for k, v in job_params.items() if k != "platforms"})
         base_url = "https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs"
         job_link = f"{base_url}?{query_string}"
         
-        # Actually fetch the job search results here
-        jobs_data = get_job_search_results(job_params)
+        # Actually fetch the job search results here from all platforms
+        jobs_data = get_job_search_results(job_params, platforms)
         job_count = len(jobs_data.get("body", []))
         
         # Get parameters for dynamic response
@@ -621,21 +733,39 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
         role = job_params.get("keyword", "jobs")
         is_resume_search = "@resume" in query
         
+        # Customize message to mention which platforms were searched
+        platforms_searched = jobs_data.get("platforms_searched", platforms)
+        platform_message = ""
+        if platforms_searched:
+            if len(platforms_searched) == 1:
+                platform_message = f" from {platforms_searched[0].capitalize()}"
+            else:
+                platform_names = [p.capitalize() for p in platforms_searched]
+                platform_message = f" from {', '.join(platform_names[:-1])} and {platform_names[-1]}"
+        
         # Use template for more varied responses
         response_text = get_job_search_response(
             job_count=job_count, 
             role=role, 
             location=location, 
-            is_resume_search=is_resume_search
-        )        
+            is_resume_search=is_resume_search,
+            platforms=platforms
+        )
+        
+        # Add platform information to the response text if not already mentioned
+        if platform_message and platform_message not in response_text:
+            response_text = response_text.replace("!", f"{platform_message}!")
+            
         return {
             "text": response_text,
             "canvasType": "job_search",
             "canvasUtils": {
                 "param": job_params,
                 "job_link": job_link,
-                "job_api": token,  # Include the actual token value
-                "job_results": jobs_data.get("body", [])  # Include actual job results
+                "job_api": token,
+                "job_results": jobs_data.get("body", []),
+                "platform": platforms[0] if len(platforms) == 1 else None,
+                "platforms_searched": platforms_searched
             }
         }
     

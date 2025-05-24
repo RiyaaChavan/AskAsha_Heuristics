@@ -63,8 +63,8 @@ const Navbar = () => {
             <div className="navbar-logo" onClick={() => navigate('/')}>AskAsha</div>
             <div className="navbar-links">
                 <button onClick={navigateToJobSearch} className="navbar-link">Job Hunt</button>
-                <button onClick={navigateToEventHub} className="navbar-link">Event Hub</button>
-                <button onClick={navigateToRoadmap} className="navbar-link">My Roadmap</button>
+                {/* <button onClick={navigateToEventHub} className="navbar-link">Event Hub</button>
+                <button onClick={navigateToRoadmap} className="navbar-link">My Roadmap</button> */}
                 <button onClick={navigateToInterviewAssistant} className="navbar-link">Interview Assistant</button>                <button onClick={navigateToCareerCoach} className="navbar-link">Career Coach-Help Desk</button>
                 <div className="profile-icon-wrapper" ref={dropdownRef}>
                     <img 

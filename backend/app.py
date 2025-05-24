@@ -434,8 +434,27 @@ def create_profile():
             
         # Handle resume file with better error handling
         filename = "no_resume_provided"
-        skills_data = {"skills": [], "categorized_skills": {}}
+        skills_data = {"skills": [], "categorized_skills": {}, "work_experience": []}
         
+        # Check if we have skills data in JSON format
+        if 'skills' in data:
+            try:
+                skills_list = json.loads(data.pop('skills'))
+                skills_data['skills'] = skills_list
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Error parsing skills JSON: {str(e)}")
+                skills_data['skills'] = []
+                
+        # Check if we have work experience data in JSON format
+        if 'work_experience' in data:
+            try:
+                work_experience_list = json.loads(data.pop('work_experience'))
+                skills_data['work_experience'] = work_experience_list
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Error parsing work_experience JSON: {str(e)}")
+                skills_data['work_experience'] = []
+        
+        # Process resume file if provided
         if 'resume' in request.files and request.files['resume'].filename:
             resume_file = request.files['resume']
             if allowed_file(resume_file.filename):                
@@ -445,18 +464,30 @@ def create_profile():
                     resume_file.save(filepath)
                     print(f"Resume saved to: {filepath}")
                     
-                    # Parse resume and extract skills and work experience using Gemini
-                    print("Starting resume parsing with Gemini API...")
-                    skills_data = parse_resume(filepath)
-                    
-                    # Log the extracted data
-                    print(f"Skills extracted: {skills_data.get('skills', [])}")
-                    print(f"Work experience extracted: {skills_data.get('work_experience', [])}")
+                    # Parse resume only if we don't already have skills data
+                    if not skills_data['skills'] and not skills_data['work_experience']:
+                        print("Starting resume parsing with Gemini API...")
+                        parsed_data = parse_resume(filepath)
+                        
+                        # Update skills_data with parsed data if available
+                        if parsed_data and 'skills' in parsed_data and parsed_data['skills']:
+                            skills_data['skills'] = parsed_data['skills']
+                        
+                        if parsed_data and 'categorized_skills' in parsed_data and parsed_data['categorized_skills']:
+                            skills_data['categorized_skills'] = parsed_data['categorized_skills']
+                            
+                        if parsed_data and 'work_experience' in parsed_data and parsed_data['work_experience']:
+                            skills_data['work_experience'] = parsed_data['work_experience']
+                        
+                        # Log the extracted data
+                        print(f"Skills extracted: {skills_data.get('skills', [])}")
+                        print(f"Work experience extracted: {skills_data.get('work_experience', [])}")
                     
                 except Exception as e:
                     print(f"Error saving or parsing resume: {str(e)}")
                     traceback.print_exc()
-          # Create user profile
+                    
+        # Create user profile
         profile_data = {
             'uid': uid,
             'name': data.get('name', ''),
@@ -614,7 +645,7 @@ def chat():
             
             # Pre-fetch some jobs to verify the API is working
             try:
-                headers = {'Content-Type': 'application/json'}
+                headers = {'Content-Type': 'application/json','Authorization': f'Token {session_id}'}
                 job_response = requests.get(job_url, headers=headers)
                 
                 if job_response.status_code == 200:
@@ -626,7 +657,7 @@ def chat():
                     print(job_response.text)
             except Exception as e:
                 print(f"Exception when testing job API: {str(e)}")
-
+    
     if is_authenticated:
         save_conversation(user_id, message, response)
 
@@ -826,6 +857,56 @@ def end_session():
     if session_id and session_id in sessions:
         del sessions[session_id]
     return jsonify({"status": "success", "message": "Session ended"})
+
+# Add new endpoint for resume parsing without profile creation
+@app.route('/api/parse-resume', methods=['POST'])
+def parse_resume_endpoint():
+    try:
+        # Check if file is present in request
+        if 'resume' not in request.files:
+            return jsonify({'error': 'No resume file provided', 'status': 'error'}), 400
+            
+        resume_file = request.files['resume']
+        
+        # Check if file is valid
+        if not resume_file or resume_file.filename == '':
+            return jsonify({'error': 'No resume file selected', 'status': 'error'}), 400
+            
+        if not allowed_file(resume_file.filename):
+            return jsonify({'error': 'Invalid file type. Please upload PDF, DOC, or DOCX file', 'status': 'error'}), 400
+            
+        # Save file temporarily
+        filename = secure_filename(f"temp_{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume_file.filename}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        resume_file.save(filepath)
+        
+        # Parse resume
+        try:
+            parsed_data = parse_resume(filepath)
+            
+            # Format the data for frontend
+            response_data = {
+                'skills': parsed_data.get('skills', []),
+                'categorized_skills': parsed_data.get('categorized_skills', {}),
+                'work_experience': parsed_data.get('work_experience', []),
+                'status': 'success'
+            }
+            
+            # Clean up the temporary file
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                
+            return jsonify(response_data), 200
+            
+        except Exception as e:
+            # Clean up on error
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            raise e
+            
+    except Exception as e:
+        print(f"Error parsing resume: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
 # -------------- Run -------------- #
 if __name__ == "__main__":

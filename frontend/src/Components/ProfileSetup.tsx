@@ -5,6 +5,13 @@ import './ProfileSetup.css';
 import { apiService } from '../services/apiService';
 import Navbar from './Navbar';
 
+interface WorkExperience {
+    company?: string;
+    position?: string;
+    duration?: string;
+    description?: string;
+}
+
 export const ProfileSetup = () => {
     const navigate = useNavigate();
 
@@ -15,6 +22,8 @@ export const ProfileSetup = () => {
     const [loading, setLoading] = useState(true);
     const [step, setStep] = useState(1);
     const [error, setError] = useState('');
+    const [parsingResume, setParsingResume] = useState(false);
+    const [resumeParseSuccess, setResumeParseSuccess] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -26,6 +35,8 @@ export const ProfileSetup = () => {
         education: '',
         professionalStage: '',
         resume: null as File | null,
+        skills: [] as string[],
+        work_experience: [] as WorkExperience[],
     });
 
     useEffect(() => {
@@ -64,6 +75,54 @@ export const ProfileSetup = () => {
                 ...prev,
                 resume: file,
             }));
+            
+            // Reset resume parse success state when a new file is selected
+            setResumeParseSuccess(false);
+        }
+    };
+    
+    const handleResumeUpload = async () => {
+        if (!formData.resume) {
+            setError('Please select a resume file first');
+            return;
+        }
+        
+        setParsingResume(true);
+        setError('');
+        
+        try {
+            const result = await apiService.parseResume(formData.resume);
+            
+            if (result.status === 'success') {
+                // Update form data with resume information
+                setFormData(prev => {
+                    const newData = { ...prev };
+                    
+                    // Extract work experience details if available
+                    if (result.work_experience && result.work_experience.length > 0) {
+                        newData.work_experience = result.work_experience;
+                        
+                        // Try to set name from work experience if available
+                        // This is optional and depends on how the resume parser works
+                    }
+                    
+                    // Set skills
+                    if (result.skills && result.skills.length > 0) {
+                        newData.skills = result.skills;
+                    }
+                    
+                    return newData;
+                });
+                
+                setResumeParseSuccess(true);
+            } else {
+                setError(result.error || 'Failed to parse resume');
+            }
+        } catch (err) {
+            console.error('Error parsing resume:', err);
+            setError('Error parsing resume. You can still manually complete the form.');
+        } finally {
+            setParsingResume(false);
         }
     };
 
@@ -87,14 +146,30 @@ export const ProfileSetup = () => {
         setError('');
         try {
             const formDataToSend = new FormData();
+            
+            // Add all form fields
             Object.entries(formData).forEach(([key, value]) => {
-                if (key !== 'resume' && value !== null) {
+                if (key !== 'resume' && key !== 'skills' && key !== 'work_experience' && value !== null) {
                     formDataToSend.append(key, String(value));
                 }
             });
+            
+            // Add skills as JSON string
+            if (formData.skills.length > 0) {
+                formDataToSend.append('skills', JSON.stringify(formData.skills));
+            }
+            
+            // Add work experience as JSON string
+            if (formData.work_experience.length > 0) {
+                formDataToSend.append('work_experience', JSON.stringify(formData.work_experience));
+            }
+            
+            // Add resume file if available
             if (formData.resume instanceof File) {
                 formDataToSend.append('resume', formData.resume);
             }
+            
+            // Add user ID
             formDataToSend.append('uid', userId);
 
             const response = await apiService.createProfile(formDataToSend);
@@ -132,6 +207,41 @@ export const ProfileSetup = () => {
             </div>
             <div className="form-wrapper">
                 <motion.div className="form-container" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                    {/* Resume Upload Section */}
+                    <div className="resume-upload-section">
+                        <h3 className="section-title">Upload Resume (Optional)</h3>
+                        <p className="section-description">
+                            Upload your resume to automatically fill out some of the information below.
+                            You can still edit all fields manually.
+                        </p>
+                        
+                        <div className="form-field">
+                            <label className="field-label">Resume</label>
+                            <input 
+                                type="file" 
+                                name="resume" 
+                                onChange={handleFileChange} 
+                                className="field-input file-input" 
+                                accept=".pdf,.doc,.docx" 
+                            />
+                        </div>
+                        
+                        <button 
+                            type="button" 
+                            onClick={handleResumeUpload} 
+                            className="resume-parse-button" 
+                            disabled={!formData.resume || parsingResume}
+                        >
+                            {parsingResume ? 'Parsing Resume...' : 'Extract Information'}
+                        </button>
+                        
+                        {resumeParseSuccess && (
+                            <div className="success-message">
+                                <p>Resume parsed successfully! Please review the information below and make any necessary changes.</p>
+                            </div>
+                        )}
+                    </div>
+                    
                     <form className="setup-form" onSubmit={handleSubmit}>
                         {step === 1 && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="form-step">
@@ -191,10 +301,34 @@ export const ProfileSetup = () => {
                                         <option value="senior">Senior Level</option>
                                     </select>
                                 </div>
-                                <div className="form-field">
-                                    <label className="field-label">Resume</label>
-                                    <input type="file" name="resume" onChange={handleFileChange} className="field-input file-input" accept=".pdf,.doc,.docx" required />
-                                </div>
+                                
+                                {/* Skills preview section */}
+                                {formData.skills.length > 0 && (
+                                    <div className="form-field">
+                                        <label className="field-label">Skills from Resume</label>
+                                        <div className="skills-preview">
+                                            {formData.skills.map((skill, index) => (
+                                                <span key={index} className="skill-tag">{skill}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Work experience preview section */}
+                                {formData.work_experience.length > 0 && (
+                                    <div className="form-field">
+                                        <label className="field-label">Work Experience from Resume</label>
+                                        <div className="work-experience-preview">
+                                            {formData.work_experience.map((exp, index) => (
+                                                <div key={index} className="experience-item">
+                                                    <p><strong>{exp.position}</strong> at {exp.company}</p>
+                                                    {exp.duration && <p>{exp.duration}</p>}
+                                                    {exp.description && <p className="experience-description">{exp.description}</p>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
                         <div className="form-navigation">

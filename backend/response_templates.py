@@ -8,35 +8,44 @@ from datetime import datetime
 
 # Job search response templates
 JOB_SEARCH_SUCCESS = [
-    "Great news! I found {job_count} relevant {role} opportunities{location_str}! Here are some positions that might interest you.",
-    "I've discovered {job_count} {role} positions{location_str} that match your criteria. Take a look!",
-    "There are {job_count} {role} openings{location_str} available right now. Check these out!",
-    "Success! Found {job_count} {role} jobs{location_str} that you might be interested in.",
-    "Good timing! {job_count} {role} positions{location_str} are currently open for applications."
+    "Great news! I found {job_count} relevant {role} opportunities{location_str}{platform_str}! Here are some positions that might interest you.",
+    "I've discovered {job_count} {role} positions{location_str}{platform_str} that match your criteria. Take a look!",
+    "There are {job_count} {role} openings{location_str}{platform_str} available right now. Check these out!",
+    "Success! Found {job_count} {role} jobs{location_str}{platform_str} that you might be interested in.",
+    "Good timing! {job_count} {role} positions{location_str}{platform_str} are currently open for applications."
 ]
 
 JOB_SEARCH_SUCCESS_RESUME = [
-    "Based on your resume, I found {job_count} {role} opportunities{location_str} that match your skills!",
-    "Using your profile details, I've discovered {job_count} {role} positions{location_str} that align with your experience.",
-    "Great news! Your resume qualifications match {job_count} open {role} positions{location_str}.",
-    "Your skills and experience match {job_count} current {role} openings{location_str}!",
-    "Perfect! Found {job_count} {role} jobs{location_str} that align with your professional background."
+    "Based on your resume, I found {job_count} {role} opportunities{location_str}{platform_str} that match your skills!",
+    "Using your profile details, I've discovered {job_count} {role} positions{location_str}{platform_str} that align with your experience.",
+    "Great news! Your resume qualifications match {job_count} open {role} positions{location_str}{platform_str}.",
+    "Your skills and experience match {job_count} current {role} openings{location_str}{platform_str}!",
+    "Perfect! Found {job_count} {role} jobs{location_str}{platform_str} that align with your professional background."
 ]
 
 JOB_SEARCH_EMPTY = [
-    "I couldn't find any {role} opportunities{location_str} at the moment. Maybe try broadening your search?",
-    "No matches found for {role}{location_str} right now. Consider trying related keywords or expanding your search area.",
-    "It appears there aren't any {role} positions{location_str} currently available. How about trying a different role or location?",
-    "I don't see any {role} openings{location_str} at this time. Would you like to search for something similar?",
-    "No {role} jobs{location_str} available right now. Let me know if you'd like suggestions for related positions."
+    "I couldn't find any {role} opportunities{location_str}{platform_str} at the moment. Maybe try broadening your search?",
+    "No matches found for {role}{location_str}{platform_str} right now. Consider trying related keywords or expanding your search area.",
+    "It appears there aren't any {role} positions{location_str}{platform_str} currently available. How about trying a different role or location?",
+    "I don't see any {role} openings{location_str}{platform_str} at this time. Would you like to search for something similar?",
+    "No {role} jobs{location_str}{platform_str} available right now. Let me know if you'd like suggestions for related positions."
 ]
 
 JOB_SEARCH_EMPTY_RESUME = [
-    "I couldn't find exact matches for '{role}'{location_str} based on your resume. Try broadening your search or adding more skills to your profile.",
-    "Your resume skills don't have exact matches with current {role} openings{location_str}. Consider exploring related roles.",
-    "No perfect matches between your resume and {role} positions{location_str} at the moment. Would you like suggestions for related roles?",
-    "I don't see any {role} opportunities{location_str} that align with your profile right now. Perhaps try a broader search?",
-    "Your qualifications don't have current matches in {role}{location_str}. Would you like to explore adjacent career paths?"
+    "I couldn't find exact matches for '{role}'{location_str}{platform_str} based on your resume. Try broadening your search or adding more skills to your profile.",
+    "Your resume skills don't have exact matches with current {role} openings{location_str}{platform_str}. Consider exploring related roles.",
+    "No perfect matches between your resume and {role} positions{location_str}{platform_str} at the moment. Would you like suggestions for related roles?",
+    "I don't see any {role} opportunities{location_str}{platform_str} that align with your profile right now. Perhaps try a broader search?",
+    "Your qualifications don't have current matches in {role}{location_str}{platform_str}. Would you like to explore adjacent career paths?"
+]
+
+# Add templates highlighting platform capabilities
+PLATFORM_HIGHLIGHT_TEMPLATES = [
+    "I've searched across multiple job platforms including Herkey for the best matches. Herkey jobs are displayed first.",
+    "Results include jobs from multiple sources, with Herkey positions prioritized at the top.",
+    "You're seeing jobs from Herkey and other platforms, with the ability to filter by platform.",
+    "I've gathered opportunities from multiple job platforms, with Herkey jobs shown first for your convenience.",
+    "Jobs from Herkey and other platforms are displayed, prioritizing the most relevant matches."
 ]
 
 # Roadmap response templates
@@ -115,27 +124,51 @@ def get_greeting():
     else:
         return random.choice(EVENING_GREETINGS)
 
-def get_job_search_response(job_count, role, location, is_resume_search):
-    """Generate a dynamic job search response"""
-    location_str = f" in {location}" if location else ""
+def get_job_search_response(job_count, role, location, is_resume_search, platforms=None):
+    """
+    Generate a dynamic job search response
     
+    Args:
+        job_count (int): Number of jobs found
+        role (str): Job role/title being searched
+        location (str): Location being searched
+        is_resume_search (bool): Whether the search is based on resume
+        platforms (list, optional): List of platforms searched
+    """
+    location_str = f" in {location}" if location else ""
+    platform_str = ""
+    
+    if platforms:
+        if len(platforms) == 1:
+            platform_str = f" on {platforms[0].capitalize()}"
+        elif len(platforms) > 1:
+            platform_names = [p.capitalize() for p in platforms]
+            platform_str = f" across {', '.join(platform_names[:-1])} and {platform_names[-1]}"
+    
+    # Select basic response based on results and search type
     if job_count > 0:
         if is_resume_search:
-            return random.choice(JOB_SEARCH_SUCCESS_RESUME).format(
-                job_count=job_count, role=role, location_str=location_str
+            response = random.choice(JOB_SEARCH_SUCCESS_RESUME).format(
+                job_count=job_count, role=role, location_str=location_str, platform_str=platform_str
             )
         else:
-            return random.choice(JOB_SEARCH_SUCCESS).format(
-                job_count=job_count, role=role, location_str=location_str
+            response = random.choice(JOB_SEARCH_SUCCESS).format(
+                job_count=job_count, role=role, location_str=location_str, platform_str=platform_str
             )
+            
+        # Add platform highlight for multi-platform searches
+        if platforms and len(platforms) > 1 and 'herkey' in [p.lower() for p in platforms]:
+            response += f" {random.choice(PLATFORM_HIGHLIGHT_TEMPLATES)}"
+            
+        return response
     else:
         if is_resume_search:
             return random.choice(JOB_SEARCH_EMPTY_RESUME).format(
-                role=role, location_str=location_str
+                role=role, location_str=location_str, platform_str=platform_str
             )
         else:
             return random.choice(JOB_SEARCH_EMPTY).format(
-                role=role, location_str=location_str
+                role=role, location_str=location_str, platform_str=platform_str
             )
 
 def get_roadmap_response(topic):

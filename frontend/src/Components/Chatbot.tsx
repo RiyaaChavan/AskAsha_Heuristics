@@ -1,11 +1,12 @@
 // Chatbot.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // Import centralized CSS file
 import './Chatbot/styles/index.css';
 import ChatWindow from './Chatbot/ChatWindow';
 import CanvasArea from './Chatbot/CanvasArea';
 import ChatInput from './Chatbot/ChatInput';
 import { Message, Payload } from './Chatbot/types';
+import { sanitizeObject, isSqlSafe } from '../utils/apiUtils';
 
 // Main Chatbot Component
 const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
@@ -15,6 +16,46 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isCanvasOpen, setIsCanvasOpen] = useState(true);
   const [currentViewType, setCurrentViewType] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Function to scroll to the latest message with forced timing
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      // Force scroll with timeout to ensure it works
+      setTimeout(() => {
+        // Use scrollIntoView with block: 'end' to ensure it scrolls to the bottom
+        messagesEndRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end'
+        });
+        
+        // Multiple backup scrolling methods
+        if (chatContainerRef.current) {
+          // Method 1: Using scrollTop directly
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          
+          // Method 2: Using scroll method
+          chatContainerRef.current.scroll({
+            top: chatContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+          
+          // Method 3: Using setTimeout for a delayed scroll as last resort
+          setTimeout(() => {
+            chatContainerRef.current!.scrollTop = chatContainerRef.current!.scrollHeight;
+          }, 50);
+        }
+      }, 100);
+    }
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages]);
 
   // Monitor localStorage for viewType changes
   useEffect(() => {
@@ -71,6 +112,9 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       setSelectedMessageId(0);
       // Keep canvas closed initially for Event Hub
       setIsCanvasOpen(false);
+      
+      // Force scroll after content loads
+      setTimeout(scrollToBottom, 200);
     } 
     else if (viewType === 'roadmap') {
       // Create a conversational response for roadmap
@@ -106,9 +150,23 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         }
       };
       
+      // Set messages and reset canvas state
       setMessages([roadmapMessage]);
-      setSelectedMessageId(0);
-      setIsCanvasOpen(true);
+      setIsCanvasOpen(false);
+      setSelectedMessageId(null);
+      
+      // Then, after a short delay, select the message and open canvas
+      setTimeout(() => {
+        setSelectedMessageId(0);
+        
+        // Open canvas after selection has been processed
+        setTimeout(() => {
+          setIsCanvasOpen(true);
+        }, 100);
+      }, 20);
+      
+      // Force scroll after content loads
+      setTimeout(scrollToBottom, 200);
     }
     else {
       // Default to job search if no view type or jobs view type
@@ -116,11 +174,23 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     }
   };
 
-  // Handle selecting a message to display its canvas
+  // Handle selecting a message to display its canvas with more reliable canvas opening
   const selectMessage = (index: number) => {
-    if (messages[index].canvasType !== 'none') {
-      setSelectedMessageId(index);
-      setIsCanvasOpen(true); // Open canvas when selecting a message
+    if (messages[index]?.canvasType !== 'none') {
+      // First close canvas to reset rendering
+      setIsCanvasOpen(false);
+      
+      // Wait a bit to ensure closed state is processed
+      setTimeout(() => {
+        // Then select the message
+        setSelectedMessageId(index);
+        
+        // Wait for selection to be processed before opening
+        setTimeout(() => {
+          // Finally open the canvas
+          setIsCanvasOpen(true);
+        }, 150);
+      }, 50);
     }
   };
 
@@ -138,21 +208,43 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     setSelectedMessageId(null);
   };
 
-  // Auto-select new messages with canvases, but respect the events hub exception
+  // Dedicated effect for handling new messages and canvas updates
   useEffect(() => {
     if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.canvasType !== 'none') {
-        setSelectedMessageId(messages.length - 1);
+      // Find the last non-loading message
+      const nonLoadingMessages = messages.filter(msg => !msg.isLoading);
+      
+      if (nonLoadingMessages.length > 0) {
+        const lastMessage = nonLoadingMessages[nonLoadingMessages.length - 1];
         
-        // Don't auto-open canvas for events view
-        const viewType = localStorage.getItem('viewType');
-        if (viewType !== 'events') {
-          setIsCanvasOpen(true);
+        // Auto-select and open canvas for bot messages with canvas content
+        if (!lastMessage.isUser && lastMessage.canvasType !== 'none') {
+          const lastIndex = messages.findIndex(msg => msg === lastMessage);
+          
+          if (lastIndex !== -1) {
+            // Use the same reliable pattern: close, select, then open
+            // First close canvas to reset rendering
+            setIsCanvasOpen(false);
+            
+            // Wait to ensure closed state is processed
+            setTimeout(() => {
+              // Then select the message
+              setSelectedMessageId(lastIndex);
+              
+              // Wait for selection to be processed before opening
+              setTimeout(() => {
+                // Auto-open canvas except for events view
+                const viewType = localStorage.getItem('viewType');
+                if (viewType !== 'events') {
+                  setIsCanvasOpen(true);
+                }
+              }, 200);
+            }, 100);
+          }
         }
       }
     }
-  }, [messages.length]);
+  }, [messages]);
 
   // Load conversation history from the server
   const loadConversationHistory = async () => {
@@ -160,12 +252,19 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     
     setIsLoadingHistory(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/conversations?user_id=${userId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      // Validate userId to prevent injection
+      if (!isSqlSafe(userId)) {
+        console.error("Potentially unsafe user ID");
+        setIsLoadingHistory(false);
+        return;
+      }
       
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/conversations?user_id=${userId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
+      
       if (res.ok) {
         const data = await res.json();
         if (data.status === 'success' && data.conversations) {
@@ -195,6 +294,9 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
           historyMessages.reverse();
           
           setMessages(historyMessages);
+          
+          // Force scroll to bottom after history loads
+          setTimeout(scrollToBottom, 200);
         }
       }
     } catch (error) {
@@ -203,8 +305,28 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       setIsLoadingHistory(false);
     }
   };
+  
   const sendMessage = async () => {
     if (!input.trim()) return;
+    
+    // Validate input to prevent injection
+    if (!isSqlSafe(input)) {
+      // Show error message if input contains potential SQL injection
+      setMessages(prev => [
+        ...prev,
+        {
+          id: messages.length + 1,
+          text: 'Your message contains potentially unsafe characters. Please revise and try again.',
+          isUser: false,
+          isUserMessage: false,
+          canvasType: 'none'
+        }
+      ]);
+      
+      // Force scroll to the error message
+      setTimeout(scrollToBottom, 100);
+      return;
+    }
     
     // Create user message object 
     const userMessage: Message = { 
@@ -214,16 +336,20 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       isUserMessage: true,
       canvasType: 'none' 
     };
-      // Store the input message before clearing
+    
+    // Store the input message before clearing
     const messageText = input;
     
     // Clear the input immediately
     setInput('');
     
-    // Add user message and typing indicator
+    // Add user message and typing indicator - keeping original text without sanitization for display
     setMessages(prev => [
       ...prev, 
-      userMessage,
+      {
+        ...userMessage,
+        text: input // Use the original input directly for display
+      },
       {
         id: messages.length + 1,
         text: "",
@@ -233,8 +359,24 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         canvasType: 'none'
       }
     ]);
+    
+    // Force immediate scroll to new messages with multiple attempts
+    scrollToBottom();
+    // Try scrolling again after a delay in case the DOM hasn't updated yet
+    setTimeout(scrollToBottom, 50);
+    setTimeout(scrollToBottom, 150);
+    setTimeout(scrollToBottom, 300);
 
-    const payload: Payload = { message: messageText, userId };
+    // Sanitize user inputs before sending to API
+    // We sanitize for the API but keep the original text for display
+    const sanitizedMessage = sanitizeObject(messageText);
+    const sanitizedUserId = sanitizeObject(userId);
+    
+    const payload: Payload = { 
+      message: sanitizedMessage, 
+      userId: sanitizedUserId 
+    };
+    
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
         method: 'POST',
@@ -246,25 +388,37 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       const data = await res.json();
       
       // Remove loading message and add bot response
+      // Ensure we don't display sanitized text (HTML entities) to the user
       const botMessage: Message = {
         ...data,
         id: messages.length + 2,
         isUser: false,
-        isUserMessage: false
+        isUserMessage: false,
+        // If the text contains HTML entities, preserve them as they are rather than sanitizing
+        text: data.text || ''
       };
       
-      setMessages(prev => [...prev.filter(m => !m.isLoading), botMessage]);
-    } catch (err) {
-      console.error(err);
+      setMessages(prev => [
+        ...prev.filter(m => !m.isLoading),
+        botMessage
+      ]);
+      
+      // Force scroll to bottom after new message is added
+      setTimeout(scrollToBottom, 200);
+    } catch (error) {
+      console.error("Error sending message:", error);
       
       // Remove loading message and add error message
       setMessages(prev => [...prev.filter(m => !m.isLoading), { 
         id: messages.length + 2, 
-        text: 'Error contacting server.', 
+        text: 'Error contacting server. Please try again.', 
         isUser: false, 
         isUserMessage: false,
         canvasType: 'none' 
       }]);
+      
+      // Force scroll to the error message
+      setTimeout(scrollToBottom, 100);
     }
   };
 
@@ -272,12 +426,13 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     <div className="chatbot-container">
       {isLoadingHistory && <div className="history-loading">...</div>}
       <div className="chatbot-main">
-        <div className="chat-container">
+        <div className="chat-container" ref={chatContainerRef} style={{ overflowY: 'auto', maxHeight: '100%', position: 'relative' }}>
           <ChatWindow 
             messages={messages} 
             selectMessage={selectMessage} 
             selectedMessageId={selectedMessageId} 
           />
+          <div ref={messagesEndRef} style={{ height: "20px", width: "100%", position: "relative", float: "left", clear: "both" }} />
           <ChatInput input={input} setInput={setInput} sendMessage={sendMessage} />
         </div>
         <CanvasArea 

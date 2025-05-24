@@ -43,8 +43,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       );
     }
     
+    // Just return the text directly
     return text;
-  };  // For typing indicator, return a different component
+  };
+
+  // For typing indicator, return a different component
   if (message.isLoading) {
     return (
       <div className="typing-indicator">

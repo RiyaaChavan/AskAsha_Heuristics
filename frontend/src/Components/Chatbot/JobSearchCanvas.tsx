@@ -1,92 +1,96 @@
 import React, { useEffect, useState } from 'react';
 import { CanvasProps } from './types';
 
+// Standardized job data structure that works across different job platforms
 interface JobData {
-  company_name: string;
+  id: number | string;
   title: string;
+  company_name: string;
   location_name: string;
   skills: string[] | string;
   status: string;
-  id?: number;
   company_logo?: string;
-  employer_name?: string;
   min_year?: number;
   max_year?: number;
   work_mode?: string[] | string;
   job_types?: string[] | string;
   boosted?: boolean;
   expires_on?: string;
-  skillMatchScore?: number; // Added skill match score property
+  skillMatchScore?: number;
+  platform?: string; // Added platform identifier (herkey, linkedin, indeed, etc.)
+  platform_job_url?: string; // URL to view job on the platform
 }
 
+// Standardized job detail data structure
 interface JobDetailData {
-  id: number;
+  id: number | string;
   title: string;
-  company_name?: string;
+  company_name: string;
   location_name: string;
-  requirements: string;
-  responsibilities: string;
-  description: string;
-  company_benefits: string;
-  min_year: number;
-  max_year: number;
+  requirements?: string;
+  responsibilities?: string;
+  description?: string;
+  company_benefits?: string;
+  min_year?: number;
+  max_year?: number;
   skills: string[] | string;
   status: string;
   company?: {
     name: string;
     logo: string;
-    about_us: string;
-    culture: string;
+    about_us?: string;
+    culture?: string;
   }
   work_mode?: string[] | string;
   job_types?: string[] | string;
   url?: string;
   company_logo?: string;
-  skillMatchScore?: number; // Add skill match score for job details
+  skillMatchScore?: number;
+  platform?: string; // Added platform identifier
+  platform_job_url?: string; // URL to view job on the platform
 }
 
-interface JobResponse {
-  response_code: number;
-  message: string;
-  pagination: {
-    page_no: string;
-    page_size: string;
-    pages: number;
-    total_items: number;
-    has_next: boolean;
-    next_page: number;
-  };
-  body: JobData[];
-}
-
-// We'll keep the interface even if not directly used as it documents the API structure
-interface JobDetailResponse {
-  response_code: number;
-  message: string;
-  body: JobDetailData[];
-  seo?: {
-    id: number;
-    entity_id: number;
-    entity_type: string;
-    title: string;
-    description: string;
-    keywords: string;
-    url: string;
+// Platform-specific icons component
+const PlatformIcon: React.FC<{ platform: string, size?: number }> = ({ platform, size = 16 }) => {
+  switch (platform.toLowerCase()) {
+    case 'linkedin':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="platform-icon">
+          <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" fill="#0077B5"/>
+        </svg>
+      );
+    case 'glassdoor':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="platform-icon">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="#0CAA41"/>
+        </svg>
+      );
+    case 'herkey':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="platform-icon">
+          <circle cx="12" cy="12" r="10" fill="#F0386B"/>
+          <path d="M12 7V13M12 17V16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      );
+    default:
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="platform-icon">
+          <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="#999999"/>
+        </svg>
+      );
   }
-}
+};
 
 const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<number | string | null>(null);
   const [jobDetail, setJobDetail] = useState<JobDetailData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
-  // These state variables are used in the code even if TypeScript doesn't detect it
-  const [jobUrl, setJobUrl] = useState<string>('');
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [selectedWorkMode, setSelectedWorkMode] = useState<string | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
 
   // Work mode options for filtering
   const workModeOptions = [
@@ -96,6 +100,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     { value: "hybrid", label: "Hybrid" },
     { value: "freelance", label: "Freelance" }
   ];
+
   // Function to calculate skill match score for a job (0-100%)
   const calculateSkillMatchScore = (jobSkills: string[] | string | undefined, userSkills: string[] = []): number => {
     if (!jobSkills || userSkills.length === 0) return 0;
@@ -118,114 +123,97 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
   };
 
   useEffect(() => {
-    // First check if we have job_results provided directly from backend
-    if (message.canvasUtils?.job_results && Array.isArray(message.canvasUtils.job_results)) {
-      // Get user skills from resume data if available
-      const userSkills: string[] = message.canvasUtils.resumeData?.skills || [];
-      
-      // Add skill match score to each job
-      const scoredJobs = message.canvasUtils.job_results.map(job => ({
-        ...job,
-        skillMatchScore: calculateSkillMatchScore(job.skills, userSkills)
-      }));
-      
-      // Sort jobs by skill match score (highest first)
-      const sortedJobs = [...scoredJobs].sort((a, b) => 
-        (b.skillMatchScore || 0) - (a.skillMatchScore || 0)
-      );
-      
-      setJobs(sortedJobs);
-      setFilteredJobs(sortedJobs);
-      return;
-    }
+    if (!message.canvasUtils) return;
     
-    // If no job_results, try to fetch jobs using job_link and token
-    const fetchJobs = async () => {
-      if (!message.canvasUtils?.job_link) return;
-      
+    // Check if we have job_results provided directly from backend
+    if (message.canvasUtils.job_results && Array.isArray(message.canvasUtils.job_results)) {
       setLoading(true);
-      setError(null);
-
+      
       try {
-        // Get the session ID from provided token or fetch a new one
-        let sessionId = message.canvasUtils?.job_api;
-        
-        if (!sessionId) {
-          const sessionResponse = await fetch('https://api-prod.herkey.com/api/v1/herkey/generate-session');
-          const sessionData = await sessionResponse.json();
-          
-          if (!sessionData.success) {
-            throw new Error('Failed to get authorization token');
-          }
-          
-          sessionId = sessionData.body.session_id;
-        }
-        
-        setSessionId(sessionId);
-        
-        // Now fetch the jobs with the authorization header
-        const jobResponse = await fetch(message.canvasUtils.job_link, {
-          headers: {
-            'Authorization': `Token ${sessionId}`
-          }
-        });
-        
-        const jobData: JobResponse = await jobResponse.json();
-        console.log('Job Data:', jobResponse, jobData);
-        if (jobData.response_code !== 10100) {
-          throw new Error(`API Error: ${jobData.message}`);
-        }
-          // Filter out expired jobs
-        const currentDate = new Date();
-        const validJobs = jobData.body.filter(job => {
-          // If job has an expires_on field, check if it's still valid
-          if (job.expires_on) {
-            const expiryDate = new Date(job.expires_on);
-            return expiryDate > currentDate;
-          }
-          return true; // If no expiry date, include the job
-        });
-        
         // Get user skills from resume data if available
         const userSkills: string[] = message.canvasUtils.resumeData?.skills || [];
         
-        // Add skill match score to each job
-        const scoredJobs = validJobs.map(job => ({
-          ...job,
-          skillMatchScore: calculateSkillMatchScore(job.skills, userSkills)
-        }));
+        // Process jobs data - standardize and add skill match scores
+        const processedJobs = message.canvasUtils.job_results.map((job: any) => {
+          // Add platform if not already provided
+          const platform = job.platform || message.canvasUtils?.platform || "herkey";
+          
+          // Create standardized job data
+          const standardizedJob: JobData = {
+            id: job.id,
+            title: job.title,
+            company_name: job.company_name,
+            location_name: job.location_name,
+            skills: job.skills,
+            status: job.status || "Active",
+            company_logo: job.company_logo,
+            min_year: job.min_year,
+            max_year: job.max_year,
+            work_mode: job.work_mode,
+            job_types: job.job_types,
+            boosted: job.boosted,
+            expires_on: job.expires_on,
+            platform,
+            platform_job_url: job.platform_job_url || job.url,
+            // Calculate skill match score if not already provided
+            skillMatchScore: job.skillMatchScore || calculateSkillMatchScore(job.skills, userSkills)
+          };
+          
+          return standardizedJob;
+        });
         
-        // Sort jobs by skill match score (highest first)
-        const sortedJobs = [...scoredJobs].sort((a, b) => 
+        // First sort by skill match score
+        const matchSortedJobs = [...processedJobs].sort((a, b) => 
           (b.skillMatchScore || 0) - (a.skillMatchScore || 0)
         );
         
-        setJobs(sortedJobs);
-        setFilteredJobs(sortedJobs);
+        // Then prioritize Herkey jobs - give Herkey jobs a significant boost
+        const platformSortedJobs = [...matchSortedJobs].sort((a, b) => {
+          // If both are Herkey or both are not Herkey, maintain the skill match order
+          if ((a.platform === 'herkey' && b.platform === 'herkey') || 
+              (a.platform !== 'herkey' && b.platform !== 'herkey')) {
+            return 0; // Keep existing order
+          }
+          // Put Herkey jobs first
+          return a.platform === 'herkey' ? -1 : 1;
+        });
+        
+        setJobs(platformSortedJobs);
+        setFilteredJobs(platformSortedJobs);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
+        console.error("Error processing job data:", err);
+        setError("Failed to process job data");
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchJobs();
+    } else {
+      setError("No job results available");
+    }
   }, [message.canvasUtils]);
 
   // Apply work mode filter when selectedWorkMode changes or jobs change
   useEffect(() => {
+    let filtered = jobs;
+    
+    // Apply work mode filter
     if (selectedWorkMode) {
-      const filtered = jobs.filter(job => {
+      filtered = filtered.filter(job => {
         const workModes = ensureArray(job.work_mode);
         return workModes.some(mode => 
           mode.toLowerCase() === selectedWorkMode.toLowerCase()
         );
       });
-      setFilteredJobs(filtered);
-    } else {
-      setFilteredJobs(jobs);
     }
-  }, [selectedWorkMode, jobs]);
+    
+    // Apply platform filter
+    if (selectedPlatform) {
+      filtered = filtered.filter(job => 
+        job.platform?.toLowerCase() === selectedPlatform.toLowerCase()
+      );
+    }
+    
+    setFilteredJobs(filtered);
+  }, [selectedWorkMode, selectedPlatform, jobs]);
 
   // Handle filter selection
   const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -233,66 +221,66 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     setSelectedWorkMode(value === "" ? null : value);
   };
 
-  const fetchJobDetail = async (jobId: number) => {
+  const fetchJobDetail = async (jobId: number | string) => {
+    // Find the job in our current data first
+    const job = jobs.find(job => job.id === jobId);
+    if (!job) {
+      setError("Job details not found");
+      return;
+    }
+    
     // Reset error and set loading state
     setError(null);
     setLoadingDetail(true);
     
     try {
-      // Always get a fresh session ID for job details to avoid 403 errors
-      const sessionResponse = await fetch('https://api-prod.herkey.com/api/v1/herkey/generate-session');
-      const sessionData = await sessionResponse.json();
-      
-      if (!sessionData.body?.session_id) {
-        throw new Error('Failed to get authorization token');
-      }
-      
-      // Use the fresh session ID
-      const freshSessionId = sessionData.body.session_id;
-      setSessionId(freshSessionId);
-      
-      // Fetch job details using the job ID and fresh session ID
-      const detailResponse = await fetch(`https://api-prod.herkey.com/api/v1/herkey/jobs/jobs/${jobId}`, {
-        headers: {
-          'Authorization': `Token ${freshSessionId}`
-        }
-      });
-      
-      // Check if the HTTP request was successful
-      if (!detailResponse.ok) {
-        throw new Error(`Failed to fetch job details: ${detailResponse.status} ${detailResponse.statusText}`);
-      }
-      
-      const detailData = await detailResponse.json();
-      console.log('Job Detail Data:', detailData);
-      
-      // Check if we have valid job data, regardless of the response_code
-      if (detailData.body && detailData.body.length > 0) {
-        setJobDetail(detailData.body[0]);
+      // If job detail is already in the job data, use it
+      if (message.canvasUtils?.job_details && Array.isArray(message.canvasUtils.job_details)) {
+        const detailFromBackend = message.canvasUtils.job_details.find(
+          (detail: any) => detail.id === jobId
+        );
         
-        // Extract URL information
-        if (detailData.seo?.url) {
-          setJobUrl(detailData.seo.url);
-        } else {
-          // Set a fallback URL format if no SEO URL is available
-          setJobUrl(`jobs/${jobId}`);
+        if (detailFromBackend) {
+          // Add platform information if not provided
+          detailFromBackend.platform = detailFromBackend.platform || job.platform || message.canvasUtils?.platform || "herkey";
+          detailFromBackend.platform_job_url = detailFromBackend.platform_job_url || detailFromBackend.url || job.platform_job_url;
+          setJobDetail(detailFromBackend);
+          setLoadingDetail(false);
+          return;
         }
-      } else {
-        // Create a meaningful error if no job data is returned
-        const errorMessage = detailData.message || 'No job details found';
-        throw new Error(errorMessage);
       }
+      
+      // If we don't have pre-loaded job details, create a basic one from the job data
+      const basicJobDetail: JobDetailData = {
+        id: job.id,
+        title: job.title,
+        company_name: job.company_name,
+        location_name: job.location_name,
+        skills: job.skills,
+        status: job.status,
+        min_year: job.min_year || 0,
+        max_year: job.max_year || 0,
+        company_logo: job.company_logo,
+        work_mode: job.work_mode,
+        job_types: job.job_types,
+        skillMatchScore: job.skillMatchScore,
+        platform: job.platform || message.canvasUtils?.platform || "herkey",
+        platform_job_url: job.platform_job_url
+      };
+      
+      setJobDetail(basicJobDetail);
+      
+      // Signal that detailed information is incomplete
+      setError("Limited job details available");
     } catch (err) {
       console.error("Failed to fetch job details:", err);
-      
-      // Set a user-friendly error message
-      setError(err instanceof Error ? err.message : 'Failed to fetch job details');
+      setError("Failed to fetch job details");
     } finally {
       setLoadingDetail(false);
     }
   };
 
-  const handleJobSelect = (jobId: number) => {
+  const handleJobSelect = (jobId: number | string) => {
     setSelectedJobId(jobId);
     fetchJobDetail(jobId);
   };
@@ -300,41 +288,58 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
   const handleCloseDetail = () => {
     setSelectedJobId(null);
     setJobDetail(null);
+    setError(null);
   };
-  
-  if (!message.canvasUtils) return null;
   
   const handleOpenJobLink = () => {
     try {
       // When a specific job is selected
       if (selectedJobId && jobDetail) {
-        // Format the job title for URL (lowercase, replace spaces with hyphens)
-        const formattedTitle = jobDetail.title
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
-          .replace(/\s+/g, '-'); // Replace spaces with hyphens
+        // Check if we have a platform_job_url
+        if (jobDetail.platform_job_url) {
+          window.open(jobDetail.platform_job_url, '_blank');
+          return;
+        }
         
-        // Use the correct URL format as shown in the example
-        window.open(`https://www.herkey.com/jobs/${formattedTitle}/${selectedJobId}`, '_blank');
-      } 
-      // Fallback to general jobs page if no specific job is selected
-      else if (message.canvasUtils?.job_link) {
-        // Use the provided job_link if available, or fallback to jobs search page
-        const jobsLink = message.canvasUtils.job_link.includes('http') 
-          ? message.canvasUtils.job_link 
-          : 'https://www.herkey.com/jobs/search';
+        // Fallback to platform-specific URL format
+        const platform = jobDetail.platform || "herkey";
         
-        window.open(jobsLink, '_blank');
+        switch (platform.toLowerCase()) {
+          case "herkey":
+            // Format the job title for URL (lowercase, replace spaces with hyphens)
+            const formattedTitle = jobDetail.title
+              .toLowerCase()
+              .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
+              .replace(/\s+/g, '-'); // Replace spaces with hyphens
+            
+            window.open(`https://www.herkey.com/jobs/${formattedTitle}/${selectedJobId}`, '_blank');
+            break;
+            
+          case "linkedin":
+            window.open(`https://www.linkedin.com/jobs/view/${selectedJobId}`, '_blank');
+            break;
+            
+          case "glassdoor":
+            window.open(`https://www.glassdoor.com/job-listing/job.htm?jobListingId=${selectedJobId}`, '_blank');
+            break;
+            
+          default:
+            // Generic fallback for unknown platforms
+            window.open(`https://www.herkey.com/jobs/search`, '_blank');
+        }
+      } else {
+        // Fallback to job search page
+        window.open('https://www.herkey.com/jobs/search', '_blank');
       }
     } catch (error) {
       console.error("Error opening job link:", error);
-      // Fallback if all else fails
+      // Fallback
       window.open('https://www.herkey.com/jobs/search', '_blank');
     }
   };
 
   const formatHTMLContent = (content: string) => {
-    return { __html: content };
+    return { __html: content || '' };
   };
 
   // Function to truncate HTML content to a reasonable length
@@ -359,7 +364,8 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     return content;
   };
 
-  const renderExperience = (min: number, max: number) => {
+  const renderExperience = (min: number = 0, max: number = 0) => {
+    if (min === 0 && max === 0) return "Not specified";
     if (min === max) return `${min} years`;
     return `${min} - ${max} years`;
   };
@@ -375,6 +381,58 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     return type.replace(/_/g, ' ');
   };
   
+  // Function to get platform name for display
+  const getPlatformName = (platform: string = "herkey"): string => {
+    switch (platform.toLowerCase()) {
+      case "herkey": return "Herkey";
+      case "linkedin": return "LinkedIn";
+      case "indeed": return "Indeed";
+      case "glassdoor": return "Glassdoor";
+      case "monster": return "Monster";
+      case "dice": return "Dice";
+      case "ziprecruiter": return "ZipRecruiter";
+      default: return platform.charAt(0).toUpperCase() + platform.slice(1);
+    }
+  };
+  
+  // Get user skills safely
+  const getUserSkills = (): string[] => {
+    if (message.canvasUtils?.resumeData?.skills && Array.isArray(message.canvasUtils.resumeData.skills)) {
+      return message.canvasUtils.resumeData.skills;
+    }
+    return [];
+  };
+  
+  // Add this function to handle platform filter changes
+  const handlePlatformChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    setSelectedPlatform(value === "" ? null : value);
+  };
+
+  // Define platformStyles object
+  const platformStyles = {
+    linkedin: {
+      primary: '#0077B5',
+      secondary: '#E6F7FF',
+      text: '#ffffff'
+    },
+    glassdoor: {
+      primary: '#0CAA41',
+      secondary: '#E6F7EC',
+      text: '#ffffff'
+    },
+    herkey: {
+      primary: '#F0386B',
+      secondary: '#FFF1F5',
+      text: '#ffffff'
+    },
+    default: {
+      primary: '#999999',
+      secondary: '#f0f0f0',
+      text: '#333333'
+    }
+  };
+
   return (
     <div className="canvas-panel job-search-canvas">
       <div className="canvas-header">
@@ -387,31 +445,15 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
         </div>
       )}
       
-      {error && (
+      {error && !loadingDetail && !selectedJobId && (
         <div className="error-message">
           <p>Error: {error}</p>
-          <a 
-            href={message.canvasUtils.job_link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="error-link"
-          >
-            Try viewing jobs directly
-          </a>
         </div>
       )}
       
       {!loading && !error && jobs.length === 0 && (
         <div className="no-results">
           <p>No job results found.</p>
-          <a 
-            href={message.canvasUtils.job_link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="error-link"
-          >
-            Try viewing jobs directly
-          </a>
         </div>
       )}
       
@@ -444,16 +486,39 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
           </div>
           
           <div className="job-detail-content">
-            {(jobDetail.company_logo || (jobDetail.company && jobDetail.company.logo)) && (
+            {jobDetail.company_logo && (
               <div className="company-logo">
                 <img 
-                  src={jobDetail.company_logo || (jobDetail.company && jobDetail.company.logo)} 
-                  alt={`${jobDetail.company_name || jobDetail.company?.name || 'Company'} logo`} 
+                  src={jobDetail.company_logo} 
+                  alt={`${jobDetail.company_name || 'Company'} logo`} 
                 />
               </div>
             )}
-              <h2 className="job-detail-title">{jobDetail.title}</h2>
-            <div className="job-detail-company">{jobDetail.company_name || jobDetail.company?.name}</div>
+            
+            <h2 className="job-detail-title">{jobDetail.title}</h2>
+            <div className="job-detail-company">{jobDetail.company_name}</div>
+            
+            {/* Platform badge */}
+            {jobDetail.platform && (
+              <div className="job-platform-badge" style={{
+                backgroundColor: platformStyles[jobDetail.platform.toLowerCase() as keyof typeof platformStyles]?.secondary || '#f0f0f0',
+                border: `1px solid ${platformStyles[jobDetail.platform.toLowerCase() as keyof typeof platformStyles]?.primary || '#ccc'}`,
+                borderRadius: '4px',
+                padding: '8px 12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                margin: '0 0 16px 0'
+              }}>
+                {/* <PlatformIcon platform={jobDetail.platform} size={24} /> */}
+                {/* <span className="platform-name" style={{ 
+                  fontWeight: 600,
+                  fontSize: '14px'
+                }}>
+                  {getPlatformName(jobDetail.platform)}
+                </span> */}
+              </div>
+            )}
             
             {/* Skill match indicator for selected job */}
             {jobDetail.skillMatchScore !== undefined && jobDetail.skillMatchScore > 0 && (
@@ -516,7 +581,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                 <h4>Required Skills</h4>
                 <div className="skill-tags">
                   {ensureArray(jobDetail.skills).join(',').split(',').map((skill, i) => {
-                    const userSkills = message.canvasUtils.resumeData?.skills || [];
+                    const userSkills = getUserSkills();
                     const isMatch = userSkills.some(userSkill => 
                       userSkill.toLowerCase().includes(skill.trim().toLowerCase()) || 
                       skill.trim().toLowerCase().includes(userSkill.toLowerCase())
@@ -581,13 +646,15 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
 
             {jobDetail.company?.about_us && (
               <div className="job-detail-section">
-                <h4>About {jobDetail.company_name || jobDetail.company?.name}</h4>
+                <h4>About {jobDetail.company_name}</h4>
                 <div 
                   className="job-detail-company-about" 
                   dangerouslySetInnerHTML={formatHTMLContent(jobDetail.company.about_us)} 
                 />
               </div>
-            )}            {jobDetail.skillMatchScore !== undefined && jobDetail.skillMatchScore < 60 && (
+            )}
+            
+            {jobDetail.skillMatchScore !== undefined && jobDetail.skillMatchScore < 60 && (
               <div className="job-detail-section skill-recommendations">
                 <h4>Skill Development Recommendations</h4>
                 <p>To improve your chances for this role, consider developing these skills:</p>
@@ -596,7 +663,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
                     .join(',')
                     .split(',')
                     .filter(skill => {
-                      const userSkills = message.canvasUtils.resumeData?.skills || [];
+                      const userSkills = getUserSkills();
                       const isMatch = userSkills.some(userSkill => 
                         userSkill.toLowerCase().includes(skill.trim().toLowerCase()) || 
                         skill.trim().toLowerCase().includes(userSkill.toLowerCase())
@@ -635,155 +702,363 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
       
       {!selectedJobId && !loading && !error && jobs.length > 0 && (
         <>
-          <div className="filter-dropdown">
-            <label htmlFor="work-mode-filter">Filter by: </label>
-            <select 
-              id="work-mode-filter" 
-              value={selectedWorkMode || ""}
-              onChange={handleFilterChange}
-              className="filter-select"
-            >
-              {workModeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <div className="filter-container" style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            padding: '12px', 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '8px',
+            marginBottom: '16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <div className="filter-dropdown" style={{ marginRight: '10px' }}>
+              <label htmlFor="platform-filter" style={{ fontWeight: 'bold', marginRight: '8px' }}>Platform: </label>
+              <select 
+                id="platform-filter" 
+                value={selectedPlatform || ""}
+                onChange={handlePlatformChange}
+                className="filter-select"
+                style={{ 
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd',
+                  minWidth: '150px'
+                }}
+              >
+                <option value="">All Platforms</option>
+                {Array.from(new Set(jobs.map(job => job.platform || "herkey"))).map(platform => (
+                  <option key={platform} value={platform}>
+                    {getPlatformName(platform)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="filter-dropdown">
+              <label htmlFor="work-mode-filter" style={{ fontWeight: 'bold', marginRight: '8px' }}>Work Mode: </label>
+              <select 
+                id="work-mode-filter" 
+                value={selectedWorkMode || ""}
+                onChange={handleFilterChange}
+                className="filter-select"
+                style={{ 
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd',
+                  minWidth: '150px'
+                }}
+              >
+                {workModeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+          
+          {selectedPlatform && (
+            <div className="platform-info-banner" style={{
+              padding: '8px 16px',
+              marginBottom: '16px',
+              backgroundColor: platformStyles[selectedPlatform.toLowerCase() as keyof typeof platformStyles]?.secondary || '#f0f0f0',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <PlatformIcon platform={selectedPlatform} size={20} />
+              <span style={{ fontWeight: 'bold' }}>
+                Showing jobs from {getPlatformName(selectedPlatform)}
+              </span>
+              <button
+                onClick={() => setSelectedPlatform(null)}
+                style={{
+                  marginLeft: 'auto',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  textDecoration: 'underline'
+                }}
+              >
+                Show all platforms
+              </button>
+            </div>
+          )}
+          
+          {jobs.some(job => job.platform === 'herkey') && !selectedPlatform && (
+            <div className="herkey-jobs-heading" style={{
+              padding: '8px 16px',
+              marginBottom: '16px',
+              backgroundColor: '#FFF1F5',
+              borderLeft: '4px solid #F0386B',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <PlatformIcon platform="herkey" size={20} />
+              <span style={{ fontWeight: 'bold' }}>
+                Herkey Jobs
+              </span>
+            </div>
+          )}
           
           {filteredJobs.length === 0 && (
             <div className="no-filter-results">
-              <p>No jobs match the selected filter.</p>
+              <p>No jobs match the selected filters.</p>
               <button 
                 className="clear-filter-button"
-                onClick={() => setSelectedWorkMode(null)}
+                onClick={() => {
+                  setSelectedWorkMode(null);
+                  setSelectedPlatform(null);
+                }}
               >
-                Clear Filter
+                Clear Filters
               </button>
             </div>
           )}
           
           <div className="job-list">
-            {filteredJobs.map((job, index) => (              <div 
-                key={index} 
-                className="job-card job-card-compact" 
-                onClick={() => job.id && handleJobSelect(job.id)}
-                data-match-score={
-                  job.skillMatchScore >= 70 ? "high" : 
-                  job.skillMatchScore >= 40 ? "medium" : 
-                  job.skillMatchScore > 0 ? "low" : "none"
-                }
-              >
-                {job.company_logo && (
-                  <div className="job-logo">
-                    <img 
-                      src={job.company_logo} 
-                      alt={`${job.company_name} logo`} 
-                      className="company-logo-img" 
-                    />
-                  </div>
-                )}
-                
-                <h4 className="job-title">{job.title}</h4>
-                <div className="job-company">{job.company_name}</div>
-                <div className="job-location">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#7f8c8d"/>
-                  </svg>
-                  {job.location_name}
-                </div>
-
-                {job.min_year && job.max_year && (
-                  <div className="job-experience">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="#7f8c8d"/>
-                    </svg>
-                    {renderExperience(job.min_year, job.max_year)}
-                  </div>
-                )}
-
-                {job.work_mode && (
-                  <div className="job-work-mode">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v-2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" fill="#7f8c8d"/>
-                    </svg>
-                    {ensureArray(job.work_mode).map(formatJobType).join(', ')}
-                  </div>
-                )}
-                  {job.skills && (
-                  <div className="job-skills">
-                    {ensureArray(job.skills).slice(0, 2).map((skill, i) => (
-                      <span key={i} className="skill-tag">
-                        {skill}
+            {filteredJobs.map((job, index) => {
+              // Check if this is a platform change in the list
+              const isFirstPlatformJob = index === 0 || 
+                                        (job.platform !== filteredJobs[index - 1].platform && 
+                                        !selectedPlatform);
+              
+              // Special styles for Herkey jobs
+              const isHerkeyJob = job.platform === 'herkey';
+              
+              return (
+                <React.Fragment key={index}>
+                  {/* Add platform heading for first job of each platform (only when not filtered) */}
+                  {isFirstPlatformJob && !selectedPlatform && job.platform && job.platform !== 'herkey' && (
+                    <div className="platform-jobs-heading" style={{
+                      padding: '8px 16px',
+                      marginTop: index > 0 ? '24px' : '0',
+                      marginBottom: '16px',
+                      backgroundColor: platformStyles[job.platform.toLowerCase() as keyof typeof platformStyles]?.secondary || '#f0f0f0',
+                      borderLeft: `4px solid ${platformStyles[job.platform.toLowerCase() as keyof typeof platformStyles]?.primary || '#ccc'}`,
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <PlatformIcon platform={job.platform} size={20} />
+                      <span style={{ fontWeight: 'bold' }}>
+                        {getPlatformName(job.platform)} Jobs
                       </span>
-                    ))}
-                    {ensureArray(job.skills).length > 2 && (
-                      <span className="skill-tag more-skills">
-                        +{ensureArray(job.skills).length - 2}
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Display skill match score if available */}
-                {job.skillMatchScore !== undefined && job.skillMatchScore > 0 && (
-                  <div className="skill-match-score">
-                    <div className="match-label">Match score:</div>
-                    <div className="match-progress">
-                      <div 
-                        className="match-bar" 
-                        style={{
-                          width: `${job.skillMatchScore}%`, 
-                          backgroundColor: job.skillMatchScore > 70 ? '#4caf50' : 
-                                         job.skillMatchScore > 40 ? '#ff9800' : '#f44336'
-                        }}
-                      />
                     </div>
-                    <div className="match-percentage">{job.skillMatchScore}%</div>
-                  </div>
-                )}
-                
-                <div className="job-status">
-                  {job.status}
-                  {job.boosted && <span className="boosted-badge">Featured</span>}
-                  {job.skillMatchScore !== undefined && job.skillMatchScore >= 80 && (
-                    <span className="skill-match-badge">Top Match</span>
                   )}
-                </div>
-                
-                <div className="job-actions">
-                  <button 
-                    className="job-view-button" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      job.id && handleJobSelect(job.id);
-                    }}
-                  >
-                    View Details
-                  </button>
                   
-                  <button 
-                    className="job-apply-button" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (job.id) {
-                        // Format the job title for URL (lowercase, replace spaces with hyphens)
-                        const formattedTitle = job.title
-                          .toLowerCase()
-                          .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
-                          .replace(/\s+/g, '-'); // Replace spaces with hyphens
-                        
-                        // Use the correct URL format as shown in the example
-                        window.open(`https://www.herkey.com/jobs/${formattedTitle}/${job.id}`, '_blank');
-                      }
+                  <div 
+                    className={`job-card job-card-compact ${isHerkeyJob ? 'herkey-job' : ''}`}
+                    onClick={() => job.id && handleJobSelect(job.id)}
+                    data-match-score={
+                      job.skillMatchScore && job.skillMatchScore >= 70 ? "high" : 
+                      job.skillMatchScore && job.skillMatchScore >= 40 ? "medium" : 
+                      job.skillMatchScore && job.skillMatchScore > 0 ? "low" : "none"
+                    }
+                    data-platform={job.platform || "herkey"}
+                    style={{
+                      borderLeft: `4px solid ${platformStyles[job.platform?.toLowerCase() as keyof typeof platformStyles]?.primary || '#ccc'}`,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: isHerkeyJob ? '0 2px 8px rgba(240, 56, 107, 0.2)' : '0 1px 3px rgba(0,0,0,0.1)',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      marginBottom: '16px'
                     }}
                   >
-                    Apply Now
-                  </button>
-                </div>
-              </div>
-            ))}
+                    {/* Platform corner ribbon with improved visibility */}
+                    <div 
+                      className="platform-ribbon" 
+                      style={{
+                        position: 'absolute',
+                        top: '0',
+                        right: '0',
+                        width: '50px',
+                        height: '50px',
+                        overflow: 'hidden',
+                        pointerEvents: 'none',
+                        zIndex: 1
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute',
+                        top: '5px',
+                        right: '-20px',
+                        width: '80px',
+                        backgroundColor: platformStyles[job.platform?.toLowerCase() as keyof typeof platformStyles]?.primary || '#ccc',
+                        color: '#fff',
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '10px',
+                        transform: 'rotate(45deg)',
+                        padding: '2px 0',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                      }}>
+                        {job.platform?.toUpperCase() || 'HERKEY'}
+                      </div>
+                    </div>
+                    
+                    {job.company_logo && (
+                      <div className="job-logo">
+                        <img 
+                          src={job.company_logo} 
+                          alt={`${job.company_name} logo`} 
+                          className="company-logo-img" 
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Enhanced platform badge with more prominence */}
+                    {job.platform && (
+                      <div className="job-platform-badge-small" style={{
+                        backgroundColor: platformStyles[job.platform.toLowerCase() as keyof typeof platformStyles]?.secondary || '#f0f0f0',
+                        color: '#333',
+                        position: 'absolute',
+                        top: '10px',
+                        left: '10px',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                      }}>
+                        {/* <PlatformIcon platform={job.platform} size={16} />
+                        <span className="platform-name">{getPlatformName(job.platform)}</span> */}
+                      </div>
+                    )}
+                    
+                    <h4 className="job-title">{job.title}</h4>
+                    <div className="job-company">{job.company_name}</div>
+                    <div className="job-location">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#7f8c8d"/>
+                      </svg>
+                      {job.location_name}
+                    </div>
 
+                    {job.min_year !== undefined && job.max_year !== undefined && (
+                      <div className="job-experience">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="#7f8c8d"/>
+                        </svg>
+                        {renderExperience(job.min_year, job.max_year)}
+                      </div>
+                    )}
+
+                    {job.work_mode && (
+                      <div className="job-work-mode">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v-2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" fill="#7f8c8d"/>
+                        </svg>
+                        {ensureArray(job.work_mode).map(formatJobType).join(', ')}
+                      </div>
+                    )}
+                    
+                    {job.skills && (
+                      <div className="job-skills">
+                        {ensureArray(job.skills).slice(0, 2).map((skill, i) => (
+                          <span key={i} className="skill-tag">
+                            {skill}
+                          </span>
+                        ))}
+                        {ensureArray(job.skills).length > 2 && (
+                          <span className="skill-tag more-skills">
+                            +{ensureArray(job.skills).length - 2}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Display skill match score if available */}
+                    {job.skillMatchScore !== undefined && job.skillMatchScore > 0 && (
+                      <div className="skill-match-score">
+                        <div className="match-label">Match score:</div>
+                        <div className="match-progress">
+                          <div 
+                            className="match-bar" 
+                            style={{
+                              width: `${job.skillMatchScore}%`, 
+                              backgroundColor: job.skillMatchScore > 70 ? '#4caf50' : 
+                                             job.skillMatchScore > 40 ? '#ff9800' : '#f44336'
+                            }}
+                          />
+                        </div>
+                        <div className="match-percentage">{job.skillMatchScore}%</div>
+                      </div>
+                    )}
+                    
+                    <div className="job-status">
+                      {job.status}
+                      {job.boosted && <span className="boosted-badge">Featured</span>}
+                      {job.skillMatchScore !== undefined && job.skillMatchScore >= 80 && (
+                        <span className="skill-match-badge">Top Match</span>
+                      )}
+                    </div>
+                    
+                    <div className="job-actions">
+                      <button 
+                        className="job-view-button" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          job.id && handleJobSelect(job.id);
+                        }}
+                      >
+                        View Details
+                      </button>
+                      
+                      <button 
+                        className={`job-apply-button ${job.platform?.toLowerCase()}`}
+                        style={{
+                          backgroundColor: job.platform && platformStyles[job.platform.toLowerCase() as keyof typeof platformStyles]?.primary
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (job.id) {
+                            if (job.platform_job_url) {
+                              window.open(job.platform_job_url, '_blank');
+                            } else {
+                              // Use platform-specific URL format as fallback
+                              const platform = job.platform || "herkey";
+                              
+                              switch (platform.toLowerCase()) {
+                                case "herkey":
+                                  // Format the job title for URL
+                                  const formattedTitle = job.title
+                                    .toLowerCase()
+                                    .replace(/[^\w\s-]/g, '')
+                                    .replace(/\s+/g, '-');
+                                  window.open(`https://www.herkey.com/jobs/${formattedTitle}/${job.id}`, '_blank');
+                                  break;
+                                  
+                                case "linkedin":
+                                  window.open(`https://www.linkedin.com/jobs/view/${job.id}`, '_blank');
+                                  break;
+                                  
+                                case "glassdoor":
+                                  window.open(`https://www.glassdoor.com/job-listing/job.htm?jobListingId=${job.id}`, '_blank');
+                                  break;
+                                  
+                                default:
+                                  window.open(`https://www.herkey.com/jobs/search`, '_blank');
+                              }
+                            }
+                          }
+                        }}
+                      >
+                        Apply Now
+                      </button>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })}
           </div>
         </>
       )}

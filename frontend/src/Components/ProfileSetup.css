@@ -234,3 +234,110 @@ select.field-input {
         animation: none;
     }
 }
+
+/* Resume Upload Section */
+.resume-upload-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(147, 79, 115, 0.2);
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #934f73;
+    margin-bottom: 0.5rem;
+}
+
+.section-description {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.resume-parse-button {
+    background-color: #87c05a;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 0.5rem;
+}
+
+.resume-parse-button:hover {
+    background-color: #79ae4e;
+}
+
+.resume-parse-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.success-message {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: rgba(135, 192, 90, 0.1);
+    border-left: 4px solid #87c05a;
+    border-radius: 0.25rem;
+}
+
+.success-message p {
+    color: #4a7a24;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Skills Preview */
+.skills-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.skill-tag {
+    background-color: rgba(147, 79, 115, 0.1);
+    color: #934f73;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2rem;
+    display: inline-block;
+}
+
+/* Work Experience Preview */
+.work-experience-preview {
+    margin-top: 0.5rem;
+}
+
+.experience-item {
+    padding: 0.75rem;
+    background-color: rgba(147, 79, 115, 0.05);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.experience-item p {
+    margin: 0.25rem 0;
+    font-size: 0.95rem;
+}
+
+.experience-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.error-message {
+    color: #e74c3c;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    text-align: center;
+}

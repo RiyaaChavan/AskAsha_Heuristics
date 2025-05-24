@@ -99,12 +99,7 @@ def generate_dynamic_text_response(chat_model, query, conversation_history=None,
         education = resume_data.get('education', [])
         if education:
             resume_context += "Education:\n"
-            for edu in education:
-                degree = edu.get('degree', '')
-                institution = edu.get('institution', '')
-                if degree and institution:
-                    resume_context += f"- {degree} from {institution}\n"
-        
+            resume_context += education
         context += resume_context + "\n"
     
     # Add conversation history context if available

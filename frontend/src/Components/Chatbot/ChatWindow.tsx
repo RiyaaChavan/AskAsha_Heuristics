@@ -3,17 +3,15 @@ import { ChatWindowProps } from './types';
 import ChatMessage from './ChatMessage';
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ messages, selectMessage, selectedMessageId }) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Auto-scroll when messages change
+  const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to the bottom when messages change
   useEffect(() => {
-    scrollToBottom();
-  }, [messages.length]);
-
+    if (endOfMessagesRef.current && messages.length > 0) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages]);
+  
   return (
     <div className="chat-window">
       {messages.map((msg, idx) => {
@@ -28,7 +26,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, selectMessage, select
           />
         );
       })}
-      <div ref={messagesEndRef} />
+      <div ref={endOfMessagesRef} style={{ float: "left", clear: "both" }}></div>
     </div>
   );
 };
