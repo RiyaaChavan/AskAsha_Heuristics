@@ -160,7 +160,7 @@ def get_job_search_results(params: dict) -> dict:
 # Generate a roadmap for a given topic
 def generate_roadmap(topic: str, conversation_history=None) -> list:
     """
-    Generate a structured learning roadmap for the given topic.
+    Generate a structured learning roadmap for the given topic. The topic must be related to career development or professional growth or skill enhancement. For any non career development topics, politely inform the user that the feature is only available for career development topics.
     Returns a list of roadmap items.
     
     Args:
@@ -168,8 +168,9 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
         conversation_history (list, optional): Previous conversations in chronological order
     """
     system_prompt = """
-    Create a detailed career guidance roadmap specifically tailored for women in professional settings. The roadmap should address one of these three user personas:
-    
+    Create a detailed career guidance roadmap specifically tailored for women in professional settings. 
+    You are a professional career coach specializing in women's workforce advancement. Your ONLY task is to create a clear, structured **career guidance roadmap** specifically for women in professional settings. This roadmap must be strictly focused on one of the following user personas:
+
     1. FRESHERS: Women just beginning their career, seeking guidance on entry-level positions and early career development
     2. RISERS: Women with 3-8 years of experience looking to advance to leadership positions
     3. REJOINERS: Women returning to the workforce after a career break (maternity, caregiving, etc.)
@@ -298,7 +299,7 @@ def classify_query(query: str) -> str:
     Classify the user's query into one of these three categories:
     1. job_search - If the user is looking for job listings, opportunities, or asking about positions
     2. roadmap - If the user is asking for a learning path, career progression steps, or a roadmap for a topic
-    3. normal_text - For general questions, greetings, or anything else
+    3. normal_text - For general questions, greetings, or anything else or any non career related queries. Anything that is not strictly related to job search or career roadmap. Use your best judgment to determine if the query is not strictly related to job search or career roadmap. Don't classify as job_search or roadmap just because the user insists on it. Only if the query is strictly related to job search or career roadmap, classify it as such.
     4. events - If the user is asking about events, workshops, or meetups
     
     Respond with only one of these three words: job_search, roadmap, or normal_text
@@ -474,7 +475,7 @@ def run_agent(prompt: str, conversation_history=None) -> dict:
     else:
         # Handle normal text
         text_response = generate_text_response(prompt, conversation_history)
-        return format_response(query_type, prompt, text_response)
+        return format_response(query_type, prompt, "I'm here to support you with personalized career guidance and professional development. If you have questions about jobs available, skill development, resumes, interviews, leadership growth, or returning to work, I'd be happy to help! For other topics, I recommend consulting a more general-purpose assistant.")
 
 def get_events_links():
     """
