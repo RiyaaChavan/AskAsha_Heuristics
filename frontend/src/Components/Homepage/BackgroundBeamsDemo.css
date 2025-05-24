@@ -1,0 +1,74 @@
+.background-beams-demo {
+  height: 40rem;
+  width: 100%;
+  background-color: #8d4d75; /* The plum/burgundy color */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: sans-serif;
+}
+
+.content-container {
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+}
+
+.title {
+  position: relative;
+  z-index: 10;
+  font-size: 1.125rem;
+  color: #ffffff;
+  text-align: center;
+  font-weight: 700;
+}
+
+.highlight-word {
+  color: rgb(135, 192, 90); /* The green color you specified */
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 3.5rem;
+  }
+}
+
+.description {
+  color: #f0f0f0;
+  max-width: 32rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+
+.email-input {
+  border-radius: 0.5rem;
+  border: 1px solid #ffffff;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  margin-top: 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+}
+
+.email-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.email-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff;
+  border-color: #ffffff;
+}
+

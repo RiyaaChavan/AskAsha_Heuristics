@@ -1,0 +1,52 @@
+/* PointerHighlight.css - updated */
+.relative {
+  position: relative;
+}
+
+.w-fit {
+  width: fit-content;
+}
+
+.pointer-events-none {
+  pointer-events: none;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.z-0 {
+  z-index: 0;
+}
+
+/* Updated rectangle border styles */
+.rectangle-border {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border: 1px solid #262626;
+  box-sizing: border-box;
+}
+
+/* For dark mode */
+@media (prefers-color-scheme: dark) {
+  .rectangle-border {
+    border-color: #e5e5e5;
+  }
+}
+
+/* Pointer icon styles */
+.pointer-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  color: #3b82f6;
+}
