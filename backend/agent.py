@@ -242,8 +242,36 @@ def get_job_search_results(params: dict, platforms=None) -> dict:
     all_results = []
     error_messages = []
     
+    # First, try to get Herkey recommendations if Herkey is in the platforms
+    herkey_recommendations = []
+    if "herkey" in platforms:
+        try:
+            # Get Herkey client directly for recommendations
+            from tools.api_client import HerkeyAPIClient
+            herkey_client = HerkeyAPIClient()
+            
+            # Get recommendations first
+            herkey_rec_results = herkey_client.get_recommendations(params)
+            
+            # If successful, add to recommendations
+            if "body" in herkey_rec_results and isinstance(herkey_rec_results["body"], list):
+                # Add recommended flag
+                for job in herkey_rec_results["body"]:
+                    job["platform"] = "herkey"
+                    job["recommended"] = True
+                
+                herkey_recommendations.extend(herkey_rec_results["body"])
+                print(f"Got {len(herkey_recommendations)} Herkey recommendations")
+        except Exception as e:
+            error_messages.append(f"Error getting Herkey recommendations: {str(e)}")
+    
     # Search for jobs on each platform
     for platform in platforms:
+        # Skip Herkey search if we already have recommendations
+        if platform == "herkey" and herkey_recommendations:
+            all_results.extend(herkey_recommendations)
+            continue
+            
         try:
             # Get the appropriate client for this platform
             client = get_job_client(platform)
@@ -283,11 +311,12 @@ def get_job_search_results(params: dict, platforms=None) -> dict:
             else:
                 # If no expiry date, include the job
                 valid_jobs.append(job)
-        
-        # Sort jobs: First prioritize Herkey jobs, then by match score if available
-        # This ensures Herkey jobs are shown first in the frontend
+          # Sort jobs: First prioritize Herkey recommendations, then regular Herkey jobs, then by match score
+        # This ensures Herkey recommendations and jobs are shown first in the frontend
         sorted_jobs = sorted(valid_jobs, key=lambda job: (
-            0 if job.get("platform") == "herkey" else 1,  # Herkey jobs first
+            0 if job.get("platform") == "herkey" and job.get("recommended", False) else # Herkey recommendations first
+            1 if job.get("platform") == "herkey" else # Then regular Herkey jobs
+            2,  # Then other platforms
             -1 * job.get("skillMatchScore", 0) if "skillMatchScore" in job else 0  # Then by skill match score
         ))
         

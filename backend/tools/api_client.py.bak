@@ -13,12 +13,11 @@ try:
 except (ImportError, AttributeError):
     HERKEY_API_BASE_URL = "https://api-prod.herkey.com/api/v1/herkey"
 
-class HerkeyAPIClient:
-    def __init__(self):
+class HerkeyAPIClient:    def __init__(self):
         self.base_url = HERKEY_API_BASE_URL
         self.headers = {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'  
+            'Accept': 'application/json'
         }
     
     def get_recommendations(self, query_params):
@@ -489,10 +488,11 @@ class WomenFocusedRedirectClient:
             ]
         }
 
-class GoogleJobsWomenClient:
+class GoogleJobsWomen:
     def __init__(self):
         self.base_url = "https://api.scrapingdog.com/google_jobs"
         self.api_key = os.getenv("SCRAPINGDOG_API_KEY")
+        self.save_to_file = True  # Optional: save jobs locally for debugging
 
     def search_jobs(self, query_params):
         if not self.api_key:
@@ -502,58 +502,83 @@ class GoogleJobsWomenClient:
                 "body": []
             }
 
-        # Build query string (broad but guided by parameters)
+        # Construct query
         keyword = query_params.get("keyword", "jobs")
         location = query_params.get("location_name", "India")
-        work_mode = query_params.get("work_mode", "")  # Could be remote/onsite
+        work_mode = query_params.get("work_mode", "")
         job_type = query_params.get("job_types", "")
         skills = query_params.get("job_skills", "")
 
-        # Compose a friendly Google Jobs query tailored for women
         query = f"{keyword} jobs for women in {location}"
-        if work_mode and "remote" in work_mode:
+        if "remote" in work_mode:
             query += " remote"
         if job_type:
             query += f" {job_type}"
         if skills:
             query += f" {skills}"
 
-        query = query.strip().replace("  ", " ").replace(" ", "+")
-
-        # Pagination
-        page_no = query_params.get("page_no", 1)
-        pages_to_fetch = 3
-
+        formatted_query = quote_plus(query)
         all_jobs = []
+        num_pages = 3
 
-        for i in range(pages_to_fetch):
+        for i in range(num_pages):
             params = {
                 "api_key": self.api_key,
-                "query": query,
+                "query": formatted_query,
                 "page": i
             }
 
             try:
                 response = requests.get(self.base_url, params=params, timeout=10)
                 if response.status_code == 200:
-                    jobs = response.json().get("jobs_results", [])
-                    for job in jobs:
+                    job_data = response.json().get("jobs_results", [])
+                    for job in job_data:
+                        job_url = None
+
+                        # Priority 1: job_highlight_url
+                        if job.get("job_highlight_url", "").startswith("http"):
+                            job_url = job["job_highlight_url"]
+
+                        # Priority 2: apply_link from detected_extensions
+                        elif job.get("detected_extensions", {}).get("apply_link", "").startswith("http"):
+                            job_url = job["detected_extensions"]["apply_link"]
+
+                        # Priority 3: from related_links
+                        elif job.get("related_links"):
+                            for link in job["related_links"]:
+                                if link.get("link", "").startswith("http"):
+                                    job_url = link["link"]
+                                    break
+
+                        # Fallback: Google search for job
+                        if not job_url:
+                            safe_title = quote_plus(job.get("title", "job"))
+                            safe_company = quote_plus(job.get("company_name", "company"))
+                            job_url = f"https://www.google.com/search?q={safe_title}+{safe_company}"
+
                         job_obj = {
                             "title": job.get("title", ""),
                             "company_name": job.get("company_name", ""),
                             "location_name": job.get("location", ""),
                             "platform": "google_jobs_women",
-                            "platform_job_url": job.get("job_highlight_url") or job.get("via", ""),
+                            "platform_job_url": job_url,
                             "status": "Active",
-                            "posted_on": job.get("extensions", [""])[0] if isinstance(job.get("extensions", []), list) else "",
+                            "posted_on": job.get("extensions", [""])[0] if isinstance(job.get("extensions", []), list) else ""
                         }
+
                         all_jobs.append(job_obj)
                 else:
-                    print(f"[ScrapingDog] Failed with {response.status_code}")
+                    print(f"[ScrapingDog] Request failed: {response.status_code}")
             except Exception as e:
                 print(f"[ScrapingDog] Exception: {str(e)}")
 
             time.sleep(2)
+
+        # Save JSON locally (optional)
+        if self.save_to_file:
+            with open('google_jobs_women.json', 'w', encoding='utf-8') as f:
+                json.dump(all_jobs, f, ensure_ascii=False, indent=2)
+            print("Saved jobs to google_jobs_women.json")
 
         return {
             "response_code": 10100,
@@ -580,7 +605,7 @@ def get_job_client(platform="herkey"):
     elif platform == "womenfocused":
         return WomenFocusedRedirectClient()
     elif platform == "google_jobs_women":
-        return GoogleJobsWomenClient()  # Return an instance of the class, not the class itself
+        return GoogleJobsWomen()  # Return an instance of the class, not the class itself
     else:
         return HerkeyAPIClient()
     
