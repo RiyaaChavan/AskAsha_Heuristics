@@ -23,6 +23,7 @@ import json
 import mimetypes
 import io
 from pathlib import Path
+from transformers import pipeline
 
 # Import your internal logic
 from agent import run_agent  # Your run_agent logic
@@ -46,8 +47,16 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 # Import profanity check functions
 from profanity import check_profanity, get_profanity_response
+gibberish_pipe = pipeline("text-classification", model="madhurjindal/autonlp-Gibberish-Detector-492513457")
 
+def check_gibberish(text, threshold=0.8):
+    try:
+        result = gibberish_pipe(text)[0]
+        return  result['score'] >= threshold and result['label'] != 'clean'
+    except Exception as e:
+        print(f"Gibberish detection error: {str(e)}")
 app = Flask(__name__)
+
 
 # Fix CORS for local dev and production (Render backend, Vercel frontend)
 CORS(app,
@@ -718,22 +727,28 @@ def send_message():
             stage = session_data["interview_stage"]
 
             if stage == "ask_role":
-                # Check profanity for role input
                 try:
                     if check_profanity(user_message):
                         return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        # Re-ask the same question without advancing stage
+                        return jsonify({"message": "Sorry, I didn't quite get that. Please provide your role for the mock interview."})
                 except Exception as e:
-                    print(f"Profanity check error in ask_role: {str(e)}")
-                
+                    print(f"Error in ask_role checks: {str(e)}")
+
                 session_data["role"] = user_message
                 session_data["interview_stage"] = "ask_experience"
                 return jsonify({"message": "How many years of experience do you have in this field?"})
+
 
             elif stage == "ask_experience":
                 # Check profanity for experience input
                 try:
                     if check_profanity(user_message):
                         return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        # Re-ask the same question without advancing stage
+                        return jsonify({"message": "Sorry, I didn't quite get that. Please provide your experience for the mock interview."})
                 except Exception as e:
                     print(f"Profanity check error in ask_experience: {str(e)}")
                 
@@ -746,6 +761,10 @@ def send_message():
                 try:
                     if check_profanity(user_message):
                         return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        # Re-ask the same question without advancing stage
+                        return jsonify({"message": "Sorry, I didn't quite get that. Please provide your skills for the mock interview."})
+
                 except Exception as e:
                     print(f"Profanity check error in ask_skills: {str(e)}")
                 
@@ -778,10 +797,20 @@ def send_message():
                 return jsonify({"message": model_reply})
 
             elif stage == "interviewing":
+                try:
+                    if check_profanity(user_message):
+                        return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        return jsonify({"message": "Hmm, I didn't quite understand that. Could you please rephrase your response?"})
+                except Exception as e:
+                    print(f"Input check error during interview: {str(e)}")
+
                 messages.append(HumanMessage(content=user_message))
 
-                # Generate follow-up question based on user input
-                messages.append(HumanMessage(content="Generate a follow-up question based on the user's response. If the user response is satisfactory ask a different question. If the interview questions have covered all aspects to be asked about then start concluding the interview."))
+                # Ask LLM to generate a follow-up or new question
+                messages.append(HumanMessage(content=(
+                    "Generate a follow-up question based on the user's response. If the user response is satisfactory ask a different question. If the interview questions have covered all aspects to be asked about then start concluding the interview."
+                )))
 
                 follow_up_response = llm.invoke(messages)
                 follow_up_reply = follow_up_response.content.strip()
@@ -789,6 +818,7 @@ def send_message():
                 messages.append(AIMessage(content=follow_up_reply))
 
                 return jsonify({"message": follow_up_reply})
+
 
             elif stage == "concluding":
                 # Provide interview rating and feedback
@@ -817,6 +847,8 @@ def send_message():
             messages.append(HumanMessage(content=user_message))
 
             try:
+                if check_gibberish(user_message):
+                    return jsonify({"message": "I'm not sure I understood that. Could you please rephrase?"})
                 # Step 1: Let the model think
                 response = llm.invoke(messages)
                 model_reply = response.content.strip()

@@ -7,10 +7,20 @@ import json
 import re
 import urllib.parse
 from datetime import datetime
-
+from transformers import pipeline
 load_dotenv()
 # Initialize your chat LLM
 chat_model = ChatOpenAI(model="gpt-4.1-nano", temperature=0.3)
+
+
+gibberish_pipe = pipeline("text-classification", model="madhurjindal/autonlp-Gibberish-Detector-492513457")
+
+def check_gibberish(text, threshold=0.8):
+    try:
+        result = gibberish_pipe(text)[0]
+        return  result['score'] >= threshold and result['label'] != 'clean'
+    except Exception as e:
+        print(f"Gibberish detection error: {str(e)}")
 
 # Helper to get a JWT session token from Herkey
 def get_herkey_token() -> str:
@@ -503,6 +513,8 @@ Generate a structured learning roadmap for the given topic. The topic must be re
 
 # Classify user query
 def classify_query(query: str) -> str:
+    if check_gibberish(query):
+        return "gibberish"
     """
     Classify the user's query into one of these three categories:
     1. job_search - If the user is looking for job listings, opportunities, or asking about positions
@@ -540,7 +552,7 @@ def classify_query(query: str) -> str:
     classification = response.content.strip().lower()
     
     # Ensure we only return one of the valid categories
-    valid_categories = ["job_search", "job_guidance", "roadmap", "events", "normal_text"]
+    valid_categories = ["job_search", "job_guidance", "roadmap", "events", "normal_text",]
     if classification not in valid_categories:
         # Try to map to closest category or default to normal_text
         if "job" in classification:
@@ -815,7 +827,13 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
                 "session_api": session_api  # Placeholder for events data
             }
         }
-        
+    elif query_type =='gibberish':
+        # Gibberish response
+        return {
+            "text": "It seems like your message is not clear. Could you please rephrase or provide more details?",
+            "canvasType": "none",
+            "canvasUtils": {}
+        }  
     else:
         # Normal text response
         return {
@@ -871,7 +889,9 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
         
         # Pass topic to format_response
         return format_response("normal_text", prompt, guidance_response, topic=topic)
-    
+    elif query_type == "gibberish":
+        # Handle gibberish input
+        return format_response("gibberish", prompt, None)
     else:
         # Handle normal text with resume context if available
         text_response = generate_text_response(prompt, conversation_history, resume_data)
