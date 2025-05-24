@@ -174,16 +174,19 @@ const startChatSession = async (chatType) => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputText.trim() || !sessionId) return;
-
+    if (!inputText.trim() || !sessionId) return;    // Store input text before clearing
+    const messageToSend = inputText;
+    
     const userMessage = {
       id: Date.now(),
-      text: inputText,
+      text: messageToSend,
       sender: 'user',
     };
 
-    setMessages([...messages, userMessage]);
+    // Clear input immediately when the user sends a message
     setInputText('');
+    
+    setMessages([...messages, userMessage]);
     setIsLoading(true);
 
     try {

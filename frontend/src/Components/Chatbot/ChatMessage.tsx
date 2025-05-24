@@ -44,20 +44,23 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     }
     
     return text;
-  };
+  };  // For typing indicator, return a different component
+  if (message.isLoading) {
+    return (
+      <div className="typing-indicator">
+        <div className="typing-dot"></div>
+        <div className="typing-dot"></div>
+        <div className="typing-dot"></div>
+      </div>
+    );
+  }
+
   return (
     <div 
-      className={`message-bubble ${message.canvasType !== 'none' ? 'with-canvas clickable' : ''} ${isUserMessage ? 'user-message' : ''} ${isSelected ? 'selected' : ''} ${message.isLoading ? 'loading-message' : ''}`}
+      className={`message-bubble ${message.canvasType !== 'none' ? 'with-canvas clickable' : ''} ${isUserMessage ? 'user-message' : ''} ${isSelected ? 'selected' : ''}`}
       onClick={handleClick}
     >
-      {message.isLoading ? (
-        <div className="loading-content">
-          <p>{formatMessageText(message.text)}</p>
-          <div className="loading-spinner"></div>
-        </div>
-      ) : (
-        <p>{formatMessageText(message.text)}</p>
-      )}
+      <p>{formatMessageText(message.text)}</p>
       
       {isSelected && message.canvasType !== 'none' && (
         <button 

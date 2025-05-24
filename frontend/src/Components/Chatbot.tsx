@@ -203,11 +203,10 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       setIsLoadingHistory(false);
     }
   };
-
   const sendMessage = async () => {
     if (!input.trim()) return;
     
-    // Create user message object with all necessary properties
+    // Create user message object 
     const userMessage: Message = { 
       id: messages.length, 
       text: input, 
@@ -215,10 +214,27 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       isUserMessage: true,
       canvasType: 'none' 
     };
+      // Store the input message before clearing
+    const messageText = input;
     
-    setMessages(prev => [...prev, userMessage]);
+    // Clear the input immediately
+    setInput('');
+    
+    // Add user message and typing indicator
+    setMessages(prev => [
+      ...prev, 
+      userMessage,
+      {
+        id: messages.length + 1,
+        text: "",
+        isLoading: true,
+        isUser: false,
+        isUserMessage: false,
+        canvasType: 'none'
+      }
+    ]);
 
-    const payload: Payload = { message: input, userId };
+    const payload: Payload = { message: messageText, userId };
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
         method: 'POST',
@@ -229,29 +245,27 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       
       const data = await res.json();
       
-      // Add bot response with all necessary properties
+      // Remove loading message and add bot response
       const botMessage: Message = {
         ...data,
-        id: messages.length + 1,
+        id: messages.length + 2,
         isUser: false,
         isUserMessage: false
       };
       
-      setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => [...prev.filter(m => !m.isLoading), botMessage]);
     } catch (err) {
       console.error(err);
       
-      // Add error message with all necessary properties
-      setMessages(prev => [...prev, { 
-        id: messages.length + 1, 
+      // Remove loading message and add error message
+      setMessages(prev => [...prev.filter(m => !m.isLoading), { 
+        id: messages.length + 2, 
         text: 'Error contacting server.', 
         isUser: false, 
         isUserMessage: false,
         canvasType: 'none' 
       }]);
     }
-    
-    setInput('');
   };
 
   return (

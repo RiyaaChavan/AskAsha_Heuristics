@@ -554,12 +554,32 @@ def chat():
     if is_authenticated:
         conversation_history = get_user_conversations(user_id, limit=5)
         conversation_history.reverse()  # chronological order
+      # If @resume is in the message and we have resume data, pass it to the agent    # Try to extract topic for better contextual responses
+    topic = None
+    try:
+        from helper_funcs import extract_topic_from_query
+        topic = extract_topic_from_query(message)
+    except ImportError:
+        # If extraction fails, continue without it
+        pass
     
-    # If @resume is in the message and we have resume data, pass it to the agent
+    # Run the agent with appropriate context
     if has_resume_context:
         response = run_agent(message, conversation_history, resume_data)
     else:
         response = run_agent(message, conversation_history)
+      # Add timestamp to the response for proper ordering in frontend
+    current_time = int(time.time() * 1000)  # Current time in milliseconds
+    response["timestamp"] = current_time
+    
+    # Extract query topic for contextual relevance
+    try:
+        from helper_funcs import extract_topic_from_query
+        topic = extract_topic_from_query(message)
+        response["topic"] = topic
+    except ImportError:
+        # Function not found, continue without it
+        pass
 
     # Fix job search API integration
     if response.get('canvasType') == 'job_search':

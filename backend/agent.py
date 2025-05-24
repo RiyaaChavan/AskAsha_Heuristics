@@ -1,6 +1,6 @@
 import requests
 from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from dotenv import load_dotenv
 import os
 import json
@@ -398,16 +398,33 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
 # Classify user query
 def classify_query(query: str) -> str:
     """
-    Classify the user query as job_search, roadmap, or normal_text.
+    Classify the user query as job_search, job_guidance, roadmap, events, or normal_text.
+    
+    - job_search: User wants specific job listings
+    - job_guidance: User wants career advice but not specific listings
+    - roadmap: User wants career/learning progression path
+    - events: User is looking for events or workshops
+    - normal_text: General conversation, greetings, etc.
     """
     system_prompt = """
-    Classify the user's query into one of these three categories:
-    1. job_search - If the user is looking for job listings, opportunities, or asking about positions
-    2. roadmap - If the user is asking for a learning path, career progression steps, or a roadmap for a topic
-    3. normal_text - For general questions, greetings, or anything else
-    4. events - If the user is asking about events, workshops, or meetups
+    Carefully analyze the user's query and classify it into ONE of these categories:
     
-    Respond with only one of these three words: job_search, roadmap, or normal_text
+    1. job_search - If the user is explicitly searching for job listings or open positions
+       Examples: "Find me software developer jobs", "Show Python jobs in New York", "Are there any data scientist positions?"
+    
+    2. job_guidance - If the user is asking for career advice or job-related guidance but NOT requesting actual job listings
+       Examples: "How do I prepare for a job interview?", "What skills should I develop for marketing?", "Tips for changing careers"
+    
+    3. roadmap - If the user is asking for a learning path, career progression steps, or skills development roadmap
+       Examples: "How to become a web developer?", "What's the learning path for AI?", "Steps to master cloud computing"
+    
+    4. events - If the user is asking about events, workshops, meetups, or networking opportunities
+       Examples: "Are there any tech events this week?", "Find me workshops on leadership", "Marketing conferences near me"
+    
+    5. normal_text - For general questions, greetings, or conversation that doesn't fit the above categories
+       Examples: "Hello", "How are you?", "Tell me about yourself", "What can you do?"
+    
+    Respond with EXACTLY ONE of these words: job_search, job_guidance, roadmap, events, or normal_text
     """
     
     messages = [
@@ -419,14 +436,25 @@ def classify_query(query: str) -> str:
     classification = response.content.strip().lower()
     
     # Ensure we only return one of the valid categories
-    if classification not in ["job_search", "roadmap", "normal_text","events"]:
-        # Default to normal_text if classification is unclear
-        classification = "normal_text"
+    valid_categories = ["job_search", "job_guidance", "roadmap", "events", "normal_text"]
+    if classification not in valid_categories:
+        # Try to map to closest category or default to normal_text
+        if "job" in classification:
+            if "search" in classification or "list" in classification or "find" in classification:
+                classification = "job_search"
+            else:
+                classification = "job_guidance"
+        elif "road" in classification or "path" in classification or "learn" in classification:
+            classification = "roadmap"
+        elif "event" in classification or "workshop" in classification:
+            classification = "events"
+        else:
+            classification = "normal_text"
     
     return classification
 
 # Generate a text response for normal conversation
-def generate_text_response(query: str, conversation_history=None, resume_data=None) -> str:
+def generate_text_response(query: str, conversation_history=None, resume_data=None, query_type="normal_text") -> str:
     """
     Generate a conversational response for general inquiries.
     
@@ -434,48 +462,57 @@ def generate_text_response(query: str, conversation_history=None, resume_data=No
         query (str): The user's current query/message
         conversation_history (list, optional): Previous conversations in chronological order
         resume_data (dict, optional): User's resume data including skills and work experience
+        query_type (str): The classification of the query (normal_text, job_guidance, etc.)
     """
-    system_prompt = """
-    You are a helpful assistant for job seekers and career advancers.
-    Respond in a friendly, concise manner. Keep responses brief and focused.
-    If the user seems to be asking about jobs or careers but not requesting specific listings,
-    suggest they can ask for job listings or a career roadmap.
-    
-    Use the conversation history to provide more personalized and contextually relevant responses.
-    Refer to previous information that the user has shared when appropriate.
-    
-    If the user mentions @resume in their query, consider their resume information when providing advice.
-    """
-    
-    messages = [
-        SystemMessage(content=system_prompt),
-    ]
-    
-    context = ""
-    
-    # Add resume data if available (when @resume tag is used)
-    if "@resume" in query:
-
-
-        resume_context = "User's resume information:\n"
-        
-        # Add skills from resume
-        skills = resume_data.get('skills', [])
-        if skills:
-            resume_context += "Skills: " + ", ".join(skills) + "\n"
+    # Use the helper function from helper_funcs.py
+    try:
+        from helper_funcs import generate_dynamic_text_response
+        return generate_dynamic_text_response(chat_model, query, conversation_history, resume_data, query_type)
+    except ImportError:
+        # Fallback to original implementation if helper_funcs.py is not available
+        # Try to import response templates, define fallbacks if not available
+        try:
+            from response_templates import get_greeting, get_job_guidance_response
+        except ImportError:
+            # Define fallback functions
+            def get_greeting():
+                return "Hello"
             
-        # Add work experience from resume
-        work_experience = resume_data.get('workExperience', [])
-        if work_experience:
-            resume_context += "Work Experience:\n"
-            for exp in work_experience:
-                company = exp.get('company', '')
-                role = exp.get('role', '')
-                description = exp.get('description', '')
-                if company and role:
-                    resume_context += f"- {role} at {company}\n"
-                    if description:
-                        resume_context += f"  Description: {description[:100]}...\n"
+            def get_job_guidance_response(topic):
+                return f"When it comes to {topic} in your career, there are several approaches to consider."
+        
+        # Customize system prompt based on query type
+        if query_type == "job_guidance":
+            system_prompt = f"You are a professional career coach helping with job and career guidance. The user is asking for career advice or guidance about: {query}\n\nRespond in a friendly but professional tone. Be specific and actionable in your advice. Provide 2-3 key suggestions that are practical and immediately useful. Keep your response concise (150-200 words maximum).\n\nIf appropriate, suggest resources or next steps the user could take. Use conversational, encouraging language that motivates the user.\n\nWhen referring to the job market or industry trends, be current and accurate."
+        else:
+            system_prompt = f"You are a helpful assistant for job seekers and career advancers named Asha. The current query is: {query}\n\nRespond in a friendly, conversational manner. Start with a brief acknowledgment. Keep responses focused and under 150 words. Make your response personalized and specific to the query. Use varied sentence structures and natural language patterns. Avoid repetitive phrases or generic responses.\n\nIf the user seems to be asking about jobs or careers but not requesting specific listings, suggest they can ask for job listings or a career roadmap.\n\nUse the conversation history to maintain context and provide relevant responses. If the user mentions @resume in their query, prioritize that information in your advice."
+        
+        messages = [
+            SystemMessage(content=system_prompt),
+        ]
+        
+        context = ""
+        
+        # Add resume data if available (when @resume tag is used)
+        if "@resume" in query and resume_data:
+            resume_context = "User's resume information:\n"
+            
+            # Add skills from resume
+            skills = resume_data.get('skills', [])
+            if skills:
+                resume_context += "Skills: " + ", ".join(skills) + "\n"
+                  # Add work experience from resume
+            work_experience = resume_data.get('workExperience', [])
+            if work_experience:
+                resume_context += "Work Experience:\n"
+                for exp in work_experience:
+                    company = exp.get('company', '')
+                    role = exp.get('role', '')
+                    description = exp.get('description', '')
+                    if company and role:
+                        resume_context += f"- {role} at {company}\n"
+                        if description:
+                            resume_context += f"  Description: {description[:100]}...\n"
         
         # Add education if available
         education = resume_data.get('education', [])
@@ -488,34 +525,81 @@ def generate_text_response(query: str, conversation_history=None, resume_data=No
                     resume_context += f"- {degree} from {institution}\n"
         
         context += resume_context + "\n"
-    
-    # Add conversation history context if available
-    if conversation_history and len(conversation_history) > 0:
-        context += "Previous messages (in chronological order):\n"
-        # The history is already in chronological order from oldest to newest
-        # Include the last 3 messages for context
-        recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
         
-        for convo in recent_history:
-            user_message = convo.get("message", "")
-            bot_response = convo.get("response", {}).get("text", "")
-            if user_message:
-                context += f"User: {user_message}\n"
-            if bot_response:
-                context += f"Assistant: {bot_response}\n"
-    
-    context += "\nCurrent query:\n"
-    messages.append(HumanMessage(content=f"{context}{query}"))
-    
-    response = chat_model(messages)
-    return response.content.strip()
+        # Add conversation history context if available
+        if conversation_history and len(conversation_history) > 0:
+            # The history is already in chronological order from oldest to newest
+            # Include the last 3 messages for context to keep it focused
+            recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
+            
+            context += "Previous conversation context:\n"
+            for convo in recent_history:
+                user_message = convo.get("message", "")
+                bot_response = convo.get("response", {}).get("text", "")
+                if user_message:
+                    context += f"User: {user_message}\n"
+                if bot_response:
+                    context += f"Assistant: {bot_response}\n"
+        
+        # Add the current query with any resume context
+        if context:
+            messages.append(HumanMessage(content=f"{context}\n{query}"))
+        else:
+            messages.append(HumanMessage(content=query))
+        
+        # Generate the response
+        response = chat_model(messages)
+        return response.content.strip()
 
 # Format the response for the frontend
-def format_response(query_type: str, query: str, result) -> dict:
+def format_response(query_type: str, query: str, result, topic=None) -> dict:
     """
     Format the response based on the query type.
-    Returns a dictionary in the format expected by the frontend.
-    """
+    
+    Args:
+        query_type (str): Type of query (job_search, roadmap, etc.)
+        query (str): The original user query
+        result: The result data from processing
+        topic (str, optional): The extracted topic from the query
+        
+    Returns:
+        dict: A dictionary in the format expected by the frontend
+    """# Import response templates - use absolute import path
+    try:
+        from response_templates import (
+            get_job_search_response,
+            get_roadmap_response, 
+            get_events_response, 
+            get_job_guidance_response,
+            get_greeting
+        )
+    except ImportError:
+        # Fallback if module not found or import error
+        def get_job_search_response(job_count, role, location, is_resume_search):
+            location_str = f" in {location}" if location else ""
+            if job_count > 0:
+                if is_resume_search:
+                    return f"Based on your resume, I found {job_count} {role} opportunities{location_str} that match your skills!"
+                else:
+                    return f"I found {job_count} {role} opportunities{location_str}! Here are some matches that might interest you."
+            else:
+                if is_resume_search:
+                    return f"I couldn't find any {role} opportunities{location_str} that match your resume skills at the moment."
+                else:
+                    return f"I couldn't find any {role} opportunities{location_str} at the moment."
+                
+        def get_roadmap_response(topic):
+            return f"I've created a step-by-step roadmap for learning {topic}. Each stage includes activities and resources to help you progress."
+            
+        def get_events_response():
+            return "I found some upcoming events related to your interests! Click the toggle to view them."
+            
+        def get_job_guidance_response(topic):
+            return f"When it comes to {topic} in your career, there are several approaches to consider."
+            
+        def get_greeting():
+            return "Hello"
+    
     if query_type == "job_search":
         # Job search response
         job_params = result
@@ -532,36 +616,18 @@ def format_response(query_type: str, query: str, result) -> dict:
         jobs_data = get_job_search_results(job_params)
         job_count = len(jobs_data.get("body", []))
         
-        # Create a more human-like response based on the search parameters
+        # Get parameters for dynamic response
         location = job_params.get("location_name", "")
         role = job_params.get("keyword", "jobs")
-        # Check if this was a resume-based search
         is_resume_search = "@resume" in query
         
-        # Create a natural language response based on search results
-        if job_count > 0:
-            if is_resume_search:
-                if location:
-                    response_text = f"Based on your resume, I found {job_count} {role} opportunities in {location} that match your skills! Here are some matches that might interest you."
-                else:
-                    response_text = f"Great news! Using your resume skills, I found {job_count} relevant {role} openings that match your profile."
-            else:
-                if location:
-                    response_text = f"I found {job_count} {role} opportunities in {location}! Here are some matches that might interest you."
-                else:
-                    response_text = f"Great news! I found {job_count} relevant {role} openings that match your criteria."
-        else:
-            if is_resume_search:
-                if location:
-                    response_text = f"I couldn't find any {role} opportunities in {location} that match your resume skills at the moment."
-                else:
-                    response_text = f"I couldn't find exact matches for '{role}' based on your resume skills. Try broadening your search or adding more skills to your profile."
-            else:
-                if location:
-                    response_text = f"I couldn't find any {role} opportunities in {location} at the moment."
-                else:
-                    response_text = f"I couldn't find exact matches for '{role}'"
-        
+        # Use template for more varied responses
+        response_text = get_job_search_response(
+            job_count=job_count, 
+            role=role, 
+            location=location, 
+            is_resume_search=is_resume_search
+        )        
         return {
             "text": response_text,
             "canvasType": "job_search",
@@ -582,8 +648,24 @@ def format_response(query_type: str, query: str, result) -> dict:
             if "calendar_event" not in item:
                 item["calendar_event"] = item.get("title", "Learning session")
         
+        # Extract topic from query for dynamic response
+        topic = query.lower()
+        for prefix in ["roadmap for", "roadmap to", "how to", "learn", "learning path", "steps to", "guide to"]:
+            if prefix in topic:
+                topic = topic.split(prefix, 1)[1].strip()
+                break
+        
+        # If topic is still the full query, just take the important keywords
+        if topic == query.lower():
+            import re
+            # Remove common words and get core topic
+            topic = re.sub(r'\b(a|an|the|for|to|of|with|on|at|in|by|about)\b', '', topic).strip()
+        
+        # Generate dynamic response
+        response_text = get_roadmap_response(topic=topic)
+        
         return {
-            "text": f"I've created a day-by-day roadmap for learning {query}. Each step includes daily activities and resources. You can add these to your calendar using the 'Add to Calendar' button.",
+            "text": response_text,
             "canvasType": "roadmap",
             "canvasUtils": {
                 "roadmap": roadmap_items,
@@ -592,11 +674,13 @@ def format_response(query_type: str, query: str, result) -> dict:
         }
     elif query_type == "events":
         # Events response
-        
         session_link, session_api = get_events_links()
         
+        # Use template for more varied responses
+        response_text = get_events_response()
+        
         return {
-            "text": "I can help you find events or workshops related to your query. Please click on the toggle to view",
+            "text": response_text,
             "canvasType": "sessions",
             "canvasUtils": {
                 "session_link": session_link,
@@ -624,22 +708,46 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
     """
     # Step 1: Classify the query
     query_type = classify_query(prompt)
-      # Step 2: Handle based on classification
+    
+    # Step 2: Handle based on classification
     if query_type == "job_search":
         # Handle job search with resume data if available
         job_params = extract_job_search_params(prompt, conversation_history, resume_data)
         return format_response(query_type, prompt, job_params)
     
     elif query_type == "roadmap":
-        # Handle roadmap (using resume data in the future for better personalization)
-        # For now, we're not passing resume_data to generate_roadmap
+        # Handle roadmap with conversation history for context
         roadmap_items = generate_roadmap(prompt, conversation_history)
         return format_response(query_type, prompt, roadmap_items)
+    
+    elif query_type == "events":
+        # Handle events requests
+        return format_response(query_type, prompt, None)
+    
+    elif query_type == "job_guidance":
+        # Handle job guidance with specialized response
+        # Try to extract topic for better contextual responses
+        topic = None
+        try:
+            from helper_funcs import extract_topic_from_query
+            topic = extract_topic_from_query(prompt)
+        except ImportError:
+            # If extraction fails, use the prompt as topic
+            topic = prompt
+        
+        # Check if this is a resume-context query
+        has_resume_context = bool(resume_data and prompt and '@resume' in prompt)
+        
+        # Generate response with appropriate context
+        guidance_response = generate_text_response(prompt, conversation_history, resume_data, query_type="job_guidance")
+        
+        # Pass topic to format_response
+        return format_response("normal_text", prompt, guidance_response, topic=topic)
     
     else:
         # Handle normal text with resume context if available
         text_response = generate_text_response(prompt, conversation_history, resume_data)
-        return format_response(query_type, prompt, text_response)
+        return format_response("normal_text", prompt, text_response)
 
 def get_events_links():
     """

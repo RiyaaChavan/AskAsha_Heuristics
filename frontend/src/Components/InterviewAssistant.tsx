@@ -94,17 +94,21 @@ export default function InterviewAssistant() {
   };
 
   const handleSendMessage = async (e: FormEvent): Promise<void> => {
-    e.preventDefault();
-    if (!inputText.trim() || !sessionId) return;
+    e.preventDefault();    if (!inputText.trim() || !sessionId) return;
 
+    // Store input text before clearing
+    const messageToSend = inputText;
+    
     const userMessage: Message = {
       id: Date.now(),
-      text: inputText,
+      text: messageToSend,
       sender: 'user',
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    // Clear input immediately when the user sends a message
     setInputText('');
+    
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
