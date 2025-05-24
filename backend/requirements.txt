@@ -12,3 +12,5 @@ python-dotenv
 pypdf2
 docx2txt
 nltk
+tranformers
+torch
