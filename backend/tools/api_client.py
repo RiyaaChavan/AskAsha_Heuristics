@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 # Try to import Config, but provide fallback if not available
 try:
-    from config.config import Config
+    from config import Config
     HERKEY_API_BASE_URL = Config.HERKEY_API_BASE_URL
 except (ImportError, AttributeError):
     HERKEY_API_BASE_URL = "https://api-prod.herkey.com/api/v1/herkey"

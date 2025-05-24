@@ -97,7 +97,6 @@ const CanvasArea: React.FC<CanvasAreaProps> = ({
         return <div key={canvasKey} className="canvas-content">No content available for type: {activeMessage.canvasType}</div>;
     }
   };
-  
   return (
     <div className={`canvas-area ${isOpen ? 'open' : 'closed'}`}>
       <div className="canvas-header">
@@ -112,6 +111,31 @@ const CanvasArea: React.FC<CanvasAreaProps> = ({
       <div className="canvas-content" key={`canvas-wrapper-${renderKey}`}>
         {isOpen && renderCanvas()}
       </div>
+      
+      {/* Floating toggle button */}
+      {!isOpen && (
+        <button 
+          className="canvas-toggle-button canvas-toggle-button-float"
+          onClick={toggleCanvas}
+          aria-label="Open canvas"
+        >
+          <span>&#10095;</span>
+        </button>
+      )}
+      
+      {/* New canvas toggle button that appears at bottom right when closed */}
+      {!isOpen && (
+        <button 
+          onClick={toggleCanvas} 
+          className="canvas-closed-toggle-btn"
+          aria-label="Open canvas"
+        >
+          <div className="canvas-icon">
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+      )}
     </div>
   );
 };
