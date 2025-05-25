@@ -3,12 +3,13 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from response_templates import get_greeting, get_job_guidance_response,get_job_search_response
 from dotenv import load_dotenv
+from tools.jobs import extract_job_search_params, get_job_search_results
 import os
 import json
 import re
 import urllib.parse
 from datetime import datetime
-
+from assets.system_prompt import JOB_SEARCH_SYSTEM_PROMPT,GENERATE_ROADMAP_SYSTEM_PROMPT, ROADMAP_SUBPROMPTS
 load_dotenv()
 # Initialize your chat LLM
 chat_model = ChatOpenAI(model="gpt-4.1-nano", temperature=0.3)
@@ -22,319 +23,150 @@ def get_herkey_token() -> str:
     resp.raise_for_status()
     return resp.json()["body"]["session_id"]
 
-# Job search function - extracts parameters from a query
-def extract_job_search_params(query: str, conversation_history=None, resume_data=None) -> dict:
-    """
-    Extract job search parameters from a natural language query.
-    Returns a dictionary of parameters for the Herkey API.
-    
-    Args:
-        query (str): The user's current query/message
-        conversation_history (list, optional): Previous conversations in chronological order
-        resume_data (dict, optional): User's resume data including skills and work experience
-    """
-    system_prompt = """
-    You are a job search parameter extractor for the Herkey API.
-    Extract job search parameters from the user's query and return them in a JSON format.
-    
-    IMPORTANT: Keep searches BROAD to ensure results. Avoid overparameterization.
-    
-    Parameters to extract (only include if explicitly mentioned):
-    - page_no: Always set to 1 for initial search
-    - page_size: Always set to 15 for initial search  
-    - keyword: The main job title, role, or broad skill area (REQUIRED - keep it broad and simple)
-    - location_name: Only include if user specifically mentions a city/location
-    - work_mode: Only if explicitly mentioned: "work_from_home", "work_from_office", "hybrid", or "freelance"
-    - job_types: Only if explicitly mentioned: "full_time", "part_time", "freelance", "returnee_program", or "volunteer"
-    - job_skills: Only include 1-3 most important/specific skills mentioned (don't over-specify)
-    - is_global_query: Always set to "false"
-    - platforms: Default ["herkey", "linkedin", "glassdoor"]
-    
-    CRITICAL RULES:
-    1. Keep 'keyword' broad and simple (e.g., "data scientist", "software engineer", "marketing")
-    2. Do NOT include overly specific parameters that could eliminate good matches
-    3. Do NOT extract: industries, company_name, salary ranges, years of experience
-    4. Limit job_skills to maximum 3 core skills only if explicitly mentioned
-    5. For general queries like "find me a job", use broad terms like "software", "data", "marketing" based on context
-    6. Prefer broader searches over narrow ones - it's better to get more results than none
-    
-    Examples:
-    - "Find data science jobs" → {"keyword": "data scientist", "job_skills": "data analysis"}
-    - "Software engineer remote" → {"keyword": "software engineer", "work_mode": "work_from_home"}
-    - "Marketing jobs in Mumbai" → {"keyword": "marketing", "location_name": "Mumbai"}
-    
-    Return ONLY the JSON object with no additional text, explanations, or markdown formatting.
-    """
-    
-    messages = [
-        SystemMessage(content=system_prompt),
-    ]
-    
-    # Prepare context with conversation history and resume data if available
-    context = ""
-    
-    # Add resume data if available (when @resume tag is used)
-    if resume_data:
-        resume_context = "User's resume information(This is the information the user is requesting when they say @resume):\n"
-        
-        # Add skills from resume
-        skills = resume_data.get('skills', [])
-        if skills:
-            resume_context += "Skills: " + ", ".join(skills) + "\n"
-            
-        # Add work experience from resume
-        work_experience = resume_data.get('workExperience', [])
-        if work_experience:
-            resume_context += "Work Experience:\n"
-            for exp in work_experience:
-                company = exp.get('company', '')
-                role = exp.get('role', '')
-                description = exp.get('description', '')
-                if company and role:
-                    resume_context += f"- {role} at {company}\n"
-                    if description:
-                        resume_context += f"  Description: {description}\n"
-        
-        # Add education if available
-        education = resume_data.get('education', [])
-        if education:
-            resume_context += "Education:\n"
-            resume_context += education
-        context += resume_context + "\n"
-        # return context
-    # Add conversation history context if available
-    if conversation_history and len(conversation_history) > 0:
-        context += "Previous messages (in chronological order):\n"
-        # The history is already in chronological order from oldest to newest
-        # Include the last 3 messages for context
-        recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
-        
-        for convo in recent_history:
-            user_message = convo.get("message", "")
-            bot_response = convo.get("response", {}).get("text", "")
-            if user_message:
-                context += f"User: {user_message}\n"
-            if bot_response:
-                context += f"Assistant: {bot_response}\n"
-    
-    context += "\nCurrent query:\n"
-    messages.append(HumanMessage(content=f"{context}{query}"))
-    
-    response = chat_model(messages)
-    content = response.content.strip()
-    
-    # Extract JSON from the response if it's wrapped in code fences
-    if content.startswith("```") and content.endswith("```"):
-        content = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content).group(1)
-    
-    try:
-        params = json.loads(content)
-        # Set default values if not present
-        params.setdefault("page_no", 1)
-        params.setdefault("page_size", 15)
-        params.setdefault("is_global_query", "false")
-        params.setdefault("platforms", ["herkey", "linkedin", "glassdoor"])
-        
-        # Ensure keyword is broad and simple
-        if "keyword" not in params or params["keyword"].strip() == "":
-            # Use resume skills as broad keywords if available
-            if resume_data and resume_data.get('skills'):
-                # Take first 2-3 skills and make them broad
-                top_skills = resume_data.get('skills', [])[:2]
-                params["keyword"] = " ".join(top_skills)
-            else:
-                # Extract a simple keyword from the query
-                query_lower = query.lower()
-                if any(word in query_lower for word in ['data', 'analyst', 'science']):
-                    params["keyword"] = "data"
-                elif any(word in query_lower for word in ['software', 'developer', 'engineer', 'programming']):
-                    params["keyword"] = "software"
-                elif any(word in query_lower for word in ['marketing', 'digital', 'social']):
-                    params["keyword"] = "marketing"
-                elif any(word in query_lower for word in ['design', 'ui', 'ux']):
-                    params["keyword"] = "design"
-                else:
-                    params["keyword"] = "jobs"  # Very broad fallback
-        
-        # Simplify job_skills - limit to 3 max and make them broad
-        if "job_skills" in params and params["job_skills"]:
-            skills_str = params["job_skills"]
-            if isinstance(skills_str, str):
-                skill_list = [s.strip() for s in skills_str.split(',')][:3]  # Max 3 skills
-                params["job_skills"] = ', '.join(skill_list)
-        elif resume_data and resume_data.get('skills'):
-            # Add top 3 resume skills as job_skills if none extracted
-            top_skills = resume_data.get('skills', [])[:3]
-            params["job_skills"] = ', '.join(top_skills)
-        
-        # Clean up parameters - remove empty or overly specific values
-        for key in list(params.keys()):
-            if isinstance(params[key], str) and (
-                params[key].strip() == "" or 
-                params[key] in ["any", "all", "none", "not specified"]
-            ):
-                del params[key]
-        
-        # Remove overly restrictive parameters that could cause no results
-        restrictive_params = ['industries', 'company_name', 'min_year', 'max_year', 'salary_min', 'salary_max']
-        for param in restrictive_params:
-            if param in params:
-                del params[param]
-        
-        # Ensure platforms is a list
-        if "platforms" in params and isinstance(params["platforms"], str):
-            params["platforms"] = [params["platforms"]]
-        
-        print(f"Final job search params: {params}")
-        return params
-    except json.JSONDecodeError:
-        # If JSON parsing fails, return very basic parameters
-        basic_keyword = "jobs"
-        
-        # Try to extract a simple keyword from the query
-        query_lower = query.lower()
-        if any(word in query_lower for word in ['data', 'analyst', 'science']):
-            basic_keyword = "data"
-        elif any(word in query_lower for word in ['software', 'developer', 'engineer']):
-            basic_keyword = "software"
-        elif any(word in query_lower for word in ['marketing', 'digital']):
-            basic_keyword = "marketing"
-        elif any(word in query_lower for word in ['design', 'ui', 'ux']):
-            basic_keyword = "design"
-        
-        return {
-            "page_no": 1,
-            "page_size": 15,
-            "keyword": basic_keyword,
-            "is_global_query": "false",
-            "platforms": ["herkey", "linkedin", "glassdoor"]
-        }
 
-# Get job search results from the Herkey API
-def get_job_search_results(params: dict, platforms=None) -> dict:
-    """
-    Search for jobs across multiple platforms with the given parameters.
+
+
+
+# Job search function - extracts parameters from a query
+# def extract_job_search_params(query: str, conversation_history=None, resume_data=None) -> dict:
+#     """
+#     Extract job search parameters from a natural language query.
+#     Returns a dictionary of parameters for the Herkey API.
     
-    Args:
-        params (dict): Job search parameters
-        platforms (list): List of platforms to search on. If None, searches on all platforms.
+#     Args:
+#         query (str): The user's current query/message
+#         conversation_history (list, optional): Previous conversations in chronological order
+#         resume_data (dict, optional): User's resume data including skills and work experience
+#     """
+#     system_prompt = JOB_SEARCH_SYSTEM_PROMPT
     
-    Returns:
-        dict: Dictionary with combined search results from all platforms.
-    """
-    # Default to all platforms if none specified
-    if platforms is None:
-        platforms = ["herkey", "linkedin", "glassdoor"]
-    elif isinstance(platforms, str):
-        platforms = [platforms]
+#     messages = [
+#         SystemMessage(content=system_prompt),
+#     ]
     
-    # Import the job client factory
-    try:
-        from tools.api_client import get_job_client
-    except ImportError:
-        # If import fails, fallback to just Herkey
-        platforms = ["herkey"]
+#     # Prepare context with conversation history and resume data if available
+#     context = ""
+    
+#     # Add resume data if available (when @resume tag is used)
+#     if resume_data:
+#         resume_context = "User's resume information(This is the information the user is requesting when they say @resume):\n"
         
-        # Define a simple factory function for Herkey only
-        def get_job_client(platform="herkey"):
-            from tools.api_client import HerkeyAPIClient
-            return HerkeyAPIClient()
-    
-    all_results = []
-    error_messages = []
-    
-    # First, try to get Herkey recommendations if Herkey is in the platforms
-    herkey_recommendations = []
-    if "herkey" in platforms:
-        try:
-            # Get Herkey client directly for recommendations
-            from tools.api_client import HerkeyAPIClient
-            herkey_client = HerkeyAPIClient()
+#         # Add skills from resume
+#         skills = resume_data.get('skills', [])
+#         if skills:
+#             resume_context += "Skills: " + ", ".join(skills) + "\n"
             
-            # Get recommendations first
-            herkey_rec_results = herkey_client.get_recommendations(params)
-            
-            # If successful, add to recommendations
-            if "body" in herkey_rec_results and isinstance(herkey_rec_results["body"], list):
-                # Add recommended flag
-                for job in herkey_rec_results["body"]:
-                    job["platform"] = "herkey"
-                    job["recommended"] = True
-                
-                herkey_recommendations.extend(herkey_rec_results["body"])
-                print(f"Got {len(herkey_recommendations)} Herkey recommendations")
-        except Exception as e:
-            error_messages.append(f"Error getting Herkey recommendations: {str(e)}")
-    
-    # Search for jobs on each platform
-    for platform in platforms:
-        # Skip Herkey search if we already have recommendations
-        if platform == "herkey" and herkey_recommendations:
-            all_results.extend(herkey_recommendations)
-            continue
-            
-        try:
-            # Get the appropriate client for this platform
-            client = get_job_client(platform)
-            
-            # Search for jobs
-            platform_results = client.search_jobs(params)
-            
-            # If successful, add to all_results
-            if "body" in platform_results and isinstance(platform_results["body"], list):
-                # Add platform identifier if not already present
-                for job in platform_results["body"]:
-                    if "platform" not in job:
-                        job["platform"] = platform
-                
-                all_results.extend(platform_results["body"])
-            else:
-                error_messages.append(f"Error searching on {platform}: No results found")
-        except Exception as e:
-            error_messages.append(f"Error searching on {platform}: {str(e)}")
-    
-    # Create a combined result
-    if all_results:
-        # Filter out expired jobs
-        current_date = datetime.now()
-        valid_jobs = []
+#         # Add work experience from resume
+#         work_experience = resume_data.get('workExperience', [])
+#         if work_experience:
+#             resume_context += "Work Experience:\n"
+#             for exp in work_experience:
+#                 company = exp.get('company', '')
+#                 role = exp.get('role', '')
+#                 description = exp.get('description', '')
+#                 if company and role:
+#                     resume_context += f"- {role} at {company}\n"
+#                     if description:
+#                         resume_context += f"  Description: {description}\n"
         
-        for job in all_results:
-            # If job has an expires_on field, check if it's still valid
-            if "expires_on" in job:
-                try:
-                    expiry_date = datetime.strptime(job["expires_on"], "%Y-%m-%d %H:%M:%S")
-                    if expiry_date > current_date:
-                        valid_jobs.append(job)
-                except (ValueError, TypeError):
-                    # If date parsing fails, include the job anyway
-                    valid_jobs.append(job)
-            else:
-                # If no expiry date, include the job
-                valid_jobs.append(job)
-          # Sort jobs: First prioritize Herkey recommendations, then regular Herkey jobs, then by match score
-        # This ensures Herkey recommendations and jobs are shown first in the frontend
-        sorted_jobs = sorted(valid_jobs, key=lambda job: (
-            0 if job.get("platform") == "herkey" and job.get("recommended", False) else # Herkey recommendations first
-            1 if job.get("platform") == "herkey" else # Then regular Herkey jobs
-            2,  # Then other platforms
-            -1 * job.get("skillMatchScore", 0) if "skillMatchScore" in job else 0  # Then by skill match score
-        ))
+#         # Add education if available
+#         education = resume_data.get('education', [])
+#         if education:
+#             resume_context += "Education:\n"
+#             resume_context += education
+#         context += resume_context + "\n"
         
-        return {
-            "response_code": 10100,
-            "message": "Success",
-            "body": sorted_jobs,
-            "platforms_searched": platforms
-        }
-    else:
-        # If no results, return error
-        return {
-            "response_code": 400,
-            "message": " | ".join(error_messages) if error_messages else "No job results found",
-            "body": [],
-            "platforms_searched": platforms
-        }
+#     # Add conversation history context if available
+#     if conversation_history and len(conversation_history) > 0:
+#         context += "Previous messages (in chronological order):\n"
+#         # The history is already in chronological order from oldest to newest
+#         # Include the last 3 messages for context
+#         recent_history = conversation_history[-3:] if len(conversation_history) > 3 else conversation_history
+        
+#         for convo in recent_history:
+#             user_message = convo.get("message", "")
+#             bot_response = convo.get("response", {}).get("text", "")
+#             if user_message:
+#                 context += f"User: {user_message}\n"
+#             if bot_response:
+#                 context += f"Assistant: {bot_response}\n"
+    
+#     context += "\nCurrent query:\n"
+#     messages.append(HumanMessage(content=f"{context}{query}"))
+    
+#     response = chat_model(messages)
+#     content = response.content.strip()
+    
+#     # Extract JSON from the response if it's wrapped in code fences
+#     if content.startswith("```") and content.endswith("```"):
+#         content = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content).group(1)
+    
+#     try:
+#         params = json.loads(content)
+#         return params
+#     except json.JSONDecodeError:
+#         # If JSON parsing fails, return very basic parameters
+#         basic_keyword = "jobs"
+        
+#         # Try to extract a simple keyword from the query
+#         query_lower = query.lower()
+#         if any(word in query_lower for word in ['data', 'analyst', 'science']):
+#             basic_keyword = "data"
+#         elif any(word in query_lower for word in ['software', 'developer', 'engineer']):
+#             basic_keyword = "software"
+#         elif any(word in query_lower for word in ['marketing', 'digital']):
+#             basic_keyword = "marketing"
+#         elif any(word in query_lower for word in ['design', 'ui', 'ux']):
+#             basic_keyword = "design"
+        
+#         return {
+          
+#             "keyword": basic_keyword,
+#             "is_global_query": "false",
+#             "platforms": ["herkey", "linkedin", "glassdoor"]
+#         }
+
+# # Get job search results from the Herkey API
+# def get_job_search_results(params: dict, platforms=None) -> dict:
+#     """
+#     Search for jobs across multiple platforms with the given parameters.
+    
+#     Args:
+#         params (dict): Job search parameters
+#         platforms (list): List of platforms to search on. If None, searches on all platforms.
+    
+#     Returns:
+#         dict: Dictionary with combined search results from all platforms.
+#     """
+#     # Default to all platforms if none specified
+    
+#     linkedin_jobs=[]
+    
+    
+    
+    
+        
+#     herkey_jobs=get_herkey_jobs.get('body', [])
+#     sorted_jobs=herkey_jobs
+    
+    
+    
+    
+#     if len(sorted_jobs)>0:
+#         return {
+#             "response_code": 10100,
+#             "message": "Success",
+#             "body": sorted_jobs,
+#             "platforms_searched": platforms
+#         }
+#     else:
+#         # If no results, return error
+#         return {
+#             "response_code": 400,
+#             # "message": " | ".join(error_messages) if error_messages else "No job results found",
+#             "body": [],
+#             "platforms_searched": platforms
+#         }
 
 # Generate a roadmap for a given topic
 def generate_roadmap(topic: str, conversation_history=None) -> list:
@@ -361,185 +193,10 @@ Generate a structured learning roadmap for the given topic. The topic must be re
     # Detect domain type to select specialized template
     domain = detect_roadmap_domain(topic)
     
-    system_prompt = """
-    Create a detailed learning roadmap for the user's requested topic. The roadmap must be practical, actionable, and include ONLY VERIFIED EXISTING resources. You are a professional career coach specializing in women's workforce advancement. Your ONLY task is to create a clear, structured **career guidance roadmap** specifically for women in professional settings.
-
-    IMPORTANT ROADMAP STRUCTURE:
-    1. Create 5-8 sequential PHASE-BASED roadmap steps that build progressively
-    2. DO NOT use "Week 1", "Day 2" or ANY time-specific headers - use descriptive phase titles only
-    3. DO NOT use day-specific language like "Monday", "Tuesday" in descriptions
-    4. ADAPT THE TIMELINE to fit exactly within the user's requested timeframe
-    5. Use headers like "Foundation Building", "Core Concepts", "Practical Application" instead
-    6. Each milestone should be specific and actionable, not generic advice
-    7. Ensure each step builds logically on the previous step
-
-    FOR EACH ROADMAP STEP INCLUDE:
-    - "title": Clear focus area based on user's topic (e.g., "Python Fundamentals: Data Types")
-    - "description": HIGHLY DETAILED guidance with:
-        * Specific activities to complete (e.g., "Complete exercises on variables & data types")
-        * Concrete topics with examples
-        * Measurable milestones
-        * Practical mini-projects to apply learning
-        * A clear breakdown of what the user will learn in this phase
-        * Context about why this phase matters for their overall goal
-        * At least 150-200 words of detailed instruction per phase
-        * DO NOT reference specific days of the week
-        * If user specified a timeframe, portion activities accordingly (e.g., "Spend 25% of your time on...")
-    - "link": ONLY verified working URLs to free or low-cost resources that are DIRECTLY RELEVANT to this specific phase
-    - "calendar_event": A short description for calendar integration
-
-    SPECIAL FOCUS FOR WOMEN IN THE WORKFORCE:
-    - For WOMEN RETURNERS (after career break): Include confidence-building exercises, skills refreshers, return-to-work programs, and relevant communities. Focus on translating past experience to current market needs.
-    - For WOMEN RESTARTING CAREERS: Emphasize transferable skills, flexible work options, and networking strategies. Include resources for balancing family responsibilities.
-    - For WOMEN STARTING CAREERS: Focus on entry points, mentorship opportunities, and building professional presence. Include women-specific career development resources.
-    - For WORKING MOTHERS: Highlight flexible learning options, time management, and resources that acknowledge family responsibilities.
-
-    RESOURCE LINKS - VERIFY AND SELECT THE MOST RELEVANT RESOURCES:
-    1. General career development resources:
-       * LinkedIn Learning: https://www.linkedin.com/learning/ - For professional skills courses
-       * Coursera: https://www.coursera.org/ - For academic and professional courses
-       * edX: https://www.edx.org/ - For courses from top universities
-       * Indeed Career Guide: https://www.indeed.com/career-advice - For job search and career guidance
-       * The Muse: https://www.themuse.com/advice/ - For career advice and job search tips
-       * Harvard Business Review: https://hbr.org/topic/career-planning - For advanced career strategies
-       * Glassdoor Blog: https://www.glassdoor.com/blog/ - For workplace insights and salary information
-       * Udemy: https://www.udemy.com/ - For specific skill-based courses
-       * Khan Academy: https://www.khanacademy.org/ - For fundamental academic skills
-
-    2. Technical skills resources:
-       * freeCodeCamp: https://www.freecodecamp.org/learn - For coding and web development
-       * MDN Web Docs: https://developer.mozilla.org/en-US/docs/Learn - For web technologies
-       * W3Schools: https://www.w3schools.com/ - For web development tutorials
-       * Codecademy: https://www.codecademy.com/catalog - For interactive coding lessons
-       * GitHub Learning Lab: https://lab.github.com/ - For Git and GitHub skills
-       * Microsoft Learn: https://docs.microsoft.com/en-us/learn/ - For Microsoft technologies
-       * Google Digital Garage: https://learndigital.withgoogle.com/ - For digital marketing and business skills
-       * DataCamp: https://www.datacamp.com/ - For data science skills
-       * HackerRank: https://www.hackerrank.com/ - For coding practice and challenges
-
-    3. Women-specific career resources:
-       * Women Who Code: https://www.womenwhocode.com/resources - For women in technology
-       * Ellevate Network: https://www.ellevatenetwork.com/articles - For professional women
-       * Lean In: https://leanin.org/tips - For women in leadership
-       * Girls Who Code: https://girlswhocode.com/programs - For young women learning to code
-       * PowerToFly: https://powertofly.com/career/ - For women in tech careers
-       * Women in Technology International: https://witi.com/networks/ - For networking
-       * Fairygodboss: https://fairygodboss.com/career-topics - For career advice for women
-       * JobsForHer: https://www.jobsforher.com/ - For women returning to work
-       * Women Returners: https://www.womenreturners.com/returners/ - For career returners
-
-    4. Interview and job search resources:
-       * Interview Cake: https://www.interviewcake.com/ - For technical interviews
-       * Big Interview: https://biginterview.com/blog/ - For interview preparation
-       * LeetCode: https://leetcode.com/ - For coding interviews
-       * Pramp: https://www.pramp.com/ - For interview practice
-       * CareerOneStop: https://www.careeronestop.org/ - Government resource for job searching
-       * The Balance Careers: https://www.thebalancecareers.com/ - For job search advice
-
-    IMPORTANT RULES FOR USING THESE RESOURCES:
-    1. Match links PRECISELY to the phase content - each resource must be SPECIFICALLY relevant
-    2. Link to specific pages within these sites whenever possible (not just homepages)
-    3. Verify each link leads to content directly related to your phase recommendation
-    4. If a specific topic isn't covered by these resources, use general career resources that are most relevant
-    5. For technical or specialized topics, prioritize the most authoritative source from the list
-    6. For domain-specific learning (e.g., marketing, finance), choose the most specialized resource
-
-    FORMAT YOUR RESPONSE AS A JSON ARRAY with 5-8 objects.
-    Each object MUST have these fields:
-    - "title": string (Clear focus area without time references)
-    - "description": string (Detailed guidance without specific days/weeks)
-    - "link": string (VERIFIED working URL to relevant resource)
-    - "calendar_event": string (Short summary for calendar)
-
-    RETURN ONLY THE JSON ARRAY. No introductions or other text.
-    """
+    system_prompt = GENERATE_ROADMAP_SYSTEM_PROMPT
 
     # Add domain-specific instructions based on detected domain
-    if domain == "technical":
-        system_prompt += """
-        SPECIALIZED INSTRUCTIONS FOR TECHNICAL SKILL ROADMAPS:
-        - Focus on logical skill progression (foundations → intermediate → advanced)
-        - Include specific coding exercises with clear objectives
-        - Recommend practical projects for portfolio building at each phase
-        - For coding topics, link to interactive coding platforms and documentation
-        - Include specific technical interview preparation in later phases
-        - Emphasize testing and debugging practices throughout the roadmap
-        - Include sections on code review and collaboration tools
-        - Direct to specialized technical communities for ongoing learning
-        - Prioritize hands-on coding exercises over theoretical learning
-        - Include GitHub portfolio development as part of the learning journey
-        """
-    elif domain == "leadership":
-        system_prompt += """
-        SPECIALIZED INSTRUCTIONS FOR LEADERSHIP ROADMAPS:
-        - Focus on progressive leadership skill development
-        - Include emotional intelligence and interpersonal communication strategies
-        - Provide exercises for team management and conflict resolution
-        - Recommend specific leadership assessment tools and reflective practices
-        - Include sections on managing diverse teams and inclusive leadership
-        - Incorporate mentorship and networking as key components
-        - Emphasize strategic thinking and decision-making frameworks
-        - Include practical management scenarios with suggested approaches
-        - Provide resources for developing executive presence and communication
-        - Link to specific leadership case studies and relevant business research
-        """
-    elif domain == "creative":
-        system_prompt += """
-        SPECIALIZED INSTRUCTIONS FOR CREATIVE SKILL ROADMAPS:
-        - Structure around progressive portfolio development
-        - Include specific design/creative challenges with clear objectives
-        - Focus on both technical skills and creative thinking processes
-        - Recommend industry-standard tools and specific tutorials
-        - Include peer review and feedback mechanisms
-        - Emphasize client/user communication and requirement gathering
-        - Provide resources for developing a professional creative identity
-        - Include exercises for creativity unblocking and inspiration
-        - Recommend specific creative communities for networking and feedback
-        - Focus on current industry trends and standards
-        """
-    elif domain == "business":
-        system_prompt += """
-        SPECIALIZED INSTRUCTIONS FOR BUSINESS ROADMAPS:
-        - Include specific case studies and business analysis frameworks
-        - Focus on quantifiable business metrics and performance indicators
-        - Include financial literacy and business model understanding
-        - Recommend industry-specific certification paths where relevant
-        - Provide scenarios for practicing business decision-making
-        - Include networking strategies for industry immersion
-        - Emphasize data-driven decision making and analytical skills
-        - Include both strategic and operational perspectives
-        - Focus on relevant business software and digital tool proficiency
-        - Recommend business workshops and conferences for practical learning
-        """
-    elif domain == "job_search":
-        system_prompt += """
-        SPECIALIZED INSTRUCTIONS FOR JOB SEARCH ROADMAPS:
-        - Structure around the complete job search life cycle
-        - Include detailed CV/resume development with ATS optimization
-        - Provide scripts and templates for networking and outreach
-        - Include detailed interview preparation with industry-specific questions
-        - Focus on digital presence optimization (LinkedIn, portfolio sites)
-        - Include salary negotiation strategies and scripts
-        - Recommend job search tracking systems and methodologies
-        - Provide resources for company research and interview preparation
-        - Include post-interview follow-up strategies
-        - Focus on both active and passive job search techniques
-        - Include specific tips for gender bias navigation in interviews
-        """
-    elif domain == "return_to_work":
-        system_prompt += """
-        SPECIALIZED INSTRUCTIONS FOR RETURN-TO-WORK ROADMAPS:
-        - Focus on confidence rebuilding and skill refreshing
-        - Include specific returner programs and opportunities
-        - Provide strategies for addressing career gaps in applications/interviews
-        - Recommend skill assessment tools and targeted upskilling resources
-        - Include comprehensive LinkedIn and professional presence revitalization
-        - Focus on current industry trends and changes since career break
-        - Provide networking scripts specifically for career returners
-        - Include family-work balance strategies and resources
-        - Recommend flexible work opportunities and search strategies
-        - Include success stories and case studies of successful returners
-        """
+    system_prompt += ROADMAP_SUBPROMPTS[domain]
 
     # Extract any timeframe from the user's query
     timeframe_patterns = [
@@ -927,7 +584,7 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
     if query_type == "job_search":
         # Job search response
         job_params = result
-        platforms = job_params.get("platforms", ["herkey", "linkedin", "glassdoor"])
+        platforms = ["herkey", "linkedin", "glassdoor"]
         
         # Get fresh token for job API
         token = get_herkey_token()
@@ -1056,6 +713,9 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
     if query_type == "job_search":
         # Handle job search with resume data if available
         job_params = extract_job_search_params(prompt, conversation_history, resume_data)
+        print(f"Job search parameters extracted: {job_params}")
+        
+        
         return format_response(query_type, prompt, job_params)
     
     elif query_type == "roadmap":

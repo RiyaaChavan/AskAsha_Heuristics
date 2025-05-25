@@ -125,6 +125,14 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
   useEffect(() => {
     if (!message.canvasUtils) return;
     
+    // Helper to infer platform from job data
+    const inferPlatform = (job: any): string => {
+      if (job.platform) return job.platform;
+      if (job.linkedin_job_id || (job.redirect_url && job.redirect_url.includes('linkedin.com'))) return 'linkedin';
+      if (job.redirect_url && job.redirect_url.includes('glassdoor.com')) return 'glassdoor';
+      return 'herkey';
+    };
+
     // Check if we have job_results provided directly from backend
     if (message.canvasUtils.job_results && Array.isArray(message.canvasUtils.job_results)) {
       setLoading(true);
@@ -135,30 +143,26 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
         
         // Process jobs data - standardize and add skill match scores
         const processedJobs = message.canvasUtils.job_results.map((job: any) => {
-          // Add platform if not already provided
-          const platform = job.platform || message.canvasUtils?.platform || "herkey";
-          
+          const platform = inferPlatform(job);
           // Create standardized job data
           const standardizedJob: JobData = {
             id: job.id,
-            title: job.title,
+            title: job.title || job.job_title || 'Untitled',
             company_name: job.company_name,
             location_name: job.location_name,
-            skills: job.skills,
-            status: job.status || "Active",
+            skills: Array.isArray(job.skills) ? job.skills : (job.skills ? [job.skills] : []),
+            status: job.status || 'Active',
             company_logo: job.company_logo,
             min_year: job.min_year,
             max_year: job.max_year,
-            work_mode: job.work_mode,
-            job_types: job.job_types,
+            work_mode: Array.isArray(job.work_mode) ? job.work_mode : (job.work_mode ? [job.work_mode] : []),
+            job_types: Array.isArray(job.job_types) ? job.job_types : (job.job_types ? [job.job_types] : []),
             boosted: job.boosted,
             expires_on: job.expires_on,
             platform,
-            platform_job_url: job.platform_job_url || job.url,
-            // Calculate skill match score if not already provided
+            platform_job_url: job.platform_job_url || job.redirect_url || job.url,
             skillMatchScore: job.skillMatchScore || calculateSkillMatchScore(job.skills, userSkills)
           };
-          
           return standardizedJob;
         });
         
@@ -169,25 +173,23 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
         
         // Then prioritize Herkey jobs - give Herkey jobs a significant boost
         const platformSortedJobs = [...matchSortedJobs].sort((a, b) => {
-          // If both are Herkey or both are not Herkey, maintain the skill match order
           if ((a.platform === 'herkey' && b.platform === 'herkey') || 
               (a.platform !== 'herkey' && b.platform !== 'herkey')) {
-            return 0; // Keep existing order
+            return 0;
           }
-          // Put Herkey jobs first
           return a.platform === 'herkey' ? -1 : 1;
         });
         
         setJobs(platformSortedJobs);
         setFilteredJobs(platformSortedJobs);
       } catch (err) {
-        console.error("Error processing job data:", err);
-        setError("Failed to process job data");
+        console.error('Error processing job data:', err);
+        setError('Failed to process job data');
       } finally {
         setLoading(false);
       }
     } else {
-      setError("No job results available");
+      setError('No job results available');
     }
   }, [message.canvasUtils]);
 

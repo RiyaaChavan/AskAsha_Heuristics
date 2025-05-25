@@ -17,9 +17,9 @@ import Signup from './pages/Signup';
 import Navbar from './Components/Navbar';
 import CareerCoach from './Components/CareerCoach';
 import InterviewAssistant from './Components/InterviewAssistant';
-import HomePage from './pages/HomePage';
+// import HomePage from './pages/HomePage';
 import './index.css';
-import { BentoGridDemo } from './Components/Homepage/BentoGrid';
+// import { BentoGridDemo } from './Components/Homepage/BentoGrid';
 
 function AppWithNavbar() {
   const location = useLocation();
@@ -63,16 +63,16 @@ function AppWithNavbar() {
             <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
           </ProtectedRoute>
         } />
-         <Route path="/homepage" element={
+         {/* <Route path="/homepage" element={
           <ProtectedRoute>
             <HomePage />
           </ProtectedRoute>
-        } />
-        <Route path="/bento" element={
+        } /> */}
+        {/* <Route path="/bento" element={
           <ProtectedRoute>
             <BentoGridDemo />
           </ProtectedRoute>
-        } />
+        } /> */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </>

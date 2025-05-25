@@ -23,18 +23,19 @@ import json
 import mimetypes
 import io
 from pathlib import Path
+from assets.system_prompt import SYSTEM_PROMPTS  
+from assets.skill_patterns import SKILL_PATTERNS 
 
-# Import your internal logic
-from agent import run_agent  # Your run_agent logic
+from agent import run_agent  
 from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
-
-# Import our external resume parser
+from chatlogic import chat_logic
 from parse_resume_gemini import parse_resume_with_gemini
+
+#traceback
+import traceback
 
 from dotenv import load_dotenv
 load_dotenv()
-
-# Configure Gemini API
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
@@ -97,52 +98,7 @@ if GEMINI_API_KEY:
 else:
     print("WARNING: GEMINI_API_KEY not set in environment variables")
 
-# Session storage for mock interview/career chats
 sessions = {}
-
-# System prompts for special chat types
-SYSTEM_PROMPTS = {
-   "career": """
-## Task and Context
-You are a supportive career coach specializing in women's empowerment.  You only answer questions related to job interviews, resume writing, career development, and professional growth. If a user asks a question that is unrelated—such as shopping, entertainment, or general trivia or any non career interview job releated question—you must politely decline and guide them back to career-related topics. Everytime a user asks something unrelated, you should respond with:
-"I'm here to help with career-related questions. If you have any questions about job interviews, resume writing, or career development, feel free to ask!"
-
-You assist with:
-- interview preparation,
-- salary negotiation,
-- career transitions,
-- confidence-building,
-- and provide factual and motivational responses.
-
-You prefer referencing trusted sources like:
-- Lean In,
-- Women Who Code,
-- SheThePeople,
-- Fairygodboss,
-- LinkedIn Career Blogs.
-
-Use the internet_search tool if you need updated or external information.
-
-Always remain respectful, empowering, factual, and motivational. NEVER create toxic, biased, or negative content.
-
-If a user query involves any of the following sensitive topics:
-["harassed", "harassment", "assault", "abuse", "discriminated", "mental health", 
-"violence", "depression", "bullied", "bullying", "abused", "threatened", "unsafe", "sexual harassment"]
-
-Then respond with:
-"I'm just an assistant and cannot handle such serious issues directly. I strongly recommend contacting your HR department, trusted authorities, or appropriate helplines for assistance."
-""",
-    "interview": """
-## Task and Context
-You are a mock interview conductor bot.  If a user asks a question that is unrelated—such as shopping, entertainment, or general trivia or any non career interview job releated question—you must politely decline and guide them back to interview-related topics. Everytime a user asks something unrelated, you should respond with:
-"I'm here to help with interview-related questions. If you have any questions about job interviews, resume writing, or career development, feel free to ask!"
-Ask the user about the role they are preparing for, their experience, and their skills.
-Then, generate interview questions dynamically based on the user's inputs. 
-Ask one question at a time, and based on the user's answers, ask relevant follow-up questions. 
-Make the interview realistic by using contextual follow-up questions, similar to how a real interview would flow. 
-At the end of the interview, rate the user based on their performance and provide feedback.
-""",
-}
 
 # -------------- Helper Functions -------------- #
 def get_session_id():
@@ -156,62 +112,8 @@ def search_online(query):
     """Search using Tavily"""
     return internet_search.invoke({"query": query})
 
-#SKILL PARSING FUNCTION
 nltk.download('punkt')
 
-# Define skills database
-SKILL_PATTERNS = {
-    # Programming Languages
-    'languages': [
-        'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'ruby', 'php', 'go', 'rust',
-        'scala', 'kotlin', 'swift', 'objective-c', 'r', 'matlab', 'perl', 'bash', 'shell', 'sql',
-        'html', 'css', 'xml', 'yaml', 'json'
-    ],
-    
-    # Frameworks & Libraries
-    'frameworks': [
-        'react', 'angular', 'vue', 'node.js', 'express', 'django', 'flask', 'spring', 'asp.net',
-        'laravel', 'ruby on rails', 'jquery', 'bootstrap', 'tailwind', 'next.js', 'gatsby',
-        'tensorflow', 'pytorch', 'keras', 'scikit-learn', 'pandas', 'numpy', 'scipy', 'matplotlib'
-    ],
-    
-    # Databases
-    'databases': [
-        'sql', 'mysql', 'postgresql', 'mongodb', 'sqlite', 'oracle', 'redis', 'dynamodb',
-        'firebase', 'cassandra', 'elasticsearch', 'neo4j', 'nosql'
-    ],
-    
-    # DevOps & Cloud
-    'devops': [
-        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'ci/cd', 'terraform',
-        'ansible', 'git', 'github', 'gitlab', 'bitbucket', 'jira', 'agile', 'scrum'
-    ],
-    
-    # Mobile Development
-    'mobile': [
-        'android', 'ios', 'react native', 'flutter', 'xamarin', 'swift', 'kotlin',
-        'mobile development', 'app development'
-    ],
-    
-    # Soft Skills
-    'soft_skills': [
-        'problem solving', 'teamwork', 'communication', 'leadership', 'time management',
-        'project management', 'critical thinking', 'analytical skills', 'adaptability'
-    ],
-    
-    # Data Science & Machine Learning
-    'data_science': [
-        'machine learning', 'deep learning', 'neural networks', 'data analysis', 'data visualization',
-        'big data', 'hadoop', 'spark', 'nlp', 'computer vision', 'ai', 'artificial intelligence',
-        'data mining', 'statistical analysis', 'business intelligence', 'a/b testing'
-    ],
-    
-    # Design
-    'design': [
-        'ui/ux', 'graphic design', 'adobe photoshop', 'adobe illustrator', 'figma', 'sketch',
-        'responsive design', 'wireframing', 'prototyping'
-    ]
-}
 
 # Create a flat list of all skills
 ALL_SKILLS = []
@@ -581,92 +483,7 @@ def chat():
     is_authenticated = bool(user_id)
     
     # Check if resume data is present from the request
-    has_resume_context = bool(resume_data and message and '@resume' in message)
-
-    conversation_history = []
-    if is_authenticated:
-        conversation_history = get_user_conversations(user_id, limit=5)
-        conversation_history.reverse()  # chronological order
-      # If @resume is in the message and we have resume data, pass it to the agent    # Try to extract topic for better contextual responses
-    topic = None
-    try:
-        from helper_funcs import extract_topic_from_query
-        topic = extract_topic_from_query(message)
-    except ImportError:
-        # If extraction fails, continue without it
-        pass
-    # try:
-    #     if check_profanity(message):
-    #         return jsonify({"message": get_profanity_response()})
-    # except Exception as e:
-    #     print(f"Profanity check error in ask_skills: {str(e)}")
-    
-    # Run the agent with appropriate context
-    if has_resume_context:
-        response = run_agent(message, conversation_history, resume_data)
-    else:
-        response = run_agent(message, conversation_history)
-      # Add timestamp to the response for proper ordering in frontend
-    current_time = int(time.time() * 1000)  # Current time in milliseconds
-    response["timestamp"] = current_time
-    
-    # Extract query topic for contextual relevance
-    try:
-        from helper_funcs import extract_topic_from_query
-        topic = extract_topic_from_query(message)
-        response["topic"] = topic
-    except ImportError:
-        # Function not found, continue without it
-        pass
-
-    # Fix job search API integration
-    if response.get('canvasType') == 'job_search':
-        # Get a proper session ID from HerKey
-        session_id = get_session_id()
-        params = response.get('canvasUtils', {}).get('param', {})
-        
-        if session_id:
-            # Ensure params is a dictionary
-            if not params:
-                params = {}
-            
-            # Add the session ID to the params
-            params['session_id'] = session_id
-            
-            # Update the params in the response
-            if 'canvasUtils' not in response:
-                response['canvasUtils'] = {}
-            response['canvasUtils']['param'] = params
-            
-            # Build the correct job URL
-            query_string = urllib.parse.urlencode(params)
-            job_url = f"https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs?{query_string}"
-            
-            # Add both job_link and job_api to the response
-            response['canvasUtils']['job_link'] = job_url
-            response['canvasUtils']['job_api'] = session_id
-            
-            # Log the job URL for debugging
-            print(f"Job API URL: {job_url}")
-            print(f"Session ID: {session_id}")
-            
-            # Pre-fetch some jobs to verify the API is working
-            try:
-                headers = {'Content-Type': 'application/json','Authorization': f'Token {session_id}'}
-                job_response = requests.get(job_url, headers=headers)
-                
-                if job_response.status_code == 200:
-                    job_data = job_response.json()
-                    job_count = len(job_data.get('body', {}).get('jobs', []))
-                    print(f"Successfully fetched {job_count} jobs from API")
-                else:
-                    print(f"Error fetching jobs: {job_response.status_code}")
-                    print(job_response.text)
-            except Exception as e:
-                print(f"Exception when testing job API: {str(e)}")
-
-           
-    
+    response= chat_logic(message, user_id, is_authenticated, resume_data)    
     if is_authenticated:
         save_conversation(user_id, message, response)
 
