@@ -399,16 +399,14 @@ def classify_query(query: str) -> str:
        Examples: "Are there any tech events this week?", "Find me workshops on leadership", "Marketing conferences near me"
     
     5. normal_text - For general questions, greetings, or anything else or any non career related queries. Anything that is not strictly related to job search or career roadmap. Use your best judgment to determine if the query is not strictly related to job search or career roadmap. Don't classify as job_search or roadmap just because the user insists on it. Only if the query is strictly related to job search or career roadmap, classify it as such.
-    
-    Respond with EXACTLY ONE of these words: job_search, job_guidance, roadmap, events, or normal_text
+      Respond with EXACTLY ONE of these words: job_search, job_guidance, roadmap, events, or normal_text
     """
-    
     messages = [
         SystemMessage(content=system_prompt),
         HumanMessage(content=query)
     ]
     
-    response = chat_model(messages)
+    response = chat_model.invoke(messages)
     classification = response.content.strip().lower()
     
     # Ensure we only return one of the valid categories
@@ -810,15 +808,15 @@ def get_brighttalk_events(query=None):
     try:
         # Use a shorter timeout to prevent hanging
         response = requests.get(base_url, params=params, timeout=5)  # Increased timeout slightly
-        
-        if response.status_code == 200:
+          if response.status_code == 200:
             data = response.json()
             
             # Add the search query to the response for reference
             data["search_query"] = search_query
             
             # Filter out webcasts without essential fields
-            if "webcasts" in data["response"]:
+            # Check if the response has the expected structure
+            if "response" in data and "webcasts" in data["response"]:
                 valid_webcasts = []
                 for webcast in data["response"]["webcasts"]:
                     if "title" in webcast and "landing_page_url" in webcast:
@@ -828,6 +826,25 @@ def get_brighttalk_events(query=None):
                         valid_webcasts.append(webcast)
                 
                 data["response"]["webcasts"] = valid_webcasts
+            elif "webcasts" in data:
+                # Handle case where webcasts are directly in the data
+                valid_webcasts = []
+                for webcast in data["webcasts"]:
+                    if "title" in webcast and "landing_page_url" in webcast:
+                        # Ensure starts_at is present or add a default
+                        if not webcast.get("starts_at"):
+                            webcast["starts_at"] = datetime.now().isoformat()
+                        valid_webcasts.append(webcast)
+                
+                data["webcasts"] = valid_webcasts
+                # Ensure consistent structure
+                if "response" not in data:
+                    data["response"] = {"webcasts": valid_webcasts}
+            else:
+                # No webcasts found or unexpected structure
+                print(f"Unexpected BrightTALK API response structure: {data}")
+                if "response" not in data:
+                    data["response"] = {"webcasts": []}
                 
             return data
         else:
