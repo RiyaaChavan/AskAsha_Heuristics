@@ -342,8 +342,27 @@ def generate_roadmap(topic: str, conversation_history=None) -> list:
 Generate a structured learning roadmap for the given topic. The topic must be related to career development or professional growth or skill enhancement. For any non career development topics, politely inform the user that the feature is only available for career development topics.
     Returns a list of roadmap items.
     """
+    # Import utility functions for roadmap generation
+    try:
+        from roadmap_utils import detect_roadmap_domain, verify_and_enhance_roadmap_links, adjust_roadmap_for_timeframe
+    except ImportError:
+        # Define simple versions if the imports fail
+        def detect_roadmap_domain(topic: str) -> str:
+            return "general"
+            
+        def verify_and_enhance_roadmap_links(roadmap_items: list) -> list:
+            return roadmap_items
+            
+        def adjust_roadmap_for_timeframe(roadmap_items: list, timeframe=None) -> list:
+            return roadmap_items
+    
+    # Detect domain type to select specialized template
+    domain = detect_roadmap_domain(topic)
+    # Detect domain type to select specialized template
+    domain = detect_roadmap_domain(topic)
+    
     system_prompt = """
-    Create a detailed learning roadmap for the user's requested topic. The roadmap must be practical, actionable, and include ONLY VERIFIED EXISTING resources. You are a professional career coach specializing in women's workforce advancement. Your ONLY task is to create a clear, structured **career guidance roadmap** specifically for women in professional settings. This roadmap must be strictly focused on one of the following user personas:
+    Create a detailed learning roadmap for the user's requested topic. The roadmap must be practical, actionable, and include ONLY VERIFIED EXISTING resources. You are a professional career coach specializing in women's workforce advancement. Your ONLY task is to create a clear, structured **career guidance roadmap** specifically for women in professional settings.
 
     IMPORTANT ROADMAP STRUCTURE:
     1. Create 5-8 sequential PHASE-BASED roadmap steps that build progressively
@@ -351,18 +370,22 @@ Generate a structured learning roadmap for the given topic. The topic must be re
     3. DO NOT use day-specific language like "Monday", "Tuesday" in descriptions
     4. ADAPT THE TIMELINE to fit exactly within the user's requested timeframe
     5. Use headers like "Foundation Building", "Core Concepts", "Practical Application" instead
-    6. Do not give any generic advice, all the milestones should be specific and actionable to the user.
+    6. Each milestone should be specific and actionable, not generic advice
+    7. Ensure each step builds logically on the previous step
 
     FOR EACH ROADMAP STEP INCLUDE:
     - "title": Clear focus area based on user's topic (e.g., "Python Fundamentals: Data Types")
-    - "description": Detailed guidance with:
+    - "description": HIGHLY DETAILED guidance with:
         * Specific activities to complete (e.g., "Complete exercises on variables & data types")
         * Concrete topics with examples
         * Measurable milestones
         * Practical mini-projects to apply learning
+        * A clear breakdown of what the user will learn in this phase
+        * Context about why this phase matters for their overall goal
+        * At least 150-200 words of detailed instruction per phase
         * DO NOT reference specific days of the week
         * If user specified a timeframe, portion activities accordingly (e.g., "Spend 25% of your time on...")
-    - "link": ONLY verified working URLs to free or low-cost resources directly relevant to this phase
+    - "link": ONLY verified working URLs to free or low-cost resources that are DIRECTLY RELEVANT to this specific phase
     - "calendar_event": A short description for calendar integration
 
     SPECIAL FOCUS FOR WOMEN IN THE WORKFORCE:
@@ -371,41 +394,55 @@ Generate a structured learning roadmap for the given topic. The topic must be re
     - For WOMEN STARTING CAREERS: Focus on entry points, mentorship opportunities, and building professional presence. Include women-specific career development resources.
     - For WORKING MOTHERS: Highlight flexible learning options, time management, and resources that acknowledge family responsibilities.
 
-    RESOURCE LINKS - MUST FOLLOW THESE RULES:
-    1. USE ONLY these GUARANTEED working resources:
-       - For women returners/restarting careers:
-         * "https://www.returnship.com/resources"
-         * "https://www.jobsforher.com/"
-         * "https://www.womenreturners.com/returners/"
-         * "https://www.themuse.com/advice/9-job-search-tips-for-women-returning-to-work"
-         * "https://www.linkedin.com/learning/returning-to-work-after-a-career-break"
-         * "https://www.indeed.com/career-advice/finding-a-job/resume-tips-women-returning-to-workforce"
-       - For women starting careers:
-         * "https://www.womenwhocode.com/resources"
-         * "https://girlswhocode.com/programs"
-         * "https://www.hiretechladies.com/resources"
-         * "https://www.ellevatenetwork.com/articles"
-         * "https://www.leanin.org/tips/mentorship"
-       - For career development:
-         * "https://www.linkedin.com/learning"
-         * "https://www.indeed.com/career-advice"
-         * "https://www.glassdoor.com/blog/"
-         * "https://www.themuse.com/advice/"
-       - For interview preparation:
-         * "https://www.interviewcake.com/"
-         * "https://leetcode.com/"
-         * "https://www.pramp.com/"
-         * "https://www.themuse.com/advice/interview-questions-and-answers"
-       - For technical skills:
-         * "https://www.freecodecamp.org/learn"
-         * "https://developer.mozilla.org/en-US/docs/Learn"
-         * "https://www.w3schools.com/"
-         * "https://www.codecademy.com/catalog"
-         * "https://github.com/microsoft/Web-Dev-For-Beginners"
+    RESOURCE LINKS - VERIFY AND SELECT THE MOST RELEVANT RESOURCES:
+    1. General career development resources:
+       * LinkedIn Learning: https://www.linkedin.com/learning/ - For professional skills courses
+       * Coursera: https://www.coursera.org/ - For academic and professional courses
+       * edX: https://www.edx.org/ - For courses from top universities
+       * Indeed Career Guide: https://www.indeed.com/career-advice - For job search and career guidance
+       * The Muse: https://www.themuse.com/advice/ - For career advice and job search tips
+       * Harvard Business Review: https://hbr.org/topic/career-planning - For advanced career strategies
+       * Glassdoor Blog: https://www.glassdoor.com/blog/ - For workplace insights and salary information
+       * Udemy: https://www.udemy.com/ - For specific skill-based courses
+       * Khan Academy: https://www.khanacademy.org/ - For fundamental academic skills
 
-    2. MATCH LINKS TO CONTENT - each resource must be SPECIFICALLY relevant to the phase it's attached to
-    3. DO NOT use links you're uncertain about or that don't specifically match the content
-    4. For topic-specific resources, link to the exact documentation page (not just homepage)
+    2. Technical skills resources:
+       * freeCodeCamp: https://www.freecodecamp.org/learn - For coding and web development
+       * MDN Web Docs: https://developer.mozilla.org/en-US/docs/Learn - For web technologies
+       * W3Schools: https://www.w3schools.com/ - For web development tutorials
+       * Codecademy: https://www.codecademy.com/catalog - For interactive coding lessons
+       * GitHub Learning Lab: https://lab.github.com/ - For Git and GitHub skills
+       * Microsoft Learn: https://docs.microsoft.com/en-us/learn/ - For Microsoft technologies
+       * Google Digital Garage: https://learndigital.withgoogle.com/ - For digital marketing and business skills
+       * DataCamp: https://www.datacamp.com/ - For data science skills
+       * HackerRank: https://www.hackerrank.com/ - For coding practice and challenges
+
+    3. Women-specific career resources:
+       * Women Who Code: https://www.womenwhocode.com/resources - For women in technology
+       * Ellevate Network: https://www.ellevatenetwork.com/articles - For professional women
+       * Lean In: https://leanin.org/tips - For women in leadership
+       * Girls Who Code: https://girlswhocode.com/programs - For young women learning to code
+       * PowerToFly: https://powertofly.com/career/ - For women in tech careers
+       * Women in Technology International: https://witi.com/networks/ - For networking
+       * Fairygodboss: https://fairygodboss.com/career-topics - For career advice for women
+       * JobsForHer: https://www.jobsforher.com/ - For women returning to work
+       * Women Returners: https://www.womenreturners.com/returners/ - For career returners
+
+    4. Interview and job search resources:
+       * Interview Cake: https://www.interviewcake.com/ - For technical interviews
+       * Big Interview: https://biginterview.com/blog/ - For interview preparation
+       * LeetCode: https://leetcode.com/ - For coding interviews
+       * Pramp: https://www.pramp.com/ - For interview practice
+       * CareerOneStop: https://www.careeronestop.org/ - Government resource for job searching
+       * The Balance Careers: https://www.thebalancecareers.com/ - For job search advice
+
+    IMPORTANT RULES FOR USING THESE RESOURCES:
+    1. Match links PRECISELY to the phase content - each resource must be SPECIFICALLY relevant
+    2. Link to specific pages within these sites whenever possible (not just homepages)
+    3. Verify each link leads to content directly related to your phase recommendation
+    4. If a specific topic isn't covered by these resources, use general career resources that are most relevant
+    5. For technical or specialized topics, prioritize the most authoritative source from the list
+    6. For domain-specific learning (e.g., marketing, finance), choose the most specialized resource
 
     FORMAT YOUR RESPONSE AS A JSON ARRAY with 5-8 objects.
     Each object MUST have these fields:
@@ -416,12 +453,99 @@ Generate a structured learning roadmap for the given topic. The topic must be re
 
     RETURN ONLY THE JSON ARRAY. No introductions or other text.
     """
-    
+
+    # Add domain-specific instructions based on detected domain
+    if domain == "technical":
+        system_prompt += """
+        SPECIALIZED INSTRUCTIONS FOR TECHNICAL SKILL ROADMAPS:
+        - Focus on logical skill progression (foundations → intermediate → advanced)
+        - Include specific coding exercises with clear objectives
+        - Recommend practical projects for portfolio building at each phase
+        - For coding topics, link to interactive coding platforms and documentation
+        - Include specific technical interview preparation in later phases
+        - Emphasize testing and debugging practices throughout the roadmap
+        - Include sections on code review and collaboration tools
+        - Direct to specialized technical communities for ongoing learning
+        - Prioritize hands-on coding exercises over theoretical learning
+        - Include GitHub portfolio development as part of the learning journey
+        """
+    elif domain == "leadership":
+        system_prompt += """
+        SPECIALIZED INSTRUCTIONS FOR LEADERSHIP ROADMAPS:
+        - Focus on progressive leadership skill development
+        - Include emotional intelligence and interpersonal communication strategies
+        - Provide exercises for team management and conflict resolution
+        - Recommend specific leadership assessment tools and reflective practices
+        - Include sections on managing diverse teams and inclusive leadership
+        - Incorporate mentorship and networking as key components
+        - Emphasize strategic thinking and decision-making frameworks
+        - Include practical management scenarios with suggested approaches
+        - Provide resources for developing executive presence and communication
+        - Link to specific leadership case studies and relevant business research
+        """
+    elif domain == "creative":
+        system_prompt += """
+        SPECIALIZED INSTRUCTIONS FOR CREATIVE SKILL ROADMAPS:
+        - Structure around progressive portfolio development
+        - Include specific design/creative challenges with clear objectives
+        - Focus on both technical skills and creative thinking processes
+        - Recommend industry-standard tools and specific tutorials
+        - Include peer review and feedback mechanisms
+        - Emphasize client/user communication and requirement gathering
+        - Provide resources for developing a professional creative identity
+        - Include exercises for creativity unblocking and inspiration
+        - Recommend specific creative communities for networking and feedback
+        - Focus on current industry trends and standards
+        """
+    elif domain == "business":
+        system_prompt += """
+        SPECIALIZED INSTRUCTIONS FOR BUSINESS ROADMAPS:
+        - Include specific case studies and business analysis frameworks
+        - Focus on quantifiable business metrics and performance indicators
+        - Include financial literacy and business model understanding
+        - Recommend industry-specific certification paths where relevant
+        - Provide scenarios for practicing business decision-making
+        - Include networking strategies for industry immersion
+        - Emphasize data-driven decision making and analytical skills
+        - Include both strategic and operational perspectives
+        - Focus on relevant business software and digital tool proficiency
+        - Recommend business workshops and conferences for practical learning
+        """
+    elif domain == "job_search":
+        system_prompt += """
+        SPECIALIZED INSTRUCTIONS FOR JOB SEARCH ROADMAPS:
+        - Structure around the complete job search life cycle
+        - Include detailed CV/resume development with ATS optimization
+        - Provide scripts and templates for networking and outreach
+        - Include detailed interview preparation with industry-specific questions
+        - Focus on digital presence optimization (LinkedIn, portfolio sites)
+        - Include salary negotiation strategies and scripts
+        - Recommend job search tracking systems and methodologies
+        - Provide resources for company research and interview preparation
+        - Include post-interview follow-up strategies
+        - Focus on both active and passive job search techniques
+        - Include specific tips for gender bias navigation in interviews
+        """
+    elif domain == "return_to_work":
+        system_prompt += """
+        SPECIALIZED INSTRUCTIONS FOR RETURN-TO-WORK ROADMAPS:
+        - Focus on confidence rebuilding and skill refreshing
+        - Include specific returner programs and opportunities
+        - Provide strategies for addressing career gaps in applications/interviews
+        - Recommend skill assessment tools and targeted upskilling resources
+        - Include comprehensive LinkedIn and professional presence revitalization
+        - Focus on current industry trends and changes since career break
+        - Provide networking scripts specifically for career returners
+        - Include family-work balance strategies and resources
+        - Recommend flexible work opportunities and search strategies
+        - Include success stories and case studies of successful returners
+        """
+
     # Extract any timeframe from the user's query
     timeframe_patterns = [
-        r'(\d+)\s*(day|days|week|weeks|month|months)',  # numeric: "2 weeks", "1 month"
-        r'(one|two|three|four|five|six|seven|eight|nine|ten)\s+(day|days|week|weeks|month|months)',  # text: "one week"
-        r'(a|an)\s+(day|week|month)'  # "a week", "a month"
+        r'(\d+)\s*(day|days|week|weeks|month|months|year|years)',  # numeric: "2 weeks", "1 month", "6 months"
+        r'(one|two|three|four|five|six|seven|eight|nine|ten)\s+(day|days|week|weeks|month|months|year|years)',  # text: "one week"
+        r'(a|an)\s+(day|week|month|year)'  # "a week", "a month"
     ]
     
     timeframe = None
@@ -446,20 +570,58 @@ Generate a structured learning roadmap for the given topic. The topic must be re
                 timeframe = f"{number} week{'s' if number > 1 else ''}"
             elif 'month' in unit:
                 timeframe = f"{number} month{'s' if number > 1 else ''}"
+            elif 'year' in unit:
+                timeframe = f"{number} year{'s' if number > 1 else ''}"
             break
     
     # Also check for words that imply timeframes without explicit numbers
     if not timeframe:
-        if any(word in topic.lower() for word in ['quick', 'fast', 'rapid', 'short', 'brief']):
+        if any(word in topic.lower() for word in ['quick', 'fast', 'rapid', 'short', 'brief', 'crash course']):
             timeframe = "short-term (1-2 weeks)"
-        elif any(word in topic.lower() for word in ['thorough', 'comprehensive', 'complete', 'in-depth']):
+        elif any(word in topic.lower() for word in ['thorough', 'comprehensive', 'complete', 'in-depth', 'detailed']):
             timeframe = "comprehensive (1-2 months)"
+    
+    # Extract experience level
+    experience_level = None
+    if any(word in topic.lower() for word in ['beginner', 'basic', 'fundamentals', 'introduction', 'starting', 'start']):
+        experience_level = "beginner"
+    elif any(word in topic.lower() for word in ['intermediate', 'advanced beginner', 'some experience']):
+        experience_level = "intermediate"
+    elif any(word in topic.lower() for word in ['advanced', 'expert', 'professional', 'experienced', 'mastery']):
+        experience_level = "advanced"
+    
+    # Extract industry or field context
+    industry_contexts = {
+        'tech': ['technology', 'software', 'programming', 'development', 'coding', 'IT', 'computer'],
+        'healthcare': ['health', 'medical', 'nursing', 'clinical', 'patient', 'hospital', 'doctor'],
+        'finance': ['financial', 'banking', 'accounting', 'investment', 'finance', 'trading', 'stocks'],
+        'marketing': ['marketing', 'advertising', 'branding', 'social media', 'SEO', 'content', 'digital marketing'],
+        'business': ['business', 'MBA', 'management', 'entrepreneurship', 'startup', 'leadership'],
+        'design': ['design', 'UX', 'UI', 'graphic', 'creative', 'visual', 'photography'],
+        'education': ['teaching', 'education', 'academic', 'school', 'learning', 'training'],
+        'science': ['science', 'research', 'laboratory', 'experiment', 'biology', 'chemistry', 'physics']
+    }
+    
+    industry_context = None
+    for industry, keywords in industry_contexts.items():
+        if any(keyword in topic.lower() for keyword in keywords):
+            industry_context = industry
+            break
     
     # Build context from the user's query
     context = f"Topic: {topic}\n"
+    
     if timeframe:
         context += f"Requested timeframe: {timeframe}\n"
         context += "Important: Adjust the roadmap to fit exactly within this timeframe.\n"
+    
+    if experience_level:
+        context += f"Experience level: {experience_level}\n"
+        context += f"Important: Tailor the roadmap for a {experience_level} level learner.\n"
+    
+    if industry_context:
+        context += f"Industry context: {industry_context}\n"
+        context += f"Important: Include resources and examples relevant to the {industry_context} industry.\n"
     
     # Check for women-specific career needs
     women_career_patterns = {
@@ -477,8 +639,7 @@ Generate a structured learning roadmap for the given topic. The topic must be re
     for keyword, description in women_career_patterns.items():
         if keyword in topic.lower():
             context += f"\nSpecial audience: {description}\n"
-    
-    # Initialize messages with system prompt
+      # Initialize messages with system prompt
     messages = [SystemMessage(content=system_prompt)]
     
     # Add the context and topic as a human message
@@ -492,44 +653,68 @@ Generate a structured learning roadmap for the given topic. The topic must be re
     # Extract JSON from the response if it's wrapped in code fences
     if content.startswith("```") and content.endswith("```"):
         content = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content).group(1)
-
+    
     try:
         roadmap_items = json.loads(content)
+        # Verify links and enhance them if needed
+        roadmap_items = verify_and_enhance_roadmap_links(roadmap_items)
+        # Adjust for timeframe if specified
+        if timeframe:
+            roadmap_items = adjust_roadmap_for_timeframe(roadmap_items, timeframe)
         return roadmap_items
     except json.JSONDecodeError:
         print("Failed to parse JSON. Using fallback roadmap.")
-        return [
+        
+        # Attempt to create a more relevant fallback based on the topic
+        topic_lower = topic.lower()
+        
+        # Default fallback for general career development
+        fallback_roadmap = [
             {
                 "title": "Understanding Your Career Goals",
-                "description": "Begin by assessing your current skills, interests, and career objectives. Create a document that outlines your strengths, areas for growth, and specific goals you want to achieve.",
+                "description": "Begin by assessing your current skills, interests, and career objectives. Create a detailed document that outlines your strengths, areas for growth, and specific goals you want to achieve. Conduct a thorough self-assessment using career assessment tools to identify your key motivators, values, and preferred work environment. Research industry trends and career paths that align with your interests and strengths. Set SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound) for your career development journey. Identify potential mentors who can guide you through your career transition or advancement.",
                 "link": "https://www.themuse.com/advice/how-to-figure-out-what-you-want-next-in-your-career",
                 "calendar_event": "Career Goals Assessment"
             },
             {
                 "title": "Skill Enhancement Planning",
-                "description": "Identify the key skills needed for your target role. Research industry requirements and create a prioritized list of skills to develop.",
-                "link": "https://www.indeed.com/career-advice/finding-a-job/resume-tips-women_returning_to_workforce",
+                "description": "Identify the key skills needed for your target role by analyzing job descriptions, industry reports, and speaking with professionals in your desired field. Create a comprehensive skills inventory comparing your current abilities with those required for your target position. Develop a prioritized list of skills to develop, focusing on both technical and soft skills. Research courses, workshops, certifications, and other learning opportunities that can help you acquire these skills efficiently. Create a realistic timeline for skill development that accounts for your current commitments. Identify small projects you can undertake to practice and demonstrate your new skills.",
+                "link": "https://www.indeed.com/career-advice/finding-a-job/skills-to-develop",
                 "calendar_event": "Skills Planning Session"
             },
             {
                 "title": "Networking and Community Building",
-                "description": "Connect with professional networks in your field. Join relevant online communities, attend virtual events, and reach out to former colleagues.",
+                "description": "Develop a strategic networking plan to connect with professionals in your field. Join relevant online communities, professional associations, and networking groups specific to your industry and career goals. Attend industry conferences, webinars, meetups, and virtual events to expand your network. Create a compelling professional introduction and practice it until it feels natural. Develop a system for following up with new connections and maintaining relationships with your network. Schedule informational interviews with professionals in roles you aspire to. Use LinkedIn effectively by optimizing your profile, engaging with industry content, and connecting with relevant professionals.",
                 "link": "https://www.ellevatenetwork.com/articles",
                 "calendar_event": "Networking Strategy Session"
             },
             {
-                "title": "Application Materials Preparation",
-                "description": "Update your resume and LinkedIn profile to highlight relevant skills and experiences. Create templates for cover letters and prepare your portfolio.",
+                "title": "Creating Your Professional Brand",
+                "description": "Develop a consistent professional brand that communicates your unique value proposition. Update your LinkedIn profile, professional website, and other online platforms to reflect your brand. Create a compelling professional narrative that highlights your journey, strengths, and career aspirations. Update your resume using contemporary formats and ATS-friendly techniques to highlight relevant skills and experiences. Create templates for customizable cover letters tailored to different roles and industries. Develop a comprehensive portfolio showcasing your best work, projects, and achievements. Consider creating content that demonstrates your expertise, such as blog posts, videos, or presentations.",
                 "link": "https://www.linkedin.com/learning",
-                "calendar_event": "Resume and Profile Updates"
+                "calendar_event": "Professional Brand Development"
             },
             {
                 "title": "Interview Preparation",
-                "description": "Research common interview questions in your field and prepare thoughtful responses. Practice answering questions confidently and concisely.",
+                "description": "Research common interview questions specific to your target role and industry. Prepare thoughtful responses using the STAR method (Situation, Task, Action, Result) for behavioral questions. Practice technical or skills-based assessments commonly used in your field. Conduct mock interviews with a friend, mentor, or career coach to receive feedback on your responses and presentation. Research companies thoroughly before interviews to understand their values, culture, products/services, and recent developments. Prepare insightful questions to ask interviewers that demonstrate your interest and knowledge. Practice body language, voice modulation, and communication techniques to present yourself confidently.",
                 "link": "https://www.themuse.com/advice/interview-questions-and-answers",
-                "calendar_event": "Interview Practice"
+                "calendar_event": "Interview Preparation"
+            },
+            {
+                "title": "Job Search Strategy & Execution",
+                "description": "Develop a comprehensive job search strategy tailored to your industry and career goals. Create a system to track applications, follow-ups, and networking contacts. Set up job alerts on major platforms and industry-specific job boards. Research target companies and create a list of organizations where you'd like to work, regardless of current openings. Develop a schedule for regular job search activities, including networking, applications, and skill development. Learn effective negotiation techniques for discussing salary and benefits. Create a plan for evaluating job offers based on factors important to you, such as growth opportunities, work culture, and compensation.",
+                "link": "https://www.glassdoor.com/blog/guide/how-to-get-a-job/",
+                "calendar_event": "Job Search Planning"
+            },
+            {
+                "title": "Continuous Career Growth",
+                "description": "Establish a long-term plan for ongoing professional development and career advancement. Set up regular intervals to reassess your career goals and progress. Join professional associations relevant to your field to stay updated on industry trends. Subscribe to key publications and follow thought leaders in your industry. Plan to obtain advanced certifications or degrees that will enhance your expertise and marketability. Seek leadership opportunities or stretch assignments in your current or future roles. Develop a mentorship plan, both for finding mentors and eventually becoming one yourself. Create a system for documenting your achievements and contributions for future performance reviews and promotions.",
+                "link": "https://hbr.org/topic/career-planning",
+                "calendar_event": "Career Growth Planning"
             }
         ]
+        
+        return fallback_roadmap
 
 # Classify user query
 def classify_query(query: str) -> str:
@@ -846,13 +1031,13 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
             }
         }
         
-    else:
-        # Normal text response
-        return {
-            "text": "I'm here to support you with personalized career guidance and professional development. If you have questions about jobs available, skill development, resumes, interviews, leadership growth, or returning to work, I'd be happy to help! For other topics, I recommend consulting a more general-purpose assistant.",
-            "canvasType": "none",
-            "canvasUtils": {}
-        }
+    # else:
+    #     # Normal text response
+    #     return {
+    #         "text": "I'm here to support you with personalized career guidance and professional development. If you have questions about jobs available, skill development, resumes, interviews, leadership growth, or returning to work, I'd be happy to help! For other topics, I recommend consulting a more general-purpose assistant.",
+    #         "canvasType": "none",
+    #         "canvasUtils": {}
+    #     }
 
 def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
     """

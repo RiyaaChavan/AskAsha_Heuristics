@@ -595,6 +595,11 @@ def chat():
     except ImportError:
         # If extraction fails, continue without it
         pass
+    # try:
+    #     if check_profanity(message):
+    #         return jsonify({"message": get_profanity_response()})
+    # except Exception as e:
+    #     print(f"Profanity check error in ask_skills: {str(e)}")
     
     # Run the agent with appropriate context
     if has_resume_context:
@@ -659,6 +664,8 @@ def chat():
                     print(job_response.text)
             except Exception as e:
                 print(f"Exception when testing job API: {str(e)}")
+
+           
     
     if is_authenticated:
         save_conversation(user_id, message, response)

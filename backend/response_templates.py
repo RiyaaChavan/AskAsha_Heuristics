@@ -50,11 +50,11 @@ PLATFORM_HIGHLIGHT_TEMPLATES = [
 
 # Roadmap response templates
 ROADMAP_RESPONSES = [
-    "I've created a step-by-step roadmap for learning {topic}. Each stage includes activities and resources to help you progress.",
-    "Here's your personalized learning path for {topic}. Follow these steps to build your skills progressively.",
-    "Ready to master {topic}? I've mapped out a comprehensive learning journey for you.",
-    "Your roadmap to {topic} proficiency is ready! Follow this plan to develop your skills systematically.",
-    "Here's a structured learning path for {topic}, with key milestones to help track your progress."
+    "I've created a detailed, phase-by-phase roadmap for mastering {topic}. Each stage includes specific activities, practical exercises, and verified online resources to help you progress effectively.",
+    "Here's your personalized learning path for {topic}, with comprehensive phases that build progressively. Each phase includes detailed instructions and links to high-quality resources relevant to your journey.",
+    "Ready to master {topic}? I've mapped out a comprehensive learning journey with detailed guidance at each phase and carefully selected resources from reputable websites to support your development.",
+    "Your roadmap to {topic} proficiency is ready! This structured plan includes detailed instructions for each phase and links to verified, relevant resources to help you develop your skills systematically.",
+    "Here's a structured learning path for {topic}, with detailed phase-wise instructions and carefully selected online resources from trusted websites. Each phase builds on the previous one to ensure steady progress."
 ]
 
 # Events response templates
