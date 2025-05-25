@@ -17,9 +17,9 @@ interface Message {
   sender: string;
 }
 
-interface SpeechRecognition {
-  isSupported: boolean;
-  start: (onResult: (transcript: string) => void, onError: (error: string) => void) => void;
+// Use a different name to avoid conflict with the browser's built-in SpeechRecognition
+interface SpeechRecognitionInterface {
+  start: () => void;
   stop: () => void;
 }
 
@@ -27,17 +27,24 @@ const Interview: React.FC<InterviewProps> = ({ userId: propUserId }) => {
   const [currentChat, setCurrentChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState<string>('');
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [userId, setUserId] = useState<string>(propUserId || 'user_' + Math.random().toString(36).substr(2, 9)); // Generate a default random user ID
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-  const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
+  const speechRecognitionRef = useRef<SpeechRecognitionInterface | null>(null);
   const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
-  
   // Initialize speech recognition
   useEffect(() => {
-    speechRecognitionRef.current = createSpeechRecognition();
+    speechRecognitionRef.current = createSpeechRecognition(
+      (transcript: string) => {
+        setInputText(transcript);
+        setIsListening(false);
+      },
+      (error: string) => {
+        console.error('Speech recognition error:', error);
+        setIsListening(false);
+      }
+    );
     return () => {
       // Cleanup speech recognition if active when component unmounts
       if (speechRecognitionRef.current && typeof speechRecognitionRef.current.stop === 'function') {
@@ -50,31 +57,17 @@ const Interview: React.FC<InterviewProps> = ({ userId: propUserId }) => {
       }
     };
   }, []);
-  
-  // Handle voice input
+    // Handle voice input
   const handleVoiceInput = () => {
-    if (!speechRecognitionRef.current?.isSupported) {
+    if (!speechRecognitionRef.current) {
       alert("Speech recognition is not supported in your browser. Please try Chrome, Edge, or Safari.");
       return;
     }
     
     setIsListening(true);
     
-    speechRecognitionRef.current.start(
-      // onResult callback
-      (transcript) => {
-        setInputText(transcript);
-        setIsListening(false);
-      },
-      // onError callback
-      (error) => {
-        console.error("Speech recognition error:", error);
-        setIsListening(false);
-        if (error === 'no-speech') {
-          alert("No speech was detected. Please try again.");
-        }
-      }
-    );
+    // Start speech recognition
+    speechRecognitionRef.current.start();
   };
   
   // Handle text to speech for bot messages

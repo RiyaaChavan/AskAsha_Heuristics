@@ -2,10 +2,15 @@
 export type SpeechRecognitionCallback = (transcript: string) => void;
 export type ErrorCallback = (error: string) => void;
 
+interface SimpleSpeechRecognition {
+  start: () => void;
+  stop: () => void;
+}
+
 export default function createSpeechRecognition(
   onResultCallback: SpeechRecognitionCallback,
   onErrorCallback: ErrorCallback
-): SpeechRecognition | null {
+): SimpleSpeechRecognition | null {
   // Check for SpeechRecognition support
   const SpeechRecognitionConstructor = 
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -40,10 +45,13 @@ export default function createSpeechRecognition(
   recognition.onstart = () => {
     console.log('Speech recognition started');
   };
-
   recognition.onend = () => {
     console.log('Speech recognition ended');
   };
 
-  return recognition;
+  // Return a simplified interface to avoid type conflicts
+  return {
+    start: () => recognition.start(),
+    stop: () => recognition.stop()
+  };
 }

@@ -4,11 +4,12 @@ export type Message = {
   id?: number;
   text: string;
   isUser?: boolean;
-  canvasType: 'none' | 'job_search' | 'roadmap' | 'session_search';
+  canvasType: 'none' | 'job_search' | 'roadmap' | 'session_search' | 'events';
   canvasUtils?: Record<string, any>;
   isUserMessage?: boolean; // Indicates if the message is from the user
   isHistory?: boolean; // Existing property for history messages
-  isLoading?: boolean; // Indicates if this is a loading state message
+  isLoading: boolean; // Indicates if this is a loading state message
+  timestamp?: Date; // Added timestamp property
 };
 
 export type Payload = {
@@ -19,6 +20,7 @@ export type Payload = {
 export interface CanvasProps {
   message: Message;
   onClose?: () => void;
+  onCalendarRequest?: (items: any[]) => void;
 }
 
 export interface ChatInputProps {

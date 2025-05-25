@@ -4,11 +4,7 @@ import JobSearchCanvas from './JobSearchCanvas';
 import RoadmapCanvas from './RoadmapCanvas';
 import EventsCanvas from './EventsCanvas';
 
-interface ExtendedCanvasProps extends CanvasProps {
-  onCalendarRequest?: (items: any[]) => void;
-}
-
-const Canvas: React.FC<ExtendedCanvasProps> = ({ message, onCalendarRequest }) => {
+const Canvas: React.FC<CanvasProps> = ({ message, onCalendarRequest }) => {
   if (!message.canvasType || message.canvasType === 'none') {
     return null;
   }

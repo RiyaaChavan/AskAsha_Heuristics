@@ -5,9 +5,7 @@ import { marked } from 'marked';
 // Configure marked options for security and rendering
 marked.setOptions({
   breaks: true, // Convert line breaks to <br>
-  gfm: true, // Use GitHub Flavored Markdown
-  headerIds: false, // Don't add IDs to headers for security
-  sanitize: false, // We'll use dangerouslySetInnerHTML which handles this
+  gfm: true // Use GitHub Flavored Markdown
 });
 
 interface ChatMessageProps {
