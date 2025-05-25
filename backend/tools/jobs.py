@@ -395,6 +395,7 @@ def get_job_search_results(params: dict, platforms=None) -> dict:
     """
     # Default to all platforms if none specified
     
+    print("get_job_search_results called with params:", params)
     linkedin_jobs= get_linkedin_jobs(params)
     
     

@@ -538,6 +538,10 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
         dict: Formatted response with text, canvasType, and canvasUtils
     """
     # Import response templates if available
+    
+    
+    print("Formatting response for query type:", query_type)
+    
     try:
         from response_templates import (
             get_job_search_response,
@@ -586,15 +590,7 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
         job_params = result
         platforms = ["herkey", "linkedin", "glassdoor"]
         
-        # Get fresh token for job API
-        token = get_herkey_token()
-        
-        # Create query string for job_link (fallback to Herkey if needed)
-        query_string = urllib.parse.urlencode({k: v for k, v in job_params.items() if k != "platforms"})
-        base_url = "https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs"
-        job_link = f"{base_url}?{query_string}"
-        
-        # Actually fetch the job search results here from all platforms
+      
         jobs_data = get_job_search_results(job_params, platforms)
         job_count = len(jobs_data.get("body", []))
         
@@ -625,14 +621,14 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
         # Add platform information to the response text if not already mentioned
         if platform_message and platform_message not in response_text:
             response_text = response_text.replace("!", f"{platform_message}!")
-            
+        print("JOb junji",jobs_data)
         return {
             "text": response_text,
             "canvasType": "job_search",
             "canvasUtils": {
                 "param": job_params,
-                "job_link": job_link,
-                "job_api": token,
+                "job_link": "job_ink",
+                "job_api": "token",
                 "job_results": jobs_data.get("body", []),
                 "platform": platforms[0] if len(platforms) == 1 else None,
                 "platforms_searched": platforms_searched
@@ -706,6 +702,9 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
         conversation_history (list, optional): Previous conversation messages for context
         resume_data (dict, optional): User's resume data including skills and work experience
     """
+    
+    print("Running agent with prompt:")
+    
     # Step 1: Classify the query
     query_type = classify_query(prompt)
     
@@ -714,6 +713,7 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
         # Handle job search with resume data if available
         job_params = extract_job_search_params(prompt, conversation_history, resume_data)
         print(f"Job search parameters extracted: {job_params}")
+        
         
         
         return format_response(query_type, prompt, job_params)
