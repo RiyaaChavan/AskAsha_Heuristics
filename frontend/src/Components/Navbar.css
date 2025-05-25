@@ -77,16 +77,25 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #b47a96;
   padding: 4px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* subtle base shadow */
 }
 
 .profile-icon:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
+  background-color: #936078; /* soft pink overlay */
+  box-shadow: 0 6px 12px rgba(148, 96, 120, 0.3); /* deeper shadow to look raised */
+  transform: translateY(-3px); /* slight lift */
 }
+
+.profile-icon:active {
+  background-color: #936078; /* deeper tone for click state */
+  box-shadow: 0 3px 6px rgba(147, 96, 120, 0.4);
+  transform: translateY(-1px); /* less lift on active */
+}
+
 
 .profile-dropdown {
   position: absolute;

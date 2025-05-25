@@ -808,7 +808,7 @@ def get_brighttalk_events(query=None):
     try:
         # Use a shorter timeout to prevent hanging
         response = requests.get(base_url, params=params, timeout=5)  # Increased timeout slightly
-          if response.status_code == 200:
+        if response.status_code == 200:
             data = response.json()
             
             # Add the search query to the response for reference
