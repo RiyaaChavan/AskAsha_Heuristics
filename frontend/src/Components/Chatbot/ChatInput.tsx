@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatInputProps } from './types';
 import createSpeechRecognition from '../../utils/speechRecognition';
+import { SimpleSpeechRecognition } from '../../utils/speechRecognition';
 
 const ChatInput: React.FC<ChatInputProps> = ({ input, setInput, sendMessage }) => {
   const [isListening, setIsListening] = useState<boolean>(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SimpleSpeechRecognition | null>(null);
 
   // Initialize speech recognition
   useEffect(() => {

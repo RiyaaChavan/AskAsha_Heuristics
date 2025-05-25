@@ -1,6 +1,6 @@
 // Components/VoiceAssistant.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import createSpeechRecognition from '../utils/speechRecognition';
+import createSpeechRecognition, { SimpleSpeechRecognition } from '../utils/speechRecognition';
 import './Chatbot/styles/VoiceAssistant.css';
 
 
@@ -8,7 +8,7 @@ const VoiceAssistant: React.FC = () => {
   const [text, setText] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isSupported, setIsSupported] = useState<boolean>(true);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SimpleSpeechRecognition | null>(null);
 
   useEffect(() => {
     // Initialize speech recognition on component mount

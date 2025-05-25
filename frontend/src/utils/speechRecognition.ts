@@ -2,9 +2,10 @@
 export type SpeechRecognitionCallback = (transcript: string) => void;
 export type ErrorCallback = (error: string) => void;
 
-interface SimpleSpeechRecognition {
+export interface SimpleSpeechRecognition {
   start: () => void;
   stop: () => void;
+  abort?: () => void;
 }
 
 export default function createSpeechRecognition(
@@ -48,10 +49,10 @@ export default function createSpeechRecognition(
   recognition.onend = () => {
     console.log('Speech recognition ended');
   };
-
   // Return a simplified interface to avoid type conflicts
   return {
     start: () => recognition.start(),
-    stop: () => recognition.stop()
+    stop: () => recognition.stop(),
+    abort: () => recognition.abort()
   };
 }

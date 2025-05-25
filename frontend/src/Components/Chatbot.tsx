@@ -92,7 +92,6 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       clearInterval(interval);
     };
   }, [currentViewType]);
-
   // Load content based on the view type
   const loadViewContent = (viewType: string | null) => {
     if (viewType === 'events') {
@@ -105,7 +104,8 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         canvasType: 'session_search', // Changed from 'sessions' to 'session_search' to match type definition
         canvasUtils: {
           session_link: 'https://api-prod.herkey.com/api/v1/discussions/filter/top?page_number=1&page_size=20',
-        }
+        },
+        isLoading: false
       };
       
       setMessages([eventsMessage]);
@@ -123,6 +123,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         isUser: false,
         isUserMessage: false,
         canvasType: 'roadmap',
+        isLoading: false,
         canvasUtils: {
           roadmap: [
             {
@@ -279,15 +280,15 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         if (data.status === 'success' && data.conversations) {
           // Transform conversations into messages format
           const historyMessages: Message[] = [];
-          
-          data.conversations.forEach((convo: any) => {
+            data.conversations.forEach((convo: any) => {
             if (convo.response) {
               historyMessages.push({
                 text: convo.response.text,
                 canvasType: convo.response.canvasType,
                 canvasUtils: convo.response.canvasUtils,
                 isHistory: true,
-                isUserMessage: false
+                isUserMessage: false,
+                isLoading: false
               });
             }
 
@@ -295,7 +296,8 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
               text: convo.message, 
               canvasType: 'none',
               isHistory: true,
-              isUserMessage: true
+              isUserMessage: true,
+              isLoading: false
             });
           });
           
@@ -317,8 +319,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
   
   const sendMessage = async () => {
     if (!input.trim()) return;
-    
-    // Validate input to prevent injection
+      // Validate input to prevent injection
     if (!isSqlSafe(input)) {
       // Show error message if input contains potential SQL injection
       setMessages(prev => [
@@ -328,7 +329,8 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
           text: 'Your message contains potentially unsafe characters. Please revise and try again.',
           isUser: false,
           isUserMessage: false,
-          canvasType: 'none'
+          canvasType: 'none',
+          isLoading: false
         }
       ]);
       
@@ -336,14 +338,14 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       setTimeout(scrollToBottom, 100);
       return;
     }
-    
-    // Create user message object 
+      // Create user message object 
     const userMessage: Message = { 
       id: messages.length, 
       text: input, 
       isUser: true,
       isUserMessage: true,
-      canvasType: 'none' 
+      canvasType: 'none',
+      isLoading: false
     };
     
     // Store the input message before clearing
@@ -416,14 +418,14 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       setTimeout(scrollToBottom, 200);
     } catch (error) {
       console.error("Error sending message:", error);
-      
-      // Remove loading message and add error message
+        // Remove loading message and add error message
       setMessages(prev => [...prev.filter(m => !m.isLoading), { 
         id: messages.length + 2, 
         text: 'Error contacting server. Please try again.', 
         isUser: false, 
         isUserMessage: false,
-        canvasType: 'none' 
+        canvasType: 'none',
+        isLoading: false
       }]);
       
       // Force scroll to the error message
