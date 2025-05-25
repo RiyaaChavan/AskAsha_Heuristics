@@ -13,4 +13,8 @@ pypdf2
 docx2txt
 nltk
 google-genai
+google-generativeai
 beautifulsoup4
+langdetect
+tavily-python
+pytest

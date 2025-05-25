@@ -37,12 +37,12 @@ const ChatbotArea: React.FC = () => {
     return tomorrow;
   };
   
-  const handleCalendarRequest = (items: RoadmapItem[]) => {
+  const handleCalendarRequest = (items: RoadmapItem[]): void => {
     setRoadmapItems(items);
     setShowCalendarDialog(true);
   };
   
-  const handleCalendarServiceSelect = async (service: 'google' | 'outlook' | 'ics') => {
+  const handleCalendarServiceSelect = async (service: 'google' | 'outlook' | 'ics'): Promise<void> => {
     if (!roadmapItems) return;
     
     try {
@@ -67,7 +67,7 @@ const ChatbotArea: React.FC = () => {
   };
   
   // Update the addToGoogleCalendar function to only open one tab
-  const addToGoogleCalendar = async (startDate: Date, items: RoadmapItem[]) => {
+  const addToGoogleCalendar = async (startDate: Date, items: RoadmapItem[]): Promise<void> => {
     try {
       // Create a single event with a comprehensive description of all roadmap items
       const firstItem = items[0];
@@ -104,7 +104,7 @@ const ChatbotArea: React.FC = () => {
   };
   
   // Update the addToOutlookCalendar function similarly
-  const addToOutlookCalendar = async (startDate: Date, items: RoadmapItem[]) => {
+  const addToOutlookCalendar = async (startDate: Date, items: RoadmapItem[]): Promise<void> => {
     try {
       // Similar approach, one event with all roadmap phases
       const firstItem = items[0];
@@ -188,68 +188,88 @@ const ChatbotArea: React.FC = () => {
       const url = URL.createObjectURL(blob);
       
       // Create a hidden link element to trigger download
-      const link = document.createElement('a');ck();
+      const link = document.createElement('a');
       link.style.display = 'none';
       link.href = url;
-      link.download = 'career_roadmap.ics';> {
+      link.download = 'career_roadmap.ics';
       document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup after a short delay
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }, 100);
-       }, 100);
-      return Promise.resolve();  
-    } catch (error) {      return Promise.resolve();
+      
+      return Promise.resolve();
+    } catch (error) {
       console.error("Error creating ICS file:", error);
-      return Promise.reject(error);    console.error("Error creating ICS file:", error);
-    }rn Promise.reject(error);
+      return Promise.reject(error);
+    }
+  };
+  // Example function to send a message
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    
+    // Add user message
+    const userMessage: Message = {
+      id: messages.length,
+      text: input,
+      isUser: true,
+      isLoading: false,
+      canvasType: 'none'
+    };
+    
+    setMessages([...messages, userMessage]);
+    setInput('');
+    
+    // You would then add your bot response logic here
   };
 
-  // ... rest of the ChatbotArea component remains the same
-  a component remains the same
+  // Scroll to bottom of messages container when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   return (
     <div className="chatbot-area">
-      {/* Calendar Dialog appears at the top level */}lassName="chatbot-area">
-      {showCalendarDialog && (* Calendar Dialog appears at the top level */}
-        <CalendarServiceDialog {showCalendarDialog && (
+      {/* Calendar Dialog appears at the top level */}
+      {showCalendarDialog && (
+        <CalendarServiceDialog
           onClose={() => setShowCalendarDialog(false)} 
-          onSelect={handleCalendarServiceSelect} log(false)} 
-        />ndleCalendarServiceSelect} 
+          onSelect={handleCalendarServiceSelect} 
+        />
       )}
       
       <div className="messages-container" id="messages-container">
-        {messages.map((message, index) => (ges-container">
+        {messages.map((message, index) => (
           <ChatMessage
             key={index}
-            message={message}key={index}
-            index={index} message={message}
+            message={message}
+            index={index}
             selectMessage={setSelectedMessageIndex}
-            isSelected={selectedMessageIndex === index}selectMessage={setSelectedMessageIndex}
+            isSelected={selectedMessageIndex === index}
             isUserMessage={message.isUser || false}
-          />erMessage={message.isUser || false}
+          />
         ))}
         <div ref={messagesEndRef} />
-      </div>iv ref={messagesEndRef} />
-      {selectedMessageIndex !== null && messages[selectedMessageIndex] && (div>
-        <Canvas essageIndex !== null && messages[selectedMessageIndex] && (
-          message={messages[selectedMessageIndex]} 
-          onCalendarRequest={handleCalendarRequest}[selectedMessageIndex]} 
-        />uest={handleCalendarRequest}
+      </div>
+      
+      {selectedMessageIndex !== null && messages[selectedMessageIndex] && (
+        <Canvas 
+          message={messages[selectedMessageIndex]}
+          onCalendarRequest={handleCalendarRequest}
+        />
       )}
-      <ChatInput
-        value={input}
-        onChange={setInput}
-        onSend={() => {Change={setInput}
-          /* existing send message functionality */onSend={() => {
-        }}/* existing send message functionality */
-        onResize={() => {    }}
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });      onResize={() => {
-        }}          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        <ChatInput
+        input={input}
+        setInput={setInput}
+        sendMessage={sendMessage}
+        onResize={() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }}
       />
-    </div>      />
-
-
-
-
-
-export default ChatbotArea;};  );    </div>
+    </div>
   );
 };
 
