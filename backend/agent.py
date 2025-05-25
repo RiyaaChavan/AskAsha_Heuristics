@@ -1003,8 +1003,7 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
             import re
             # Remove common words and get core topic
             topic = re.sub(r'\b(a|an|the|for|to|of|with|on|at|in|by|about)\b', '', topic).strip()
-        
-        # Generate dynamic response
+          # Generate dynamic response
         response_text = get_roadmap_response(topic=topic)
         
         return {
@@ -1015,19 +1014,28 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
                 "enableCalendarIntegration": True  # Flag to enable calendar integration in frontend
             }
         }
-    elif query_type == "events":
-        # Events response
-        session_link, session_api = get_events_links()
         
-        # Use template for more varied responses
+    elif query_type == "events":
+        # Events response - extract any search terms from the query
+        search_terms = extract_search_terms(query)
+        session_link, session_api, brighttalk_events = get_events_links(search_terms)
+        
+        # Generate a more customized response based on search terms
         response_text = get_events_response()
+        
+        # If we have search terms, make the response more specific
+        if search_terms and search_terms != "Women In Tech":
+            search_query = brighttalk_events.get("search_query", search_terms)
+            response_text = f"I found some events related to '{search_query}'! Here are both Herkey and BrightTALK events that might interest you."
         
         return {
             "text": response_text,
             "canvasType": "sessions",
             "canvasUtils": {
                 "session_link": session_link,
-                "session_api": session_api  # Placeholder for events data
+                "session_api": session_api,
+                "brighttalk_events": brighttalk_events,  # Add BrightTALK events data
+                "search_query": search_terms  # Include the search query for reference
             }
         }
         
@@ -1092,17 +1100,218 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
         text_response = generate_text_response(prompt, conversation_history, resume_data)
         return format_response("normal_text", prompt, text_response)
 
-def get_events_links():
+def get_events_links(query=None):
     """
     Get the session link and API token for events.
-    Returns a tuple of (session_link, session_api).
+    Returns a tuple of (session_link, session_api, brighttalk_events).
+    
+    Args:
+        query (str, optional): Search query for filtering events. Defaults to None.
     """
-    # Placeholder for actual implementation to get events links
-    # For now, return dummy values
+    # Get Herkey events data
     session_link = "https://api-prod.herkey.com/api/v1/herkey/sessions/get-session-widgets?category=Featured"
     session_api = get_herkey_token()
     
-    return session_link, session_api
+    # Get BrightTALK events
+    brighttalk_events = get_brighttalk_events(query)
+    
+    return session_link, session_api, brighttalk_events
+
+def get_brighttalk_events(query=None):
+    """
+    Get events from BrightTALK API.
+    
+    Args:
+        query (str, optional): Search query for filtering events. Defaults to None or "Women In Tech".
+        
+    Returns:
+        dict: JSON response with BrightTALK events data
+    """
+    import requests
+    from datetime import datetime
+    
+    base_url = "https://www.brighttalk.com/api/webcasts"
+    
+    # If no query provided, default to women in tech topics
+    search_query = query if query else "Women In Tech"
+    
+    params = {
+        "start": 0,
+        "size": 10,  # Increased size to allow for client-side pagination
+        "rank": "-webcast_relevance",
+        "bq": "(and type:'webcast')",  # Include both upcoming and recorded webcasts
+        "rankClosest": "",
+        "paidSearch": "true",
+        "returnFields": "",
+        "q": search_query
+    }
+
+    try:
+        # Use a shorter timeout to prevent hanging
+        response = requests.get(base_url, params=params, timeout=5)  # Increased timeout slightly
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Add the search query to the response for reference
+            data["search_query"] = search_query
+            
+            # Filter out webcasts without essential fields
+            if "webcasts" in data["response"]:
+                valid_webcasts = []
+                for webcast in data["response"]["webcasts"]:
+                    if "title" in webcast and "landing_page_url" in webcast:
+                        # Ensure starts_at is present or add a default
+                        if not webcast.get("starts_at"):
+                            webcast["starts_at"] = datetime.now().isoformat()
+                        valid_webcasts.append(webcast)
+                
+                data["response"]["webcasts"] = valid_webcasts
+                
+            return data
+        else:
+            print(f"BrightTALK API error: {response.status_code}")
+            return {
+                "error": f"Failed to fetch BrightTALK events (Status: {response.status_code})", 
+                "search_query": search_query,
+                "response": {"webcasts": []}
+            }
+    except requests.exceptions.Timeout:
+        print("BrightTALK API request timed out")
+        return {
+            "error": "The BrightTALK API request timed out. Please try again later.", 
+            "search_query": search_query,
+            "response": {"webcasts": []}
+        }
+    except requests.exceptions.ConnectionError:
+        print("BrightTALK API connection error")
+        return {
+            "error": "Unable to connect to the BrightTALK API. Please check your network connection.", 
+            "search_query": search_query,
+            "response": {"webcasts": []}
+        }
+    except Exception as e:
+        print(f"Error fetching BrightTALK events: {str(e)}")
+        return {
+            "error": f"An unexpected error occurred while fetching BrightTALK events: {str(e)}", 
+            "search_query": search_query,
+            "response": {"webcasts": []}
+        }
+
+def extract_search_terms(query):
+    """
+    Extract search terms from user query for filtering events.
+    
+    Args:
+        query (str): User query about events/workshops
+        
+    Returns:
+        str: Extracted search terms or None if no specific terms found
+    """
+    import re
+    
+    if not query:
+        return "Women In Tech"
+        
+    # Clean the query - remove question marks and extra spaces
+    clean_query = re.sub(r'[\?\!\.\,]', ' ', query).strip()
+    clean_query = re.sub(r'\s+', ' ', clean_query)
+    
+    # List of common phrases that indicate the start of search terms
+    prefixes = [
+        "about", "on", "related to", "for", "regarding", "in", "with",
+        "events about", "events on", "events for", "events related to", 
+        "workshops about", "workshops on", "workshops for", "workshops related to",
+        "webinars about", "webinars on", "webinars for", "webinars related to",
+        "conferences about", "conferences on", "conferences for", "sessions about",
+        "seminars about", "talks about", "presentations on", "courses on"
+    ]
+    
+    # Try to extract search terms using common prefixes
+    for prefix in prefixes:
+        pattern = rf"{prefix}\s+(.+?)(?:\s+in|\s+near|\s+at|\s+for|\s+by|\s+and|\s+or|$)"
+        match = re.search(pattern, clean_query, re.IGNORECASE)
+        if match:
+            terms = match.group(1).strip()
+            # Remove common stop words at the beginning if present
+            terms = re.sub(r'^(the|a|an|some|any)\s+', '', terms, flags=re.IGNORECASE)
+            return terms
+    
+    # If no match with prefixes, look for keywords after "events", "workshops", etc.
+    event_types = ["event", "events", "workshop", "workshops", "webinar", "webinars", 
+                   "conference", "conferences", "seminar", "seminars", "session", "sessions"]
+    
+    for event_type in event_types:
+        pattern = rf"{event_type}s?\s+(?:on|about|for|related to)?\s*(.+?)(?:\s+in|\s+near|\s+at|\s+for|\s+by|\s+and|\s+or|$)"
+        match = re.search(pattern, clean_query, re.IGNORECASE)
+        if match:
+            terms = match.group(1).strip()
+            # Remove common stop words at the beginning if present
+            terms = re.sub(r'^(the|a|an|some|any)\s+', '', terms, flags=re.IGNORECASE)
+            return terms
+    
+    # Look for direct mentions of topics after "show me", "find", "search for", etc.
+    action_verbs = ["show me", "find", "search for", "look for", "get", "fetch", "display", "list"]
+    for verb in action_verbs:
+        pattern = rf"{verb}\s+(?:some|any)?\s*(?:upcoming|recent|new)?\s*(?:events|workshops|webinars|conferences)?\s*(?:on|about|for|related to)?\s*(.+?)(?:\s+in|\s+near|\s+at|\s+for|\s+by|$)"
+        match = re.search(pattern, clean_query, re.IGNORECASE)
+        if match:
+            terms = match.group(1).strip()
+            # If the extracted terms contain event-related words, remove them
+            for event_word in event_types:
+                terms = re.sub(rf'\b{event_word}s?\b', '', terms, flags=re.IGNORECASE)
+            terms = terms.strip()
+            if terms:
+                return terms
+    
+    # Extract any domain-specific terms that might be useful
+    domains = [
+        "tech", "technology", "programming", "coding", "development", "developer",
+        "data science", "AI", "artificial intelligence", "machine learning", "deep learning", 
+        "leadership", "management", "marketing", "digital marketing", "product marketing",
+        "career", "professional development", "mentoring", "coaching", "networking",
+        "business", "entrepreneurship", "startup", "innovation", "strategy",
+        "finance", "accounting", "investment", "fintech", "banking",
+        "design", "UX", "UI", "user experience", "graphic design", "product design",
+        "product management", "agile", "scrum", "project management", "product development",
+        "women in tech", "diversity", "inclusion", "equity", "belonging",
+        "cloud computing", "devops", "cybersecurity", "information security", "blockchain"
+    ]
+    
+    # Sort domains by length (descending) to match longer phrases first
+    domains = sorted(domains, key=len, reverse=True)
+    
+    for domain in domains:
+        if domain.lower() in clean_query.lower():
+            return domain
+    
+    # Check for any specific skills or technologies mentioned
+    tech_skills = ["Python", "JavaScript", "Java", "C#", "Ruby", "React", "Angular", "Vue", 
+                   "Node.js", "AWS", "Azure", "GCP", "Docker", "Kubernetes", "Git", "SQL", 
+                   "NoSQL", "MongoDB", "PostgreSQL", "TensorFlow", "PyTorch", "R", "Tableau", 
+                   "Power BI", "Excel", "Salesforce", "SAP", "PMP", "Scrum", "JIRA", "Confluence"]
+    
+    for skill in tech_skills:
+        if skill.lower() in clean_query.lower() or skill in clean_query:
+            return skill
+    
+    # If query mentions "women" specifically, return "Women In Tech"
+    if re.search(r'\bwom[ae]n\b', clean_query, re.IGNORECASE):
+        return "Women In Tech"
+        
+    # Last resort: extract nouns from the query
+    words = clean_query.split()
+    # Filter out common verbs, articles, prepositions
+    stop_words = ["show", "find", "get", "me", "for", "the", "a", "an", "in", "on", "at", "by", "with", 
+                  "and", "or", "to", "from", "is", "are", "am", "was", "were", "be", "being", "been"]
+    potential_terms = [w for w in words if w.lower() not in stop_words and len(w) > 2]
+    
+    if potential_terms:
+        # Use up to 3 significant words as search terms
+        return " ".join(potential_terms[:3])
+    
+    # Default to women in tech if no specific terms found
+    return "Women In Tech"
 
 
 # Example usage
