@@ -1,47 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChatInputProps } from './types';
+import createSpeechRecognition from '../../utils/speechRecognition';
 
 const ChatInput: React.FC<ChatInputProps> = ({ input, setInput, sendMessage }) => {
-  // Add state to track if a file is selected
-  const [fileSelected, setFileSelected] = useState<boolean>(false);
-  
-  // Create a reference to the hidden file input element
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  // Handle file button click
-  const handleFileButtonClick = () => {
-    // Trigger the hidden file input click
-    fileInputRef.current?.click();
-  };
+  // Initialize speech recognition
+  useEffect(() => {
+    const recognition = createSpeechRecognition(
+      (transcript: string) => {
+        const newInput = input + ' ' + transcript;
+        setInput(newInput.trim());
+        setIsListening(false);
+      },
+      (error: string) => {
+        console.error('Speech recognition error:', error);
+        setIsListening(false);
+      }
+    );
 
-  // Handle file selection
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      const fileName = file.name;
-      const fileSize = (file.size / 1024).toFixed(2) + ' KB';
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [setInput, input]);
+
+  const handleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      console.warn('Speech Recognition not supported');
+      return;
+    }
+
+    if (isListening) {
+      // Stop listening
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      // Start listening
+      setIsListening(true);
       
-      // Update the input with information about the attached file
-      setInput(`I'm attaching a file: ${fileName} (${fileSize})`);
-      
-      // Indicate that a file is selected
-      setFileSelected(true);
-      
-      // Reset the file input so the same file can be selected again if needed
-      event.target.value = '';
-      
-      // Optionally, you could upload the file to a server here using FormData
-      // const formData = new FormData();
-      // formData.append('file', file);
-      // fetch('your-upload-endpoint', { method: 'POST', body: formData });
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error('Failed to start recognition:', error);
+        setIsListening(false);
+      }
     }
   };
 
-  // Clear file selection when the message is sent
-  const handleSendMessage = () => {
-    sendMessage();
-    setFileSelected(false);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
   };
 
   return (
@@ -50,36 +68,47 @@ const ChatInput: React.FC<ChatInputProps> = ({ input, setInput, sendMessage }) =
         <input
           type="text"
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              handleSendMessage();
-            }
-          }}
-          placeholder="Type your message..."
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={isListening ? "Listening..." : "Type your message..."}
           className="chat-input"
         />
-        {/* Hidden file input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
-          accept=".pdf,.doc,.docx"
-        />
+        
         <button 
-          className={`attach-button ${fileSelected ? 'file-selected' : ''}`}
+          className={`voice-button ${isListening ? 'listening' : ''}`}
+          onClick={handleVoiceInput}
+          aria-label="Voice input"
+          title={isListening ? "Listening... Click to stop" : "Click to speak"}
           type="button"
-          onClick={handleFileButtonClick}
-          aria-label="Attach file"
-          title="Attach a document (.pdf, .doc, .docx)"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" fill="currentColor"/>
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {isListening ? (
+              // Stop icon when listening
+              <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+            ) : (
+              // Microphone icon when not listening
+              <>
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" fill="currentColor"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" fill="currentColor"/>
+              </>
+            )}
           </svg>
         </button>
       </div>
-      <button className="send-button" onClick={handleSendMessage}>Send</button>
+      
+      <button 
+        className="send-button" 
+        onClick={sendMessage}
+        type="button"
+      >
+        Send
+      </button>
     </div>
   );
 };

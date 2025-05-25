@@ -20,6 +20,7 @@ import InterviewAssistant from './Components/InterviewAssistant';
 import HomePage from './pages/HomePage';
 import './index.css';
 import { BentoGridDemo } from './Components/Homepage/BentoGrid';
+import VoiceAssistant from './Components/VoiceAssistant';
 
 function AppWithNavbar() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function AppWithNavbar() {
       <KeepAlive />
       <DebugInfo />
       {!hideNavbar && <Navbar />}
+      <VoiceAssistant />
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
