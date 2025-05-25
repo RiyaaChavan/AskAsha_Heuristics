@@ -12,16 +12,28 @@ load_dotenv()
 # Initialize your chat LLM
 chat_model = ChatOpenAI(model="gpt-4.1-nano", temperature=0.3)
 
-
+from response_templates import ABBREVIATION_MAP
 gibberish_pipe = pipeline("text-classification", model="madhurjindal/autonlp-Gibberish-Detector-492513457")
+
+def expand_abbreviations(text, abbreviation_map):
+    pattern = re.compile(r'\b(' + '|'.join(re.escape(k) for k in abbreviation_map.keys()) + r')\b', re.IGNORECASE)
+    return pattern.sub(lambda x: abbreviation_map[x.group().upper()], text)
+
 
 def check_gibberish(text, threshold=0.8):
     try:
-        result = gibberish_pipe(text)[0]
+        # Expand known career-related abbreviations
+        expanded_text = expand_abbreviations(text, ABBREVIATION_MAP)
+        print(f"Expanded text: {expanded_text}")
+
+        # Pass expanded text to the gibberish detector
+        result = gibberish_pipe(expanded_text)[0]
         print(f"Gibberish detection result: {result}")
-        return  result['score'] >= threshold and result['label'] != 'clean'
+        return result['score'] >= threshold and result['label'] != 'clean'
+
     except Exception as e:
         print(f"Gibberish detection error: {str(e)}")
+        return False
 
 # Helper to get a JWT session token from Herkey
 def get_herkey_token() -> str:
