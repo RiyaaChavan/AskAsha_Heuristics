@@ -23,11 +23,10 @@ import json
 import mimetypes
 import io
 from pathlib import Path
-from transformers import pipeline
 from assets.system_prompt import SYSTEM_PROMPTS  
-from assets.skill_patterns import SKILL_PATTERNS 
+from assets.skill_patterns import SKILL_PATTERNS
 
-from agent import run_agent  
+# from agent import run_agent  
 from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
 from chatlogic import chat_logic
 from parse_resume_gemini import parse_resume_with_gemini
@@ -48,14 +47,25 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 # Import profanity check functions
 from profanity import check_profanity, get_profanity_response
-gibberish_pipe = pipeline("text-classification", model="madhurjindal/autonlp-Gibberish-Detector-492513457")
+# Replace pipeline with OpenAI for gibberish detection
+from langchain_openai import ChatOpenAI
 
 def check_gibberish(text, threshold=0.8):
     try:
-        result = gibberish_pipe(text)[0]
-        return  result['score'] >= threshold and result['label'] != 'clean'
+        # Use OpenAI to check for gibberish
+        chat_model = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+        system_prompt = "Your task is to determine if the provided text is gibberish (nonsensical, random characters, or incomprehensible text). Respond with 'true' if it's gibberish or 'false' if it's valid text in any language. Only respond with 'true' or 'false'."
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
+        ]
+        
+        response = chat_model.invoke(messages).content.strip().lower()
+        return response == 'true'
     except Exception as e:
         print(f"Gibberish detection error: {str(e)}")
+        return False
 app = Flask(__name__)
 
 
@@ -363,10 +373,13 @@ def get_user():
 @app.route('/api/conversations', methods=['GET'])
 def get_conversations():
     user_id = request.args.get('user_id')
+    # canvas_type = request.args.get('canvas_type')  # Add optional canvas_type parameter
     print(f"User ID from param: {user_id}")
+    
     if not user_id:
         return jsonify({"status": "error", "message": "Not authenticated"}), 401
 
+    # Pass canvas_type filter to get_user_conversations if provided
     conversations = get_user_conversations(user_id)
     return jsonify({"status": "success", "conversations": conversations})
 

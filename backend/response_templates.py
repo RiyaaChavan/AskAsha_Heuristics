@@ -175,11 +175,15 @@ PLATFORM_HIGHLIGHT_TEMPLATES = [
 
 # Roadmap response templates
 ROADMAP_RESPONSES = [
-    "I've created a detailed, phase-by-phase roadmap for mastering {topic}. Each stage includes specific activities, practical exercises, and verified online resources to help you progress effectively.",
-    "Here's your personalized learning path for {topic}, with comprehensive phases that build progressively. Each phase includes detailed instructions and links to high-quality resources relevant to your journey.",
-    "Ready to master {topic}? I've mapped out a comprehensive learning journey with detailed guidance at each phase and carefully selected resources from reputable websites to support your development.",
-    "Your roadmap to {topic} proficiency is ready! This structured plan includes detailed instructions for each phase and links to verified, relevant resources to help you develop your skills systematically.",
-    "Here's a structured learning path for {topic}, with detailed phase-wise instructions and carefully selected online resources from trusted websites. Each phase builds on the previous one to ensure steady progress."
+    "## Your Path to Mastering {topic}\n\nI've created a detailed, **phase-by-phase roadmap** for mastering {topic}. Each stage includes specific activities, practical exercises, and verified online resources from trusted platforms to help you progress effectively. Please explore each phase below to see what skills you'll develop and which industry-recognized resources will support your journey.\n\n> This personalized roadmap will guide you from beginner to advanced level with carefully curated resources.",
+    
+    "# {topic} Learning Journey\n\nHere's your personalized learning path for {topic}, with comprehensive phases that build progressively. Each phase includes detailed instructions, skill-building activities, and links to high-quality resources from established educational platforms relevant to your journey.\n\n**This roadmap is designed to systematically build your expertise** from foundational concepts to advanced applications.",
+    
+    "## Master {topic}: Your Complete Roadmap\n\nReady to master {topic}? I've mapped out a comprehensive learning journey with detailed guidance at each phase and carefully selected resources from reputable websites to support your development.\n\n* Each phase introduces specific concepts and skills\n* Progressive learning path ensures logical skill development\n* Resources are carefully selected from trusted platforms\n\nLet's begin your journey to {topic} mastery!",
+    
+    "# Your {topic} Proficiency Roadmap\n\nYour roadmap to {topic} proficiency is ready! This structured plan includes **detailed instructions** for each phase and **links to verified, relevant resources** to help you develop your skills systematically.\n\nI've focused on resources from industry-leading platforms that will provide you with both theoretical knowledge and practical skills needed for real-world application.",
+    
+    "## Structured Learning Path: {topic}\n\nHere's a structured learning path for {topic}, with detailed phase-wise instructions and carefully selected online resources from trusted websites. Each phase builds on the previous one to ensure steady progress.\n\n> I've designed this roadmap to include a mix of learning approaches: conceptual understanding, practical application, and opportunities to demonstrate your new skills through projects."
 ]
 
 # Events response templates

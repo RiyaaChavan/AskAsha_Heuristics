@@ -307,7 +307,7 @@ def extract_job_search_params(query: str, conversation_history=None, resume_data
     context = ""
     
     # Add resume data if available (when @resume tag is used)
-    if resume_data:
+    if "@resume" in query:
         resume_context = "User's resume information(This is the information the user is requesting when they say @resume):\n"
         
         # Add skills from resume
@@ -347,6 +347,10 @@ def extract_job_search_params(query: str, conversation_history=None, resume_data
             bot_response = convo.get("response", {}).get("text", "")
             if user_message:
                 context += f"User: {user_message}\n"
+                if '@resume' in user_message:
+                    resume_data = convo.get("resume_data", {})
+                    if resume_data:
+                        context += f"Resume data user attached by mentioning @resume: {json.dumps(resume_data, indent=2)}\n"
             if bot_response:
                 context += f"Assistant: {bot_response}\n"
     

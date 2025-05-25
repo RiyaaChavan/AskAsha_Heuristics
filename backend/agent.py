@@ -9,13 +9,12 @@ import json
 import re
 import urllib.parse
 from datetime import datetime
-from transformers import pipelinefrom assets.system_prompt import JOB_SEARCH_SYSTEM_PROMPT,GENERATE_ROADMAP_SYSTEM_PROMPT, ROADMAP_SUBPROMPTS
+from assets.system_prompt import JOB_SEARCH_SYSTEM_PROMPT,GENERATE_ROADMAP_SYSTEM_PROMPT, ROADMAP_SUBPROMPTS
 load_dotenv()
 # Initialize your chat LLM
 chat_model = ChatOpenAI(model="gpt-4.1-nano", temperature=0.3)
 
 from response_templates import ABBREVIATION_MAP
-gibberish_pipe = pipeline("text-classification", model="madhurjindal/autonlp-Gibberish-Detector-492513457")
 
 def expand_abbreviations(text, abbreviation_map):
     pattern = re.compile(r'\b(' + '|'.join(re.escape(k) for k in abbreviation_map.keys()) + r')\b', re.IGNORECASE)
@@ -28,10 +27,20 @@ def check_gibberish(text, threshold=0.8):
         expanded_text = expand_abbreviations(text, ABBREVIATION_MAP)
         print(f"Expanded text: {expanded_text}")
 
-        # Pass expanded text to the gibberish detector
-        result = gibberish_pipe(expanded_text)[0]
-        print(f"Gibberish detection result: {result}")
-        return result['score'] >= threshold and result['label'] != 'clean'
+        # Use OpenAI to check for gibberish
+        system_prompt = "Your task is to determine if the provided text is gibberish (nonsensical, random characters, or incomprehensible text). Respond with 'true' if it's gibberish or 'false' if it's valid text in any language. Only respond with 'true' or 'false'."
+        
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=expanded_text)
+        ]
+        
+        response = chat_model.invoke(messages).content.strip().lower()
+        print(f"Gibberish detection result: {response}")
+        return response == 'true'
+    except Exception as e:
+        print(f"Gibberish detection error: {str(e)}")
+        return False
 
     except Exception as e:
         print(f"Gibberish detection error: {str(e)}")
@@ -347,50 +356,49 @@ Generate a structured learning roadmap for the given topic. The topic must be re
         
         # Attempt to create a more relevant fallback based on the topic
         topic_lower = topic.lower()
-        
-        # Default fallback for general career development
+          # Default fallback for general career development with detailed phase descriptions and real links
         fallback_roadmap = [
             {
-                "title": "Understanding Your Career Goals",
-                "description": "Begin by assessing your current skills, interests, and career objectives. Create a detailed document that outlines your strengths, areas for growth, and specific goals you want to achieve. Conduct a thorough self-assessment using career assessment tools to identify your key motivators, values, and preferred work environment. Research industry trends and career paths that align with your interests and strengths. Set SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound) for your career development journey. Identify potential mentors who can guide you through your career transition or advancement.",
+                "title": "Phase 1: Self-Assessment & Goal Clarity",
+                "description": "Begin with a comprehensive self-assessment to identify your strengths, values, interests, and areas for growth. Use professional assessment tools like Myers-Briggs Type Indicator, CliftonStrengths, or CareerLeader to gain deeper insights. Document your transferable skills, technical abilities, and soft skills. Research emerging industry trends relevant to your field using resources like LinkedIn's Workforce Reports and industry publications. Identify 2-3 potential career paths that align with your strengths and interests. Create a detailed career vision document with 1-year, 3-year, and 5-year SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound). Prioritize your goals based on current market opportunities and personal satisfaction factors.",
                 "link": "https://www.themuse.com/advice/how-to-figure-out-what-you-want-next-in-your-career",
-                "calendar_event": "Career Goals Assessment"
+                "calendar_event": "Career Vision & Assessment"
             },
             {
-                "title": "Skill Enhancement Planning",
-                "description": "Identify the key skills needed for your target role by analyzing job descriptions, industry reports, and speaking with professionals in your desired field. Create a comprehensive skills inventory comparing your current abilities with those required for your target position. Develop a prioritized list of skills to develop, focusing on both technical and soft skills. Research courses, workshops, certifications, and other learning opportunities that can help you acquire these skills efficiently. Create a realistic timeline for skill development that accounts for your current commitments. Identify small projects you can undertake to practice and demonstrate your new skills.",
-                "link": "https://www.indeed.com/career-advice/finding-a-job/skills-to-develop",
-                "calendar_event": "Skills Planning Session"
+                "title": "Phase 2: Strategic Skill Development",
+                "description": "Conduct a detailed gap analysis by reviewing 15-20 job descriptions for your target roles and identifying recurring required skills you currently lack. Prioritize skills based on frequency of mention and impact on career advancement. Create a personalized learning roadmap focusing on both technical and soft skills with specific resources for each skill. Enroll in 1-2 highly relevant courses, certifications, or workshops that address your highest-priority skill gaps through platforms like Coursera, LinkedIn Learning, or industry-specific training. Schedule dedicated weekly learning time blocks (at least 5 hours per week). Identify micro-projects to immediately apply each new skill in real-world contexts. Find an accountability partner or learning community to maintain momentum and share resources.",
+                "link": "https://www.coursera.org/professional-certificates",
+                "calendar_event": "Skills Gap Analysis & Learning Plan"
             },
             {
-                "title": "Networking and Community Building",
-                "description": "Develop a strategic networking plan to connect with professionals in your field. Join relevant online communities, professional associations, and networking groups specific to your industry and career goals. Attend industry conferences, webinars, meetups, and virtual events to expand your network. Create a compelling professional introduction and practice it until it feels natural. Develop a system for following up with new connections and maintaining relationships with your network. Schedule informational interviews with professionals in roles you aspire to. Use LinkedIn effectively by optimizing your profile, engaging with industry content, and connecting with relevant professionals.",
-                "link": "https://www.ellevatenetwork.com/articles",
-                "calendar_event": "Networking Strategy Session"
+                "title": "Phase 3: Network Building & Expansion",
+                "description": "Map your existing professional network and identify strategic gaps in key industries, roles, or organizations. Create a targeted networking strategy with monthly goals for new connections and relationship development. Craft a compelling elevator pitch and professional introduction tailored to different networking contexts. Identify and join 2-3 professional associations and online communities highly relevant to your career goals. Schedule at least two informational interviews monthly with professionals in roles you aspire to. Develop a system for tracking networking activities and following up with new connections. Create a relationship nurturing calendar to maintain meaningful contact with key connections. Actively contribute valuable insights in online professional communities to establish your expertise and visibility.",
+                "link": "https://www.linkedin.com/business/sales/blog/profile-best-practices/how-to-network-on-linkedin--19-easy-steps-for-2023",
+                "calendar_event": "Strategic Network Development"
             },
             {
-                "title": "Creating Your Professional Brand",
-                "description": "Develop a consistent professional brand that communicates your unique value proposition. Update your LinkedIn profile, professional website, and other online platforms to reflect your brand. Create a compelling professional narrative that highlights your journey, strengths, and career aspirations. Update your resume using contemporary formats and ATS-friendly techniques to highlight relevant skills and experiences. Create templates for customizable cover letters tailored to different roles and industries. Develop a comprehensive portfolio showcasing your best work, projects, and achievements. Consider creating content that demonstrates your expertise, such as blog posts, videos, or presentations.",
-                "link": "https://www.linkedin.com/learning",
+                "title": "Phase 4: Personal Brand Development",
+                "description": "Conduct a personal brand audit by reviewing your online presence across all platforms and gathering feedback from trusted colleagues. Define your unique value proposition that clearly articulates what sets you apart in your field. Create a consistent professional narrative that highlights your journey, expertise, and career vision. Optimize your LinkedIn profile with industry keywords, accomplishments, and a compelling summary that reflects your personal brand. Develop a content strategy to demonstrate your expertise through sharing insights, articles, or creating original content relevant to your field. Update your resume using modern formats and ATS-friendly techniques, with achievement-focused bullet points and quantifiable results. Create a digital portfolio showcasing your best work with case studies, project outcomes, and testimonials.",
+                "link": "https://www.themuse.com/advice/the-31-best-linkedin-profile-tips-for-job-seekers",
                 "calendar_event": "Professional Brand Development"
             },
             {
-                "title": "Interview Preparation",
-                "description": "Research common interview questions specific to your target role and industry. Prepare thoughtful responses using the STAR method (Situation, Task, Action, Result) for behavioral questions. Practice technical or skills-based assessments commonly used in your field. Conduct mock interviews with a friend, mentor, or career coach to receive feedback on your responses and presentation. Research companies thoroughly before interviews to understand their values, culture, products/services, and recent developments. Prepare insightful questions to ask interviewers that demonstrate your interest and knowledge. Practice body language, voice modulation, and communication techniques to present yourself confidently.",
+                "title": "Phase 5: Interview Mastery & Negotiation",
+                "description": "Research contemporary interview formats and questions specific to your target roles and industries. Prepare comprehensive responses to 25+ common questions using the STAR method (Situation, Task, Action, Result). Develop 5-7 powerful stories that demonstrate your key strengths and experiences that can be adapted for different interview questions. Practice technical assessments and role-specific challenges commonly used in your field. Conduct at least 3 mock interviews with professionals in your industry to receive actionable feedback. Research salary ranges for your target positions using tools like Glassdoor, PayScale, and industry reports. Develop a negotiation strategy with clear understanding of your minimum acceptable offer, target salary, and ideal package. Practice negotiation scenarios for compensation, benefits, and role responsibilities with specific language and responses.",
                 "link": "https://www.themuse.com/advice/interview-questions-and-answers",
-                "calendar_event": "Interview Preparation"
+                "calendar_event": "Interview & Negotiation Preparation"
             },
             {
-                "title": "Job Search Strategy & Execution",
-                "description": "Develop a comprehensive job search strategy tailored to your industry and career goals. Create a system to track applications, follow-ups, and networking contacts. Set up job alerts on major platforms and industry-specific job boards. Research target companies and create a list of organizations where you'd like to work, regardless of current openings. Develop a schedule for regular job search activities, including networking, applications, and skill development. Learn effective negotiation techniques for discussing salary and benefits. Create a plan for evaluating job offers based on factors important to you, such as growth opportunities, work culture, and compensation.",
-                "link": "https://www.glassdoor.com/blog/guide/how-to-get-a-job/",
-                "calendar_event": "Job Search Planning"
+                "title": "Phase 6: Strategic Job Search Campaign",
+                "description": "Develop a multi-channel job search strategy combining job boards, company websites, networking, and recruiters. Create a target list of 15-20 organizations aligned with your values and career goals, regardless of current openings. Set up sophisticated job alerts using boolean search strings to filter for highly relevant opportunities. Develop templates for customizable application materials tailored to different roles and industries. Create a comprehensive application tracking system to monitor all opportunities, follow-ups, and networking contacts. Block dedicated weekly time for job search activities including application submission, follow-ups, and network engagement. Research each organization thoroughly before applying, identifying key initiatives, challenges, and potential connections. Develop a follow-up strategy with templates for different scenarios and appropriate timing intervals.",
+                "link": "https://www.indeed.com/career-advice/finding-a-job/how-to-conduct-a-job-search",
+                "calendar_event": "Strategic Job Search Planning"
             },
             {
-                "title": "Continuous Career Growth",
-                "description": "Establish a long-term plan for ongoing professional development and career advancement. Set up regular intervals to reassess your career goals and progress. Join professional associations relevant to your field to stay updated on industry trends. Subscribe to key publications and follow thought leaders in your industry. Plan to obtain advanced certifications or degrees that will enhance your expertise and marketability. Seek leadership opportunities or stretch assignments in your current or future roles. Develop a mentorship plan, both for finding mentors and eventually becoming one yourself. Create a system for documenting your achievements and contributions for future performance reviews and promotions.",
-                "link": "https://hbr.org/topic/career-planning",
-                "calendar_event": "Career Growth Planning"
+                "title": "Phase 7: Continuous Professional Development",
+                "description": "Establish a structured system for ongoing professional development with quarterly learning goals and regular skill assessments. Subscribe to 3-5 key industry publications, podcasts, or newsletters to stay current with trends and innovations. Join professional associations relevant to your field and identify leadership or committee opportunities to enhance visibility. Schedule quarterly career reflection sessions to assess progress toward goals and adjust strategies as needed. Develop a mentoring relationship roadmap, identifying potential mentors for different aspects of your career development. Create a leadership development plan with specific competencies to strengthen and opportunities to practice them. Establish a system for documenting achievements, project outcomes, and positive feedback for performance reviews and promotion discussions. Identify advanced certifications or specialized training that would significantly enhance your expertise and marketability over the next 1-3 years.",
+                "link": "https://hbr.org/topic/managing-yourself",
+                "calendar_event": "Professional Growth Planning"
             }
         ]
         
@@ -617,7 +625,7 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
     if query_type == "job_search":
         # Job search response
         job_params = result
-        platforms = ["herkey", "linkedin", "glassdoor"]
+        platforms = ["herkey", "linkedin"]
         print("Job parameters: in query_type of format response is", job_params)
       
         jobs_data = get_job_search_results(job_params, platforms)
@@ -709,7 +717,6 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
         if search_terms and search_terms != "Women In Tech":
             search_query = brighttalk_events.get("search_query", search_terms)
             response_text = f"I found some events related to '{search_query}'! Here are both Herkey and BrightTALK events that might interest you."
-        
         return {
             "text": response_text,
             "canvasType": "sessions",
@@ -721,12 +728,30 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
             }
         }
     elif query_type =='gibberish':
-        # Gibberish response
+        # Generate a dynamic, human-like response for gibberish using OpenAI
+        try:
+            # Get a dynamic response from OpenAI about the unclear message
+            system_prompt = "The user has sent a message that was detected as unclear or possibly gibberish. Generate a friendly, human-like response asking them to clarify or rephrase their question. Vary your responses and be conversational. Your response should be brief (1-2 sentences) and encouraging."
+            
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=query)
+            ]
+            
+            response = chat_model.invoke(messages).content.strip()
+            
+            # If OpenAI fails for any reason, use the fallback message
+            if not response:
+                response = "Can you please like to reiterate or tell clearly what you are looking for?"
+        except Exception as e:
+            print(f"Error generating gibberish response: {str(e)}")
+            response = "Can you please like to reiterate or tell clearly what you are looking for?"
+        
         return {
-            "text": "It seems like your message is not clear. Could you please rephrase or provide more details?",
+            "text": response,
             "canvasType": "none",
             "canvasUtils": {}
-        }  
+        }
     elif query_type =="non_english":
         # Non-English response
         return {

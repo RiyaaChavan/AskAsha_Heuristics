@@ -115,36 +115,45 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       
       // Force scroll after content loads
       setTimeout(scrollToBottom, 200);
-    } 
-    else if (viewType === 'roadmap') {
+    }    else if (viewType === 'roadmap') {
       // Create a conversational response for roadmap
       const roadmapMessage: Message = {
         id: 0,
-        text: 'What kind of career roadmap assistance do you need? I can help with planning your professional growth journey.',
+        text: 'What kind of career roadmap assistance do you need? I can help with planning your professional growth journey. Please ask me about specific career areas like "data science", "leadership", "UX design", or "returning to work" to get personalized roadmaps.',
         isUser: false,
         isUserMessage: false,
         canvasType: 'roadmap',
         canvasUtils: {
           roadmap: [
             {
-              title: 'Build Your Foundation',
-              description: 'Focus on core skills and fundamentals of your field.',
-              link: 'https://www.herkey.com/learn/foundation-skills'
+              title: 'Self-Assessment & Career Direction',
+              description: 'Begin by assessing your current skills, interests, and career objectives. Create a detailed document that outlines your strengths, areas for growth, and specific goals you want to achieve. Conduct assessments using tools like Myers-Briggs Type Indicator or CliftonStrengths to identify your key motivators and preferred work environments. Research industry trends and career paths that align with your interests. Set SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound) for your career development journey.',
+              link: 'https://www.themuse.com/advice/how-to-figure-out-what-you-want-next-in-your-career',
+              calendar_event: 'Self-Assessment & Goal Setting'
             },
             {
-              title: 'Gain Practical Experience',
-              description: 'Apply your skills through internships or projects.',
-              link: 'https://www.herkey.com/jobs/internships'
+              title: 'Skill Enhancement Planning',
+              description: 'Identify key skills needed for your target roles by analyzing job descriptions, industry reports, and speaking with professionals in your desired field. Create a skills inventory comparing your current abilities with those required for your target positions. Develop a prioritized list of skills to develop, focusing on both technical and soft skills that will provide the greatest career advancement. Research courses, workshops, and certifications that can help you acquire these skills efficiently. Create a realistic timeline for skill development.',
+              link: 'https://www.linkedin.com/learning',
+              calendar_event: 'Skills Development Planning'
             },
             {
-              title: 'Expand Your Network',
-              description: 'Connect with professionals in your industry.',
-              link: 'https://www.herkey.com/network'
+              title: 'Strategic Networking',
+              description: 'Develop a networking plan to connect with professionals in your field. Join relevant online communities, professional associations, and industry-specific groups. Attend conferences, webinars, and events to expand your network. Create a compelling elevator pitch that clearly communicates your value proposition. Schedule informational interviews with professionals in roles you aspire to. Optimize your LinkedIn profile with keywords relevant to your target roles. Engage regularly by commenting on industry posts and sharing relevant content to build your professional reputation.',
+              link: 'https://www.linkedin.com/feed/',
+              calendar_event: 'Networking Strategy Session'
             },
             {
-              title: 'Develop Specialized Skills',
-              description: 'Focus on niche areas that interest you.',
-              link: 'https://www.herkey.com/learn/specialized-skills'
+              title: 'Professional Brand Development',
+              description: 'Develop a consistent professional brand that communicates your unique value. Update your LinkedIn profile, professional website, and other online platforms to reflect your brand positioning. Create a compelling professional narrative highlighting your journey and strengths. Update your resume using ATS-friendly techniques to highlight relevant skills and accomplishments. Create customizable cover letter templates for different roles. Develop a portfolio showcasing your best work and achievements. Consider creating content that demonstrates your expertise through blog posts, videos, or presentations.',
+              link: 'https://www.themuse.com/advice/the-31-best-linkedin-profile-tips-for-job-seekers',
+              calendar_event: 'Personal Brand Workshop'
+            },
+            {
+              title: 'Continuous Growth & Development',
+              description: 'Establish a long-term plan for ongoing professional development. Set regular intervals to reassess your career goals and progress. Join professional associations relevant to your field to stay updated on industry trends. Subscribe to key publications and follow thought leaders in your industry. Plan to obtain advanced certifications or degrees that will enhance your expertise and marketability. Seek leadership opportunities or stretch assignments in your current role. Create a system for documenting your achievements for future performance reviews and promotions.',
+              link: 'https://hbr.org/topic/career-planning',
+              calendar_event: 'Career Growth Planning'
             }
           ]
         }
