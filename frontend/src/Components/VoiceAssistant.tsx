@@ -1,6 +1,8 @@
 // Components/VoiceAssistant.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import createSpeechRecognition from '../utils/speechRecognition';
+import './Chatbot/styles/VoiceAssistant.css';
+
 
 const VoiceAssistant: React.FC = () => {
   const [text, setText] = useState<string>('');
