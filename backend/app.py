@@ -23,6 +23,7 @@ import json
 import mimetypes
 import io
 from pathlib import Path
+from transformers import pipeline
 from assets.system_prompt import SYSTEM_PROMPTS  
 from assets.skill_patterns import SKILL_PATTERNS 
 
@@ -47,8 +48,16 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 # Import profanity check functions
 from profanity import check_profanity, get_profanity_response
+gibberish_pipe = pipeline("text-classification", model="madhurjindal/autonlp-Gibberish-Detector-492513457")
 
+def check_gibberish(text, threshold=0.8):
+    try:
+        result = gibberish_pipe(text)[0]
+        return  result['score'] >= threshold and result['label'] != 'clean'
+    except Exception as e:
+        print(f"Gibberish detection error: {str(e)}")
 app = Flask(__name__)
+
 
 # Fix CORS for local dev and production (Render backend, Vercel frontend)
 CORS(app,
@@ -99,6 +108,52 @@ else:
     print("WARNING: GEMINI_API_KEY not set in environment variables")
 
 sessions = {}
+
+# System prompts for special chat types
+SYSTEM_PROMPTS = {
+   "career": """
+## Task and Context
+You are a supportive career coach specializing in women's empowerment.  You only answer questions related to job interviews, resume writing, career development, and professional growth. If a user asks a question that is unrelated—such as shopping, entertainment, or general trivia or any non career interview job releated question—you must politely decline and guide them back to career-related topics. Everytime a user asks something unrelated, you should respond with:
+"I'm here to help with career-related questions. If you have any questions about job interviews, resume writing, or career development, feel free to ask!"
+If the user responds in any language other than English, you should respond with: "I'm here to help with career-related questions in English. If you have any questions about job interviews, resume writing, or career development, feel free to ask in English!"
+
+You assist with:
+- interview preparation,
+- salary negotiation,
+- career transitions,
+- confidence-building,
+- and provide factual and motivational responses.
+
+You prefer referencing trusted sources like:
+- Lean In,
+- Women Who Code,
+- SheThePeople,
+- Fairygodboss,
+- LinkedIn Career Blogs.
+
+Use the internet_search tool if you need updated or external information.
+
+Always remain respectful, empowering, factual, and motivational. NEVER create toxic, biased, or negative content.
+
+If a user query involves any of the following sensitive topics:
+["harassed", "harassment", "assault", "abuse", "discriminated", "mental health", 
+"violence", "depression", "bullied", "bullying", "abused", "threatened", "unsafe", "sexual harassment"]
+
+Then respond with:
+"I'm just an assistant and cannot handle such serious issues directly. I strongly recommend contacting your HR department, trusted authorities, or appropriate helplines for assistance."
+""",
+    "interview": """
+## Task and Context
+You are a mock interview conductor bot.  If a user asks a question that is unrelated—such as shopping, entertainment, or general trivia or any non career interview job releated question—you must politely decline and guide them back to interview-related topics. Everytime a user asks something unrelated, you should respond with:
+"I'm here to help with interview-related questions. If you have any questions about job interviews, resume writing, or career development, feel free to ask!"
+Ask the user about the role they are preparing for, their experience, and their skills.
+Then, generate interview questions dynamically based on the user's inputs. 
+Ask one question at a time, and based on the user's answers, ask relevant follow-up questions. 
+Make the interview realistic by using contextual follow-up questions, similar to how a real interview would flow. 
+At the end of the interview, rate the user based on their performance and provide feedback.
+If the user responds in any language other than English, you should respond with: "I'm here to help you prepare for an interview in English. Please respond in English."
+""",
+}
 
 # -------------- Helper Functions -------------- #
 def get_session_id():
@@ -542,22 +597,28 @@ def send_message():
             stage = session_data["interview_stage"]
 
             if stage == "ask_role":
-                # Check profanity for role input
                 try:
                     if check_profanity(user_message):
                         return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        # Re-ask the same question without advancing stage
+                        return jsonify({"message": "Sorry, I didn't quite get that. Please provide your role for the mock interview."})
                 except Exception as e:
-                    print(f"Profanity check error in ask_role: {str(e)}")
-                
+                    print(f"Error in ask_role checks: {str(e)}")
+
                 session_data["role"] = user_message
                 session_data["interview_stage"] = "ask_experience"
                 return jsonify({"message": "How many years of experience do you have in this field?"})
+
 
             elif stage == "ask_experience":
                 # Check profanity for experience input
                 try:
                     if check_profanity(user_message):
                         return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        # Re-ask the same question without advancing stage
+                        return jsonify({"message": "Sorry, I didn't quite get that. Please provide your experience for the mock interview."})
                 except Exception as e:
                     print(f"Profanity check error in ask_experience: {str(e)}")
                 
@@ -570,6 +631,10 @@ def send_message():
                 try:
                     if check_profanity(user_message):
                         return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        # Re-ask the same question without advancing stage
+                        return jsonify({"message": "Sorry, I didn't quite get that. Please provide your skills for the mock interview."})
+
                 except Exception as e:
                     print(f"Profanity check error in ask_skills: {str(e)}")
                 
@@ -580,6 +645,7 @@ def send_message():
     ## Task and Context
     You are a mock interview conductor bot and not a general chatbot.Focus only on interview-related questions. If a user asks a question that is unrelated—such as shopping, entertainment, or general trivia or any non career interview job releated question—you must politely decline and guide them back to interview-related topics. Everytime a user asks something unrelated, you should respond with:
     "I'm here to help with interview-related questions. If you have any questions about job interviews, resume writing, or career development, feel free to ask!"
+    If the user responds in any language other than English, you should respond with: "I'm here to help you prepare for an interview in English. Please respond in English."
     The user is preparing for the role of {session_data['role']} with {session_data['experience']} years of experience. 
     Their key skills include {session_data['skills']}.
     Ask one interview question at a time based on their profile. After each answer, ask a relevant follow-up or a new question. Conclude with rating and feedback.
@@ -602,10 +668,20 @@ def send_message():
                 return jsonify({"message": model_reply})
 
             elif stage == "interviewing":
+                try:
+                    if check_profanity(user_message):
+                        return jsonify({"message": get_profanity_response()})
+                    if check_gibberish(user_message):
+                        return jsonify({"message": "Hmm, I didn't quite understand that. Could you please rephrase your response?"})
+                except Exception as e:
+                    print(f"Input check error during interview: {str(e)}")
+
                 messages.append(HumanMessage(content=user_message))
 
-                # Generate follow-up question based on user input
-                messages.append(HumanMessage(content="Generate a follow-up question based on the user's response. If the user response is satisfactory ask a different question. If the interview questions have covered all aspects to be asked about then start concluding the interview."))
+                # Ask LLM to generate a follow-up or new question
+                messages.append(HumanMessage(content=(
+                    "Generate a follow-up question based on the user's response. If the user response is satisfactory ask a different question. If the interview questions have covered all aspects to be asked about then start concluding the interview."
+                )))
 
                 follow_up_response = llm.invoke(messages)
                 follow_up_reply = follow_up_response.content.strip()
@@ -613,6 +689,7 @@ def send_message():
                 messages.append(AIMessage(content=follow_up_reply))
 
                 return jsonify({"message": follow_up_reply})
+
 
             elif stage == "concluding":
                 # Provide interview rating and feedback
@@ -641,6 +718,8 @@ def send_message():
             messages.append(HumanMessage(content=user_message))
 
             try:
+                if check_gibberish(user_message):
+                    return jsonify({"message": "I'm not sure I understood that. Could you please rephrase?"})
                 # Step 1: Let the model think
                 response = llm.invoke(messages)
                 model_reply = response.content.strip()
