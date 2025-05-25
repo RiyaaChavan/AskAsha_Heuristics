@@ -541,6 +541,7 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
     
     
     print("Formatting response for query type:", query_type)
+    print("Result:", result)
     
     try:
         from response_templates import (
@@ -589,7 +590,7 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
         # Job search response
         job_params = result
         platforms = ["herkey", "linkedin", "glassdoor"]
-        
+        print("Job parameters: in query_type of format response is", job_params)
       
         jobs_data = get_job_search_results(job_params, platforms)
         job_count = len(jobs_data.get("body", []))
@@ -724,7 +725,7 @@ def run_agent(prompt: str, conversation_history=None, resume_data=None) -> dict:
         
         
         
-        return format_response(query_type, prompt, job_params)
+        return format_response(query_type, prompt, result=job_params)
     
     elif query_type == "roadmap":
         # Handle roadmap with conversation history for context

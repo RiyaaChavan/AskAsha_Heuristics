@@ -236,14 +236,17 @@ def is_location_allowed(location_name):
 
 def get_herkey_jobs(params: dict) -> dict:
     herkey_session = get_herkey_token()
-    if 'location_name' in params:
-        location_name = params['location_name'].strip().lower()
+    # Work with a copy to avoid modifying the original params
+    herkey_params = params.copy()
+    
+    if 'location_name' in herkey_params:
+        location_name = herkey_params['location_name'].strip().lower()
         if not is_location_allowed(location_name):
-            del params['location_name']  # Remove if not allowed
+            del herkey_params['location_name']  # Remove if not allowed
         else:
-            params['location_name'] = is_location_allowed(location_name)
+            herkey_params['location_name'] = is_location_allowed(location_name)
         
-    query_string = urlencode(params)
+    query_string = urlencode(herkey_params)
     job_url = f"https://api-prod.herkey.com/api/v1/herkey/jobs/es_candidate_jobs?{query_string}"
     try:
         headers = {'Content-Type': 'application/json', 'Authorization': f'Token {herkey_session}'}
@@ -394,15 +397,9 @@ def get_job_search_results(params: dict, platforms=None) -> dict:
         dict: Dictionary with combined search results from all platforms.
     """
     # Default to all platforms if none specified
-    
     print("get_job_search_results called with params:", params)
-    linkedin_jobs= get_linkedin_jobs(params)
+    # linkedin_jobs= get_linkedin_jobs(params)
     
-    
-    
-    
-        
-    herkey_jobs=get_herkey_jobs(params).get('body', [])
     # Combine results from all platforms
     sorted_jobs = []
     print(params,"gunji")
