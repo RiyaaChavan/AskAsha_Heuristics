@@ -24,6 +24,7 @@ import mimetypes
 import io
 from pathlib import Path
 from transformers import pipeline
+import cohere
 
 # Import your internal logic
 from agent import run_agent  # Your run_agent logic
@@ -47,14 +48,31 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 # Import profanity check functions
 from profanity import check_profanity, get_profanity_response
+from response_templates import ABBREVIATION_MAP
 gibberish_pipe = pipeline("text-classification", model="madhurjindal/autonlp-Gibberish-Detector-492513457")
+
+def expand_abbreviations(text, abbreviation_map):
+    pattern = re.compile(r'\b(' + '|'.join(re.escape(k) for k in abbreviation_map.keys()) + r')\b', re.IGNORECASE)
+    return pattern.sub(lambda x: abbreviation_map[x.group().upper()], text)
+
 
 def check_gibberish(text, threshold=0.8):
     try:
-        result = gibberish_pipe(text)[0]
-        return  result['score'] >= threshold and result['label'] != 'clean'
+        # Expand known career-related abbreviations
+        expanded_text = expand_abbreviations(text, ABBREVIATION_MAP)
+        print(f"Expanded text: {expanded_text}")
+
+        # Pass expanded text to the gibberish detector
+        result = gibberish_pipe(expanded_text)[0]
+        print(f"Gibberish detection result: {result}")
+        return result['score'] >= threshold and result['label'] != 'clean'
+
     except Exception as e:
         print(f"Gibberish detection error: {str(e)}")
+        return False
+
+
+    
 app = Flask(__name__)
 
 

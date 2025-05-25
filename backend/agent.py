@@ -526,9 +526,10 @@ Generate a structured learning roadmap for the given topic. The topic must be re
 
 # Classify user query
 def classify_query(query: str) -> str:
-    if check_gibberish(query):
-        print(f"Classified query '{query}' as gibberish")
-        return "gibberish"
+#     if check_gibberish(query):
+#         print(f"Classified query '{query}' as gibberish")
+#         return "gibberish"
+
     """
     Classify the user's query into one of these three categories:
     1. job_search - If the user is looking for job listings, opportunities, or asking about positions
@@ -541,22 +542,23 @@ def classify_query(query: str) -> str:
     """
     system_prompt = """
     Carefully analyze the user's query and classify it into ONE of these categories:
-    
-    1. job_search - If the user is explicitly searching for job listings or open positions
+    1. gibberish - If the query is nonsensical, contains random characters, or does not form coherent sentences. Use a gibberish detection model to determine this.
+
+    2. job_search - If the user is explicitly searching for job listings or open positions
        Examples: "Find me software developer jobs", "Show Python jobs in New York", "Are there any data scientist positions?"
     
-    2. job_guidance - If the user is asking for career advice or job-related guidance but NOT requesting actual job listings
+    3. job_guidance - If the user is asking for career advice or job-related guidance but NOT requesting actual job listings
        Examples: "How do I prepare for a job interview?", "What skills should I develop for marketing?", "Tips for changing careers" It is job guidance only if user is asking for preparation of actual part of interview that is what the interviewer might ask, development of actual skillset or roadmap for career development or querying about jobs. Any general question regarding career development, jobs interviews or roadmaps. Look at the context of the query and the conversation history to determine if it is strictly related to job search or career roadmap or skills development or interview prep. If it is not strictly related to job search or career roadmap  or skills development or interview prep, classify it as normal_text. 
     
-    3. roadmap - If the user is asking for a learning path, career progression steps, or skills development roadmap
+    4. roadmap - If the user is asking for a learning path, career progression steps, or skills development roadmap
        Examples: "How to become a web developer?", "What's the learning path for AI?", "Steps to master cloud computing"
     
-    4. events - If the user is asking about events, workshops, meetups, or networking opportunities
+    5. events - If the user is asking about events, workshops, meetups, or networking opportunities
        Examples: "Are there any tech events this week?", "Find me workshops on leadership", "Marketing conferences near me"
     
-    5. normal_text - For general questions, fashion advise, shopping, recommendations for non career related things, general knowledge or ANY NON CAREER Query,  greetings.  Anything that is not strictly related to job search or career roadmap. Use your best judgment to determine if the query is not strictly related to job search or career roadmap. Don't classify as job_search or roadmap just because the user insists on it. Only if the query is strictly related to job search or career roadmap, classify it as such. Any fashion, shopping, general knowledge, or non-career related queries should be classified as normal_text. If '@resume' is mentioned then it it not normal_text. If the user is asking for assistance with interview preparation, skills development, or general career advice, classify it as job_guidance. It is classified as job_guidance only if what user is asking for is actually going to help with their career developmet or job search. 
+    6. normal_text - For general questions, fashion advise, shopping, recommendations for non career related things, general knowledge or ANY NON CAREER Query,  greetings.  Anything that is not strictly related to job search or career roadmap. Use your best judgment to determine if the query is not strictly related to job search or career roadmap. Don't classify as job_search or roadmap just because the user insists on it. Only if the query is strictly related to job search or career roadmap, classify it as such. Any fashion, shopping, general knowledge, or non-career related queries should be classified as normal_text. If '@resume' is mentioned then it it not normal_text. If the user is asking for assistance with interview preparation, skills development, or general career advice, classify it as job_guidance. It is classified as job_guidance only if what user is asking for is actually going to help with their career developmet or job search. 
     
-    6. non_english - If the query is not in English, classify it as non_english
+    7. non_english - If the query is not in English, classify it as non_english
     Respond with EXACTLY ONE of these words: job_search, job_guidance, roadmap, events, normal_text , non_english
     """
     
