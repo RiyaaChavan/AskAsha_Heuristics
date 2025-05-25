@@ -3,12 +3,14 @@ import time
 import urllib.parse
 from agent import run_agent
 from db import get_user_conversations
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+# from google import genai
+# from google.genai import types
+from google.generativeai import types
 
 # from backend.session import get_session_id
 
-import google.generativeai as genai
+
 import os
 
 from dotenv import load_dotenv

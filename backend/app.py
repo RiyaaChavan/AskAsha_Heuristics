@@ -25,6 +25,7 @@ import io
 from pathlib import Path
 from assets.system_prompt import SYSTEM_PROMPTS  
 from assets.skill_patterns import SKILL_PATTERNS
+from langdetect import detect, LangDetectException
 
 # from agent import run_agent  
 from db import create_user, authenticate_user, get_user_by_id, save_conversation, get_user_conversations
@@ -123,9 +124,10 @@ sessions = {}
 SYSTEM_PROMPTS = {
    "career": """
 ## Task and Context
+If the user responds in any language other than English, you should respond with: "I'm here to help with career-related questions in English. If you have any questions about job interviews, resume writing, or career development, feel free to ask in English!" dont respond to their queries if it is in any other language.
 You are a supportive career coach specializing in women's empowerment.  You only answer questions related to job interviews, resume writing, career development, and professional growth. If a user asks a question that is unrelated—such as shopping, entertainment, or general trivia or any non career interview job releated question—you must politely decline and guide them back to career-related topics. Everytime a user asks something unrelated, you should respond with:
 "I'm here to help with career-related questions. If you have any questions about job interviews, resume writing, or career development, feel free to ask!"
-If the user responds in any language other than English, you should respond with: "I'm here to help with career-related questions in English. If you have any questions about job interviews, resume writing, or career development, feel free to ask in English!"
+
 
 You assist with:
 - interview preparation,
@@ -154,6 +156,8 @@ Then respond with:
 """,
     "interview": """
 ## Task and Context
+If the user responds in any language other than English, you should respond with: "I'm here to help with career-related questions in English. If you have any questions about job interviews, resume writing, or career development, feel free to ask in English!"
+Do not respond to their queries if it is in any other language.
 You are a mock interview conductor bot.  If a user asks a question that is unrelated—such as shopping, entertainment, or general trivia or any non career interview job releated question—you must politely decline and guide them back to interview-related topics. Everytime a user asks something unrelated, you should respond with:
 "I'm here to help with interview-related questions. If you have any questions about job interviews, resume writing, or career development, feel free to ask!"
 Ask the user about the role they are preparing for, their experience, and their skills.
@@ -616,12 +620,29 @@ def send_message():
                     if check_gibberish(user_message):
                         # Re-ask the same question without advancing stage
                         return jsonify({"message": "Sorry, I didn't quite get that. Please provide your role for the mock interview."})
+                    
+                    # detected_lang = detect(user_message)
+                    # print(f"Detected language: {detected_lang}")
+                    # if detected_lang != ('en' or 'tl'):
+                    #         # Don't update session if not English
+                    #         return jsonify({"message": "Please enter your role in English for the mock interview."})
+                   
+                # If input is valid English, store it and move to next stage
+                    session_data["role"] = user_message
+                    session_data["interview_stage"] = "ask_experience"
+                    return jsonify({"message": "How many years of experience do you have in this field?"})
+                
                 except Exception as e:
                     print(f"Error in ask_role checks: {str(e)}")
+                    return jsonify({"message": "Something went wrong. Please try again."})
+            
 
-                session_data["role"] = user_message
-                session_data["interview_stage"] = "ask_experience"
-                return jsonify({"message": "How many years of experience do you have in this field?"})
+            # except Exception as e:
+            #     print(f"Error in ask_role checks: {str(e)}")
+
+            # session_data["role"] = user_message
+            # session_data["interview_stage"] = "ask_experience"
+            # return jsonify({"message": "How many years of experience do you have in this field?"})
 
 
             elif stage == "ask_experience":
@@ -632,6 +653,12 @@ def send_message():
                     if check_gibberish(user_message):
                         # Re-ask the same question without advancing stage
                         return jsonify({"message": "Sorry, I didn't quite get that. Please provide your experience for the mock interview."})
+                    
+                    detected_lang = detect(user_message)
+                    if detected_lang != 'en':
+                            # Don't update session if not English
+                            return jsonify({"message": "Please enter your experience in English for the mock interview."})
+                   
                 except Exception as e:
                     print(f"Profanity check error in ask_experience: {str(e)}")
                 
@@ -647,7 +674,12 @@ def send_message():
                     if check_gibberish(user_message):
                         # Re-ask the same question without advancing stage
                         return jsonify({"message": "Sorry, I didn't quite get that. Please provide your skills for the mock interview."})
-
+                    
+                    detected_lang = detect(user_message)
+                    if detected_lang != 'en':
+                            # Don't update session if not English
+                            return jsonify({"message": "Please enter your skills in English for the mock interview."})
+                    
                 except Exception as e:
                     print(f"Profanity check error in ask_skills: {str(e)}")
                 
