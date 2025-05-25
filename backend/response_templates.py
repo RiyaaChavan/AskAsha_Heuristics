@@ -133,9 +133,9 @@ ABBREVIATION_MAP = {
 
 # Job search response templates
 JOB_SEARCH_SUCCESS = [
-    "Great news! I found {job_count} relevant {role} opportunities{location_str}{platform_str}! Here are some positions that might interest you.",
-    "I've discovered {job_count} {role} positions{location_str}{platform_str} that match your criteria. Take a look!",
-    "There are {job_count} {role} openings{location_str}{platform_str} available right now. Check these out!",
+    "Great news! I found {job_count} relevant {role} opportunities{location_str}{platform_str}! Here are some positions that might interest you.Explore filters in the canvas for more options.",
+    "I've discovered {job_count} {role} positions{location_str}{platform_str} that match your criteria. Take a look at the filters to explore more work mode categories !",
+    "There are {job_count} {role} openings{location_str}{platform_str} along with work mode filters in canvas available right now. Check these out!",
     "Success! Found {job_count} {role} jobs{location_str}{platform_str} that you might be interested in.",
     "Good timing! {job_count} {role} positions{location_str}{platform_str} are currently open for applications."
 ]
