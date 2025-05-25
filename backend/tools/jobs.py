@@ -252,7 +252,8 @@ def get_herkey_jobs(params: dict) -> dict:
         headers = {'Content-Type': 'application/json', 'Authorization': f'Token {herkey_session}'}
         job_response = requests.get(job_url, headers=headers)
         jobs_data = job_response.json()
-       
+        print(f"Herkey job search URL: {job_url}")
+        print(f"Herkey job search response: {jobs_data}")
         return jobs_data
     except requests.HTTPError as http_err:
         return {
