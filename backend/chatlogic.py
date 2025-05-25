@@ -19,7 +19,7 @@ if GEMINI_API_KEY:
 
 
 
-def generate(USER_PROMPT,SYSTEM_PRROMPT=None):
+def generate(USER_PROMPT,SYSTEM_PROMPT=None):
     client = genai.Client(
         api_key=os.environ.get("GEMINI_API_KEY"),
     )
@@ -50,7 +50,7 @@ def generate(USER_PROMPT,SYSTEM_PRROMPT=None):
         model=model,
         contents=contents,
         generate_content_config=generate_content_config,
-        system_prompt=SYSTEM_PRROMPT,
+        system_prompt=SYSTEM_PROMPT,
     ).result
 
 
@@ -84,6 +84,12 @@ def chat_logic(message,user_id,is_authenticated,resume_data):
     
     
     if has_resume_context:
+        
+        message += f"""
+        \n The user provided their resume data by referring to '@resume' in their message.
+        \n Here is the resume data: {str(resume_data)}
+        """
+        
         response = run_agent(message, conversation_history, resume_data)
     else:
         response = run_agent(message, conversation_history)

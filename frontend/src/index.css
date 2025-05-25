@@ -515,7 +515,7 @@ textarea::placeholder {
   }
 }
 
-/* Print Styles */
+/* print Styles */
 @media print {
   * {
     background: transparent !important;

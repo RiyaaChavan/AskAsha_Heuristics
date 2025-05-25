@@ -16,6 +16,14 @@ chat_model = ChatOpenAI(model="gpt-4.1-nano", temperature=0.3)
 
 from response_templates import ABBREVIATION_MAP
 
+
+
+
+
+
+
+
+
 def expand_abbreviations(text, abbreviation_map):
     pattern = re.compile(r'\b(' + '|'.join(re.escape(k) for k in abbreviation_map.keys()) + r')\b', re.IGNORECASE)
     return pattern.sub(lambda x: abbreviation_map[x.group().upper()], text)
@@ -694,7 +702,20 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
             # Remove common words and get core topic
             topic = re.sub(r'\b(a|an|the|for|to|of|with|on|at|in|by|about)\b', '', topic).strip()
           # Generate dynamic response
-        response_text = get_roadmap_response(topic=topic)
+        # Create messages for the chat model
+        messages = [
+            SystemMessage(content="Write a short 1-line reply announcing the roadmap creation. Use format like 'I've created a roadmap for [topic]' or 'Here's your learning path for [topic]'. Keep it friendly but professional. The response should take into account the user's query and any conversation history."),
+            HumanMessage(content=f"""
+    Topic: {topic}
+    User's message: {query} 
+    
+    Generated roadmap: {roadmap_items}
+            """)
+        ]
+        
+        # Get response from chat model
+        response = chat_model.invoke(messages)
+        response_text = response.content.strip()
         
         return {
             "text": response_text,

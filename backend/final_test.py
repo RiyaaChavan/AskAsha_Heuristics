@@ -10,7 +10,7 @@ print("Generating technical roadmap with 2-week timeframe...")
 tech_roadmap = generate_roadmap("learning python programming in 2 weeks")
 print(f"Generated {len(tech_roadmap)} steps")
 
-# Print the first step to check if timeframe guidance is included
+# print the first step to check if timeframe guidance is included
 print("\nFirst step title:", tech_roadmap[0]["title"])
 description = tech_roadmap[0]["description"]
 print("Description excerpt:", description[:100] + "..." if len(description) > 100 else description)
@@ -21,7 +21,7 @@ print("\nGenerating leadership roadmap...")
 leadership_roadmap = generate_roadmap("developing leadership skills")
 print(f"Generated {len(leadership_roadmap)} steps") 
 
-# Print the first step
+# print the first step
 print("\nFirst step title:", leadership_roadmap[0]["title"])
 
 # Save the roadmaps to files for inspection

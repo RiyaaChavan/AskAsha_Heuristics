@@ -83,7 +83,7 @@ def test_full_roadmap_generation():
             result = generate_roadmap(topic)
             if result:
                 print(f"✓ Successfully generated roadmap with {len(result)} steps")
-                # Print first item's title and check for timeframe guidance
+                # print first item's title and check for timeframe guidance
                 print(f"First step: {result[0]['title']}")
                 has_timeframe = "Timeframe Guidance" in result[0]['description']
                 print(f"Includes timeframe guidance: {'Yes' if has_timeframe else 'No'}")

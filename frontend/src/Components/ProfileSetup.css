@@ -11,7 +11,7 @@
 .profile-setup-header {
     margin: 0 auto;
     width: 100%;
-    max-width: 28rem;
+    max-width: 24rem;
 }
 
 .setup-title {
@@ -61,7 +61,7 @@
 .form-wrapper {
     margin: 0 auto;
     width: 100%;
-    max-width: 28rem;
+    max-width: 24rem;
 }
 
 .form-container {
@@ -219,6 +219,25 @@ select.field-input {
 
     .nav-button {
         padding: 0.75rem 1.5rem;
+    }
+    
+    .profile-setup-header,
+    .form-wrapper {
+        max-width: 100%;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+    .profile-setup-header,
+    .form-wrapper {
+        max-width: 22rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .profile-setup-header,
+    .form-wrapper {
+        max-width: 24rem;
     }
 }
 
