@@ -9,7 +9,7 @@ Empowering Women’s Careers on the HerKey Platform 🌟
 Designed with **empathy**, **inclusivity**, and **innovation**, AskAsha bridges the gaps women often face in accessing career growth resources, mentorship, and community support.
 
 ---
-**Deployed link**: https://ask-asha-heuristics-git-pushing2-riyaas-projects.vercel.app
+**Deployed link**: https://ask-asha-heuristics.vercel.app
 ---
 
 ## 📋 Table of Contents
