@@ -34,28 +34,42 @@ export default function ProfilePage(): JSX.Element {
   const [error, setError] = useState<string>("")
 
   // ProfilePage.tsx
-  const handleUpdateProfile = async (field: keyof ProfileData, value: string) => {
-    try {
-      // Assuming you have the user's UID available
-      const uid = "current_user_uid"; // Replace with actual user UID
+const handleUpdateProfile = async (field: keyof ProfileData, value: string) => {
+  try {
+    // For debugging
+    console.log(`Updating ${field} to ${value}`);
 
-      const response = await fetch(`/api/update-profile/${uid}`, {  // Updated URL
-        method: 'PUT',  // Changed from PATCH to PUT to match Flask route
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          [field]: value
-        }),
-      });
+    const response = await fetch(`/api/update-profile/${uid}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        [field]: value
+      }),
+    });
 
-      const data = await response.json();
+    // For debugging
+    console.log('Response status:', response.status);
+    
+    // Check if response is ok before trying to parse JSON
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update profile');
-      }
+    const data = await response.json();
+    console.log('Response data:', data);
 
-      // Update local state if needed
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to update profile');
+    }
+
+    // Update local state if needed
+    if (data.data) {
+      setProfile(data.data);
+    } else {
       setProfile((prev) => {
         if (!prev) return null;
         return {
@@ -63,17 +77,16 @@ export default function ProfilePage(): JSX.Element {
           [field]: value,
         };
       });
-
-      // Optionally show success message
-      // toast.success('Profile updated successfully');
-
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      // Show error message
-      // toast.error('Failed to update profile');
-      throw error;
     }
-  };
+
+    // Show success message
+    toast.success(data.message || 'Profile updated successfully');
+
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
+};
 
   useEffect(() => {
     const fetchProfileData = async () => {

@@ -26,6 +26,7 @@ import "@fontsource/poppins/500.css"
 import "@fontsource/poppins/600.css"
 import "@fontsource/poppins/700.css"
 import ProfilePage from './pages/ProfilePage';
+import Dashboard from './Components/Dashboard';
 
 
 function AppWithNavbar() {
@@ -75,9 +76,9 @@ function AppWithNavbar() {
             <HomePage />
           </ProtectedRoute>
         } />
-        <Route path="/bento" element={
+         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <BentoGridDemo />
+            <Dashboard />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/login" replace />} />

@@ -37,22 +37,19 @@ function EditableField({ value, label, onSave, className = "" }: EditableFieldPr
   const [isEditing, setIsEditing] = useState(false);
   const [editedValue, setEditedValue] = useState(value);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSave = async () => {
     try {
+      setError(null);
       setIsLoading(true);
       await onSave(editedValue);
       setIsEditing(false);
     } catch (error) {
-      console.error('Error saving:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCancel = () => {
-    setEditedValue(value);
-    setIsEditing(false);
   };
 
   return (
@@ -63,7 +60,8 @@ function EditableField({ value, label, onSave, className = "" }: EditableFieldPr
             type="text"
             value={editedValue}
             onChange={(e) => setEditedValue(e.target.value)}
-            className="edit-input"
+            className={`edit-input ${error ? 'error' : ''}`}
+            disabled={isLoading}
           />
           <div className="edit-actions">
             <button
@@ -71,16 +69,21 @@ function EditableField({ value, label, onSave, className = "" }: EditableFieldPr
               disabled={isLoading}
               className="save-btn"
             >
-              <Check size={16} />
+              {isLoading ? <span>Saving...</span> : <Check size={16} />}
             </button>
             <button
-              onClick={handleCancel}
+              onClick={() => {
+                setEditedValue(value);
+                setIsEditing(false);
+                setError(null);
+              }}
               disabled={isLoading}
               className="cancel-btn"
             >
               <X size={16} />
             </button>
           </div>
+          {error && <div className="error-message">{error}</div>}
         </div>
       ) : (
         <div className="view-mode">
