@@ -81,22 +81,13 @@ const getCategoryName = (categoryId: number | string): string => {
 
 const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
   const [sessions, setSessions] = useState<SessionData[]>([]);
-  const [filteredSessions, setFilteredSessions] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-
-  // Category options for filtering
-  const categoryOptions = Object.entries(CATEGORY_MAPPING).map(([id, name]) => ({
-    value: parseInt(id, 10),
-    label: name
-  }));
 
   useEffect(() => {
     // First check if we have session_results provided directly from backend
     if (message.canvasUtils?.session_results && Array.isArray(message.canvasUtils.session_results)) {
       setSessions(message.canvasUtils.session_results);
-      setFilteredSessions(message.canvasUtils.session_results);
       return;
     }
     
@@ -130,7 +121,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
         });
         
         const sessionData: SessionResponse = await sessionResponse.json();
-        console.log('Session Data:', sessionResponse, sessionData);
         
         if (!sessionData.body || !Array.isArray(sessionData.body)) {
           throw new Error('Invalid response format from sessions API');
@@ -148,7 +138,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
         });
         
         setSessions(validSessions);
-        setFilteredSessions(validSessions);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch sessions');
       } finally {
@@ -158,38 +147,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
 
     fetchSessions();
   }, [message.canvasUtils]);
-
-  // Apply category filter when selectedCategory changes or sessions change
-  useEffect(() => {
-    if (selectedCategory !== null) {
-      const filtered = sessions.filter(session => {
-        // Handle case where categories is a number array
-        if (Array.isArray(session.post_content.categories)) {
-          return session.post_content.categories.some(cat => {
-            const categoryId = typeof cat === 'string' ? parseInt(cat, 10) : cat;
-            return categoryId === selectedCategory;
-          });
-        }
-        // Handle case where categories is a string (comma-separated)
-        else if (typeof session.post_content.categories === 'string') {
-          const categoryIds = (session.post_content.categories as string).split(',')
-            .map((id: string) => parseInt(id.trim(), 10))
-            .filter((id: number) => !isNaN(id));
-          return categoryIds.includes(selectedCategory);
-        }
-        return false;
-      });
-      setFilteredSessions(filtered);
-    } else {
-      setFilteredSessions(sessions);
-    }
-  }, [selectedCategory, sessions]);
-
-  // Handle filter selection
-  const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
-    setSelectedCategory(value === "" ? null : parseInt(value, 10));
-  };
 
   // Format date for display
   const formatDate = (dateString: string): string => {
@@ -286,40 +243,11 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
           </a>
         </div>
       )}
-      
+
       {!loading && !error && sessions.length > 0 && (
         <>
-          <div className="filter-dropdown">
-            <label htmlFor="category-filter">Filter by: </label>
-            <select 
-              id="category-filter" 
-              value={selectedCategory === null ? "" : selectedCategory.toString()}
-              onChange={handleFilterChange}
-              className="filter-select"
-            >
-              <option value="">All Event Types</option>
-              {categoryOptions.map((option) => (
-                <option key={option.value} value={option.value.toString()}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          {filteredSessions.length === 0 && (
-            <div className="no-filter-results">
-              <p>No sessions match the selected filter.</p>
-              <button 
-                className="clear-filter-button"
-                onClick={() => setSelectedCategory(null)}
-              >
-                Clear Filter
-              </button>
-            </div>
-          )}
-          
           <div className="session-list">
-            {filteredSessions.map((session, index) => (
+            {sessions.map((session, index) => (
               <div 
                 key={index} 
                 className="session-card" 
@@ -371,11 +299,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
                         {category}
                       </span>
                     ))}
-                    {/* {getCategoryLabels(session.post_content.categories).length > 2 && (
-                      <span className="category-tag more-categories">
-                        +{getCategoryLabels(session.post_content.categories).length - 2}
-                      </span>
-                    )} */}
                   </div>
                   
                   <div className="session-status">
@@ -384,7 +307,6 @@ const SessionCanvas: React.FC<CanvasProps> = ({ message }) => {
                 </div>
               </div>
             ))}
-
           </div>
           
           <a 
