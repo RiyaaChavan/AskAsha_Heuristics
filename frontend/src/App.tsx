@@ -9,7 +9,7 @@ import Login from './pages/Login';
 import { ProfileSetup } from './Components/ProfileSetup';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { useAuth } from './context/AuthContext';
 import DebugInfo from './Components/DebugInfo';
 import KeepAlive from './Components/KeepAlive';
@@ -22,9 +22,20 @@ import './index.css';
 // import { BentoGridDemo } from './Components/Homepage/BentoGrid';
 import VoiceAssistant from './Components/VoiceAssistant';
 
-function AppWithNavbar() {
+// Memoized AppWithNavbar component to prevent unnecessary re-renders
+const AppWithNavbar = memo(() => {
   const location = useLocation();
-  const hideNavbar = ['/login', '/signup', '/profile-setup'].includes(location.pathname);
+  
+  // Memoize the hideNavbar calculation to prevent recalculation on every render
+  const hideNavbar = useMemo(() => {
+    return ['/login', '/signup', '/profile-setup'].includes(location.pathname);
+  }, [location.pathname]);
+
+  // Memoize the userId to prevent recreation
+  const userId = useMemo(() => {
+    return localStorage.getItem('userId') || 'anonymous';
+  }, []);
+
   return (
     <>
       <KeepAlive />
@@ -42,12 +53,12 @@ function AppWithNavbar() {
         <Route path="/" element={<Navigate to="/jobsearch" replace />} />
         <Route path="/chatbot" element={
           <ProtectedRoute>
-            <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+            <Chatbot userId={userId} />
           </ProtectedRoute>
         } />
         <Route path="/interview" element={
           <ProtectedRoute>
-            <Interview userId={localStorage.getItem('userId') || 'anonymous'} />
+            <Interview userId={userId} />
           </ProtectedRoute>
         } />
         <Route path="/career-coach" element={
@@ -62,7 +73,7 @@ function AppWithNavbar() {
         } />
         <Route path="/jobsearch" element={
           <ProtectedRoute>
-            <Chatbot userId={localStorage.getItem('userId') || 'anonymous'} />
+            <Chatbot userId={userId} />
           </ProtectedRoute>
         } />
          {/* <Route path="/homepage" element={
@@ -79,7 +90,10 @@ function AppWithNavbar() {
       </Routes>
     </>
   );
-}
+});
+
+// Add display name for debugging
+AppWithNavbar.displayName = 'AppWithNavbar';
 
 function App() {
   return (

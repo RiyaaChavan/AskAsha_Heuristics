@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { CanvasProps } from './types';
 
 // Standardized job data structure that works across different job platforms
@@ -50,8 +50,8 @@ interface JobDetailData {
   platform_job_url?: string; // URL to view job on the platform
 }
 
-// Platform-specific icons component
-const PlatformIcon: React.FC<{ platform: string, size?: number }> = ({ platform, size = 16 }) => {
+// Memoized Platform Icon component to prevent re-renders
+const PlatformIcon: React.FC<{ platform: string, size?: number }> = React.memo(({ platform, size = 16 }) => {
   switch (platform.toLowerCase()) {
     case 'linkedin':
       return (
@@ -79,9 +79,12 @@ const PlatformIcon: React.FC<{ platform: string, size?: number }> = ({ platform,
         </svg>
       );
   }
-};
+});
 
-const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
+// Add display name for debugging
+PlatformIcon.displayName = 'PlatformIcon';
+
+const JobSearchCanvas: React.FC<CanvasProps> = React.memo(({ message }) => {
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -92,17 +95,17 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
   const [selectedWorkMode, setSelectedWorkMode] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
 
-  // Work mode options for filtering
-  const workModeOptions = [
+  // Memoize work mode options to prevent recreation
+  const workModeOptions = useMemo(() => [
     { value: "", label: "All Work Modes" },
     { value: "work_from_office", label: "Work from Office" },
     { value: "work_from_home", label: "Work from Home" },
     { value: "hybrid", label: "Hybrid" },
     { value: "freelance", label: "Freelance" }
-  ];
+  ], []);
 
-  // Function to calculate skill match score for a job (0-100%)
-  const calculateSkillMatchScore = (jobSkills: string[] | string | undefined, userSkills: string[] = []): number => {
+  // Memoize the skill match calculation function
+  const calculateSkillMatchScore = useCallback((jobSkills: string[] | string | undefined, userSkills: string[] = []): number => {
     if (!jobSkills || userSkills.length === 0) return 0;
     
     // Normalize job skills to array
@@ -120,27 +123,29 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     
     // Calculate match percentage (based on job skills)
     return Math.round((matchingSkills.length / normalizedJobSkills.length) * 100);
-  };
+  }, []);
+
+  // Memoize user skills extraction
+  const userSkills = useMemo(() => {
+    return message.canvasUtils?.resumeData?.skills || [];
+  }, [message.canvasUtils?.resumeData?.skills]);
+
+  // Memoize the platform inference function
+  const inferPlatform = useCallback((job: any): string => {
+    if (job.platform) return job.platform;
+    if (job.linkedin_job_id || (job.redirect_url && job.redirect_url.includes('linkedin.com'))) return 'linkedin';
+    if (job.redirect_url && job.redirect_url.includes('glassdoor.com')) return 'glassdoor';
+    return 'herkey';
+  }, []);
 
   useEffect(() => {
     if (!message.canvasUtils) return;
     
-    // Helper to infer platform from job data
-    const inferPlatform = (job: any): string => {
-      if (job.platform) return job.platform;
-      if (job.linkedin_job_id || (job.redirect_url && job.redirect_url.includes('linkedin.com'))) return 'linkedin';
-      if (job.redirect_url && job.redirect_url.includes('glassdoor.com')) return 'glassdoor';
-      return 'herkey';
-    };
-
     // Check if we have job_results provided directly from backend
     if (message.canvasUtils.job_results && Array.isArray(message.canvasUtils.job_results)) {
       setLoading(true);
       
       try {
-        // Get user skills from resume data if available
-        const userSkills: string[] = message.canvasUtils.resumeData?.skills || [];
-        
         // Process jobs data - standardize and add skill match scores
         const processedJobs = message.canvasUtils.job_results.map((job: any) => {
           const platform = inferPlatform(job);
@@ -191,7 +196,7 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
     } else {
       setError('No job results available');
     }
-  }, [message.canvasUtils]);
+  }, [message.canvasUtils, inferPlatform, calculateSkillMatchScore, userSkills]);
 
   // Apply work mode filter when selectedWorkMode changes or jobs change
   useEffect(() => {
@@ -395,14 +400,6 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
       case "ziprecruiter": return "ZipRecruiter";
       default: return platform.charAt(0).toUpperCase() + platform.slice(1);
     }
-  };
-  
-  // Get user skills safely
-  const getUserSkills = (): string[] => {
-    if (message.canvasUtils?.resumeData?.skills && Array.isArray(message.canvasUtils.resumeData.skills)) {
-      return message.canvasUtils.resumeData.skills;
-    }
-    return [];
   };
   
   // Add this function to handle platform filter changes
@@ -1066,6 +1063,6 @@ const JobSearchCanvas: React.FC<CanvasProps> = ({ message }) => {
       )}
     </div>
   );
-};
+});
 
 export default JobSearchCanvas;

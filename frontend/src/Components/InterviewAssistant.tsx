@@ -1,7 +1,8 @@
-import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import React, { useState, FormEvent, ChangeEvent, useEffect, memo, useCallback, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import './Chatbot/styles/Interview.css';
 import './Chatbot/styles/ChatInput.css';
+import { fastMarkdown } from '../utils/fastMarkdown';
 
 // Define types here since they're not imported
 interface Message {
@@ -27,7 +28,7 @@ const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 // Key for localStorage
 const INTERVIEW_SESSION_KEY = 'interview_session_data';
 
-export default function InterviewAssistant() {
+const InterviewAssistant: React.FC = memo(() => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState<string>('');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -63,7 +64,8 @@ export default function InterviewAssistant() {
     }
   }, [sessionId, messages]);
 
-  const startInterviewSession = async (): Promise<void> => {
+  // Memoize the startInterviewSession function
+  const startInterviewSession = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/start-session`, {
@@ -91,10 +93,18 @@ export default function InterviewAssistant() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
-  const handleSendMessage = async (e: FormEvent): Promise<void> => {
-    e.preventDefault();    if (!inputText.trim() || !sessionId) return;
+  // Memoize the formatBotResponse function for better performance
+  const formatBotResponse = useCallback((response: string): string => {
+    // Use fast markdown processor instead of manual regex replacements
+    return fastMarkdown(response);
+  }, []);
+
+  // Memoize the handleSendMessage function
+  const handleSendMessage = useCallback(async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (!inputText.trim() || !sessionId) return;
 
     // Store input text before clearing
     const messageToSend = inputText;
@@ -119,7 +129,7 @@ export default function InterviewAssistant() {
         },
         body: JSON.stringify({
           sessionId,
-          message: inputText,
+          message: messageToSend, // Use stored message instead of inputText
         }),
       });
       
@@ -150,37 +160,14 @@ export default function InterviewAssistant() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [inputText, sessionId, formatBotResponse]);
 
-  const formatBotResponse = (response: string): string => {
-    let formattedResponse = response;
-    formattedResponse = formattedResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    formattedResponse = formattedResponse.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    formattedResponse = formattedResponse.replace(/^\s*(\d+\.|-\s)(.*)$/gm, (match, p1, p2) => {
-      if (p1.includes('.')) {
-        return `<li style="margin-left: 20px; list-style-type: decimal;">${p2}</li>`;
-      }
-      return `<li style="margin-left: 20px; list-style-type: disc;">${p2}</li>`;
-    });
-
-    if (formattedResponse.includes('<li>')) {
-      formattedResponse = `<ul style="list-style-position: inside; padding-left: 0;">${formattedResponse}</ul>`;
-    }
-
-    formattedResponse = formattedResponse.replace(
-      /$$([^$$]+)\]$$(https?:\/\/[^$$]+)\)/g,
-      '<a href="$2" target="_blank" style="color: #6b46c1; text-decoration: none;">$1</a>'
-    );
-
-    return formattedResponse;
-  };
-
-  // Add method to clear session history
-  const clearSessionHistory = () => {
+  // Memoize the clearSessionHistory function
+  const clearSessionHistory = useCallback(() => {
     localStorage.removeItem(INTERVIEW_SESSION_KEY);
     setSessionId(null);
     setMessages([]);
-  };
+  }, []);
 
   return (
     <div className="chat-container-interview asha-theme">
@@ -249,4 +236,9 @@ export default function InterviewAssistant() {
       </div>
     </div>
   );
-}
+});
+
+// Add display name for debugging
+InterviewAssistant.displayName = 'InterviewAssistant';
+
+export default InterviewAssistant;

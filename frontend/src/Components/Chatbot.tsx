@@ -1,5 +1,5 @@
 // Chatbot.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // Import centralized CSS file
 import './Chatbot/styles/index.css';
 import ChatWindow from './Chatbot/ChatWindow';
@@ -7,6 +7,7 @@ import CanvasArea from './Chatbot/CanvasArea';
 import ChatInput from './Chatbot/ChatInput';
 import { Message, Payload } from './Chatbot/types';
 import { sanitizeObject, isSqlSafe } from '../utils/apiUtils';
+import PerformanceDebug from './PerformanceDebug';
 
 // Main Chatbot Component
 const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
@@ -16,11 +17,12 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isCanvasOpen, setIsCanvasOpen] = useState(true);
   const [currentViewType, setCurrentViewType] = useState<string | null>(null);
+  const [showPerformanceDebug, setShowPerformanceDebug] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Function to scroll to the latest message with forced timing
-  const scrollToBottom = () => {
+  // Memoize the scroll function to prevent recreation on every render
+  const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       // Force scroll with timeout to ensure it works
       setTimeout(() => {
@@ -48,53 +50,17 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
         }
       }, 100);
     }
-  };
+  }, []);
 
   // Auto-scroll when messages change
   useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom();
     }
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
-  // Monitor localStorage for viewType changes
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const viewType = localStorage.getItem('viewType');
-      
-      // If viewType changed, update the UI
-      if (viewType !== currentViewType) {
-        setCurrentViewType(viewType);
-        loadViewContent(viewType);
-      }
-    };
-
-    // Check for view type on mount
-    const viewType = localStorage.getItem('viewType');
-    setCurrentViewType(viewType);
-    loadViewContent(viewType);
-
-    // Listen for localStorage changes
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Set up an interval to check for localStorage changes
-    // This is needed because the storage event doesn't fire in the same window that made the change
-    const interval = setInterval(() => {
-      const viewType = localStorage.getItem('viewType');
-      if (viewType !== currentViewType) {
-        setCurrentViewType(viewType);
-        loadViewContent(viewType);
-      }
-    }, 500);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [currentViewType]);
-
-  // Load content based on the view type
-  const loadViewContent = (viewType: string | null) => {
+  // Memoize the loadViewContent function to prevent recreation
+  const loadViewContent = useCallback((viewType: string | null) => {
     if (viewType === 'events') {
       // Create a conversational response for events
       const eventsMessage: Message = {
@@ -115,7 +81,7 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       
       // Force scroll after content loads
       setTimeout(scrollToBottom, 200);
-    }    else if (viewType === 'roadmap') {
+    } else if (viewType === 'roadmap') {
       // Create a conversational response for roadmap
       const roadmapMessage: Message = {
         id: 0,
@@ -181,82 +147,46 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       // Default to job search if no view type or jobs view type
       loadConversationHistory();
     }
-  };
+  }, [scrollToBottom]); // Add scrollToBottom as dependency
 
-  // Handle selecting a message to display its canvas with more reliable canvas opening
-  const selectMessage = (index: number) => {
-    if (messages[index]?.canvasType !== 'none') {
-      // First close canvas to reset rendering
-      setIsCanvasOpen(false);
-      
-      // Wait a bit to ensure closed state is processed
-      setTimeout(() => {
-        // Then select the message
-        setSelectedMessageId(index);
-        
-        // Wait for selection to be processed before opening
-        setTimeout(() => {
-          // Finally open the canvas
-          setIsCanvasOpen(true);
-        }, 150);
-      }, 50);
-    }
-  };
-
-  // Toggle canvas open/closed state
-  const toggleCanvas = () => {
-    setIsCanvasOpen(prev => !prev);
-    // If canvas is being closed, deselect message
-    if (isCanvasOpen) {
-      setSelectedMessageId(null);
-    }
-  };
-  
-  // Function to clear the selected message (close the canvas)
-  const clearSelectedMessage = () => {
-    setSelectedMessageId(null);
-  };
-
-  // Dedicated effect for handling new messages and canvas updates
+  // Monitor localStorage for viewType changes
   useEffect(() => {
-    if (messages.length > 0) {
-      // Find the last non-loading message
-      const nonLoadingMessages = messages.filter(msg => !msg.isLoading);
+    const handleStorageChange = () => {
+      const viewType = localStorage.getItem('viewType');
       
-      if (nonLoadingMessages.length > 0) {
-        const lastMessage = nonLoadingMessages[nonLoadingMessages.length - 1];
-        
-        // Auto-select and open canvas for bot messages with canvas content
-        if (!lastMessage.isUser && lastMessage.canvasType !== 'none') {
-          const lastIndex = messages.findIndex(msg => msg === lastMessage);
-          
-          if (lastIndex !== -1) {
-            // Use the same reliable pattern: close, select, then open
-            // First close canvas to reset rendering
-            setIsCanvasOpen(false);
-            
-            // Wait to ensure closed state is processed
-            setTimeout(() => {
-              // Then select the message
-              setSelectedMessageId(lastIndex);
-              
-              // Wait for selection to be processed before opening
-              setTimeout(() => {
-                // Auto-open canvas except for events view
-                const viewType = localStorage.getItem('viewType');
-                if (viewType !== 'events') {
-                  setIsCanvasOpen(true);
-                }
-              }, 200);
-            }, 100);
-          }
-        }
+      // If viewType changed, update the UI
+      if (viewType !== currentViewType) {
+        setCurrentViewType(viewType);
+        loadViewContent(viewType);
       }
-    }
-  }, [messages]);
+    };
 
-  // Load conversation history from the server
-  const loadConversationHistory = async () => {
+    // Check for view type on mount
+    const viewType = localStorage.getItem('viewType');
+    setCurrentViewType(viewType);
+    loadViewContent(viewType);
+
+    // Listen for localStorage changes
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Set up an interval to check for localStorage changes
+    // This is needed because the storage event doesn't fire in the same window that made the change
+    const interval = setInterval(() => {
+      const viewType = localStorage.getItem('viewType');
+      if (viewType !== currentViewType) {
+        setCurrentViewType(viewType);
+        loadViewContent(viewType);
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [currentViewType, loadViewContent]);
+
+  // Memoize the loadConversationHistory function
+  const loadConversationHistory = useCallback(async () => {
     if (!userId) return;
     
     setIsLoadingHistory(true);
@@ -313,9 +243,44 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
     } finally {
       setIsLoadingHistory(false);
     }
-  };
+  }, [userId, scrollToBottom]);
+
+  // Handle selecting a message to display its canvas with more reliable canvas opening
+  const selectMessage = useCallback((index: number) => {
+    if (messages[index]?.canvasType !== 'none') {
+      // First close canvas to reset rendering
+      setIsCanvasOpen(false);
+      
+      // Wait a bit to ensure closed state is processed
+      setTimeout(() => {
+        // Then select the message
+        setSelectedMessageId(index);
+        
+        // Wait for selection to be processed before opening
+        setTimeout(() => {
+          // Finally open the canvas
+          setIsCanvasOpen(true);
+        }, 150);
+      }, 50);
+    }
+  }, [messages]);
+
+  // Toggle canvas open/closed state
+  const toggleCanvas = useCallback(() => {
+    setIsCanvasOpen(prev => !prev);
+    // If canvas is being closed, deselect message
+    if (isCanvasOpen) {
+      setSelectedMessageId(null);
+    }
+  }, [isCanvasOpen]);
   
-  const sendMessage = async () => {
+  // Function to clear the selected message (close the canvas)
+  const clearSelectedMessage = useCallback(() => {
+    setSelectedMessageId(null);
+  }, []);
+
+  // Memoize the sendMessage function
+  const sendMessage = useCallback(async () => {
     if (!input.trim()) return;
     
     // Validate input to prevent injection
@@ -429,7 +394,45 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
       // Force scroll to the error message
       setTimeout(scrollToBottom, 100);
     }
-  };
+  }, [input, messages.length, scrollToBottom, userId]);
+
+  // Dedicated effect for handling new messages and canvas updates
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Find the last non-loading message
+      const nonLoadingMessages = messages.filter(msg => !msg.isLoading);
+      
+      if (nonLoadingMessages.length > 0) {
+        const lastMessage = nonLoadingMessages[nonLoadingMessages.length - 1];
+        
+        // Auto-select and open canvas for bot messages with canvas content
+        if (!lastMessage.isUser && lastMessage.canvasType !== 'none') {
+          const lastIndex = messages.findIndex(msg => msg === lastMessage);
+          
+          if (lastIndex !== -1) {
+            // Use the same reliable pattern: close, select, then open
+            // First close canvas to reset rendering
+            setIsCanvasOpen(false);
+            
+            // Wait to ensure closed state is processed
+            setTimeout(() => {
+              // Then select the message
+              setSelectedMessageId(lastIndex);
+              
+              // Wait for selection to be processed before opening
+              setTimeout(() => {
+                // Auto-open canvas except for events view
+                const viewType = localStorage.getItem('viewType');
+                if (viewType !== 'events') {
+                  setIsCanvasOpen(true);
+                }
+              }, 200);
+            }, 100);
+          }
+        }
+      }
+    }
+  }, [messages]);
 
   return (
     <div className="chatbot-container">
@@ -452,6 +455,14 @@ const Chatbot: React.FC<{ userId: string }> = ({ userId }) => {
           clearSelectedMessage={clearSelectedMessage}
         />
       </div>
+      
+      {/* Performance Debug Component - only in development */}
+      {import.meta.env.DEV && (
+        <PerformanceDebug 
+          isVisible={showPerformanceDebug}
+          onToggle={() => setShowPerformanceDebug(!showPerformanceDebug)}
+        />
+      )}
     </div>
   );
 };

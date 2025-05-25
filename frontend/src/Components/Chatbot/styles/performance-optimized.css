@@ -1,0 +1,155 @@
+/* Performance-Optimized CSS Alternatives */
+/* Use these classes to replace backdrop-filter heavy elements */
+
+/* Optimized glass effect without backdrop-filter */
+.glass-effect-optimized {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95), 
+    rgba(248, 249, 248, 0.9)
+  );
+  border: 1px solid rgba(180, 122, 150, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(180, 122, 150, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  /* Remove backdrop-filter for better performance */
+  /* backdrop-filter: blur(10px); */
+}
+
+/* Optimized job card without heavy backdrop-filter */
+.job-card-optimized {
+  border-radius: 24px;
+  padding: 28px;
+  margin: 24px 0;
+  background: linear-gradient(145deg, 
+    rgba(255, 255, 255, 0.98), 
+    rgba(248, 249, 248, 0.95)
+  );
+  border: 1px solid rgba(180, 122, 150, 0.2);
+  box-shadow: 
+    0 10px 30px rgba(180, 122, 150, 0.12),
+    0 4px 8px rgba(180, 122, 150, 0.06);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  /* Use transform3d for hardware acceleration */
+  transform: translate3d(0, 0, 0);
+}
+
+.job-card-optimized:hover {
+  transform: translate3d(0, -4px, 0);
+  box-shadow: 
+    0 20px 40px rgba(180, 122, 150, 0.2),
+    0 8px 16px rgba(180, 122, 150, 0.1);
+}
+
+/* Optimized filter container */
+.filter-container-optimized {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95), 
+    rgba(248, 249, 248, 0.9)
+  );
+  border-radius: 16px;
+  border: 1px solid rgba(180, 122, 150, 0.25);
+  box-shadow: 0 8px 32px rgba(180, 122, 150, 0.12);
+  /* Remove backdrop-filter */
+}
+
+/* Hardware-accelerated animations */
+.animate-optimized {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Optimized typing indicator */
+.typing-indicator-optimized {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+  background: rgba(248, 249, 248, 0.95);
+  border-radius: 18px;
+  margin: 8px 0;
+}
+
+.typing-dot-optimized {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #936078;
+  animation: typing-bounce 1.4s infinite ease-in-out;
+  transform: translate3d(0, 0, 0);
+}
+
+.typing-dot-optimized:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot-optimized:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing-bounce {
+  0%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+/* Optimized message bubble */
+.message-bubble-optimized {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95), 
+    rgba(248, 249, 248, 0.9)
+  );
+  border: 1px solid rgba(180, 122, 150, 0.2);
+  border-radius: 18px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  box-shadow: 0 4px 12px rgba(180, 122, 150, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform: translate3d(0, 0, 0);
+}
+
+.message-bubble-optimized:hover {
+  transform: translate3d(0, -1px, 0);
+  box-shadow: 0 6px 16px rgba(180, 122, 150, 0.15);
+}
+
+/* Performance-focused utility classes */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.smooth-transition {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reduced motion for accessibility and performance */
+@media (prefers-reduced-motion: reduce) {
+  .animate-optimized,
+  .smooth-transition,
+  .job-card-optimized,
+  .message-bubble-optimized {
+    transition: none;
+    animation: none;
+  }
+  
+  .typing-dot-optimized {
+    animation: none;
+  }
+}
+
+/* Container queries for responsive performance */
+@container (max-width: 768px) {
+  .job-card-optimized {
+    padding: 20px;
+    margin: 16px 0;
+  }
+  
+  .filter-container-optimized {
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+} 

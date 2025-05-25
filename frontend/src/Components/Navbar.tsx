@@ -1,48 +1,57 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import './Navbar.css';
 
-const Navbar = () => {
+const Navbar = memo(() => {
     const navigate = useNavigate();
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const handleLogout = () => {
+    // Memoize navigation handlers to prevent recreation on every render
+    const handleLogout = useCallback(() => {
         localStorage.clear();
         navigate('/login');
-    };
+    }, [navigate]);
 
-    const navigateToJobSearch = () => {
+    const navigateToJobSearch = useCallback(() => {
         localStorage.setItem('viewType', 'jobs');
         navigate('/jobsearch');
-    };
+    }, [navigate]);
 
-    const navigateToEventHub = () => {
+    const navigateToEventHub = useCallback(() => {
         // Clear any existing chat history to make it appear as a new feature
         localStorage.removeItem('chatHistory');
         localStorage.setItem('viewType', 'events');
         navigate('/jobsearch');
-    };
+    }, [navigate]);
 
-    const navigateToRoadmap = () => {
+    const navigateToRoadmap = useCallback(() => {
         // Clear any existing chat history to make it appear as a new feature
         localStorage.removeItem('chatHistory');
         localStorage.setItem('viewType', 'roadmap');
         navigate('/jobsearch');
-    };
+    }, [navigate]);
 
-    const navigateToInterviewAssistant = () => {
+    const navigateToInterviewAssistant = useCallback(() => {
         navigate('/interview-assistant');
-    };
+    }, [navigate]);
 
-    const navigateToCareerCoach = () => {
+    const navigateToCareerCoach = useCallback(() => {
         navigate('/career-coach');
-    };
+    }, [navigate]);
     
-    const navigateToProfile = () => {
+    const navigateToProfile = useCallback(() => {
         setShowProfileDropdown(false);
         navigate('/profile');
-    };
+    }, [navigate]);
+
+    const navigateToHome = useCallback(() => {
+        navigate('/');
+    }, [navigate]);
+
+    const toggleProfileDropdown = useCallback(() => {
+        setShowProfileDropdown(prev => !prev);
+    }, []);
     
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -60,7 +69,7 @@ const Navbar = () => {
 
     return (
         <nav className="navbar">
-            <div className="navbar-logo" onClick={() => navigate('/')}>AskAsha</div>
+            <div className="navbar-logo" onClick={navigateToHome}>AskAsha</div>
             <div className="navbar-links">
                 <button onClick={navigateToJobSearch} className="navbar-link">Job Hunt</button>
                 {/* <button onClick={navigateToEventHub} className="navbar-link">Event Hub</button>
@@ -71,7 +80,7 @@ const Navbar = () => {
                         src="/profile-icon.svg" 
                         alt="Profile" 
                         className="profile-icon" 
-                        onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                        onClick={toggleProfileDropdown}
                         title="Profile Options"
                     />
                     {showProfileDropdown && (
@@ -88,6 +97,9 @@ const Navbar = () => {
             </div>
         </nav>
     );
-};
+});
+
+// Add display name for debugging
+Navbar.displayName = 'Navbar';
 
 export default Navbar;
