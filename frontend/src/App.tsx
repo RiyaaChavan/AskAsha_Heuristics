@@ -20,6 +20,13 @@ import InterviewAssistant from './Components/InterviewAssistant';
 import HomePage from './pages/HomePage';
 import './index.css';
 import { BentoGridDemo } from './Components/Homepage/BentoGrid';
+import "@fontsource/poppins/300.css"
+import "@fontsource/poppins/400.css"
+import "@fontsource/poppins/500.css"
+import "@fontsource/poppins/600.css"
+import "@fontsource/poppins/700.css"
+import ProfilePage from './pages/ProfilePage';
+
 
 function AppWithNavbar() {
   const location = useLocation();
@@ -35,7 +42,7 @@ function AppWithNavbar() {
         <Route path="/profile-setup" element={<ProfileSetup />} />
         <Route path="/signup" element={<Signup />} />
         {/* Protected routes */}
-        <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/old-profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/jobsearch" replace />} />
         <Route path="/chatbot" element={

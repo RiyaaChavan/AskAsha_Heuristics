@@ -1,0 +1,42 @@
+/* Super high-specificity selectors to override everything */
+body .sticky-scroll-container .sticky-scroll-visual-container.green-bg,
+.sticky-scroll-container .sticky-scroll-visual-container.green-bg,
+div.sticky-scroll-visual-container.green-bg,
+.green-bg {
+  background: #87c05a !important;
+  background-color: #87c05a !important;
+  background-image: none !important;
+}
+
+body .sticky-scroll-demo-content,
+.sticky-scroll-demo-content,
+div.sticky-scroll-demo-content {
+  background: #87c05a !important;
+  background-color: #87c05a !important;
+  background-image: none !important;
+}
+
+/* Target all child elements too */
+.sticky-scroll-visual-container * {
+  background-color: #87c05a !important;
+}
+
+.sticky-scroll-demo-content * {
+  background-color: #87c05a !important;
+}
+
+/* Additional fix for the journey steps */
+.journey-step-1,
+.journey-step-2,
+.journey-step-3,
+.journey-step-4 {
+  background-color: #87c05a !important;
+}
+
+/* Make images stand out on green background */
+.sticky-scroll-demo-image {
+  height: 50%;
+  width: 50%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.3));
+}

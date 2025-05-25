@@ -1,0 +1,100 @@
+/* Container styles */
+.sticky-scroll-container {
+  position: relative;
+  display: flex;
+  height: 30rem;
+  justify-content: center;
+  overflow-y: auto;
+  border-radius: 0.375rem;
+  padding: 2.5rem;
+  gap: 2.5rem;
+}
+
+.sticky-scroll-content-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: 0 1rem;
+}
+
+.sticky-scroll-text-column {
+  max-width: 42rem;
+}
+
+/* Card styles */
+.sticky-scroll-card {
+  margin: 5rem 0;
+}
+
+.sticky-scroll-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f1f5f9; /* slate-100 */
+}
+
+.sticky-scroll-description {
+  margin-top: 2.5rem;
+  max-width: 24rem;
+  color: #cbd5e1; /* slate-300 */
+}
+
+.sticky-scroll-spacer {
+  height: 15rem; /* Increase from original 10rem */
+}
+
+/* Visual container styles */
+.sticky-scroll-visual-container {
+  position: sticky;
+  top: 2.5rem;
+  height: 15rem;
+  width: 20rem;
+  overflow: hidden;
+  border-radius: 0.375rem;
+  background-color: #87c05a !important; /* Set to the desired green color */
+}
+
+@media (max-width: 1024px) {
+  .sticky-scroll-visual-container {
+    display: none;
+  }
+}
+
+/* Demo content styles */
+.sticky-scroll-demo-wrapper {
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.sticky-scroll-demo-content {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  background-color: #87c05a !important; /* Force green background */
+
+}
+
+.green-background {
+  background-color: #87c05a;
+}
+
+
+.collaborative-editing {
+  background: black;
+}
+
+.version-control {
+  background: black;
+}
+
+.content-placeholder {
+  background: black;
+}
+
+.sticky-scroll-demo-image {
+  height: 50%;
+  width: 50%;
+  object-fit: contain;
+}

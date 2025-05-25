@@ -1,0 +1,73 @@
+/* Loading screen styles */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #934f73;
+}
+
+.loading-spinner {
+  width: 4rem;
+  height: 4rem;
+  border: 4px solid white;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Main app container */
+.app-container {
+  min-height: 100vh;
+  background-color: #934f73;
+}
+
+/* Content container */
+.content-container {
+  /* Removed container-type: inline-size */
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  box-sizing: border-box;
+}
+
+/* For responsiveness - equivalent to container class in Tailwind */
+@media (min-width: 640px) {
+  .content-container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .content-container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .content-container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .content-container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .content-container {
+    max-width: 1536px;
+  }
+}

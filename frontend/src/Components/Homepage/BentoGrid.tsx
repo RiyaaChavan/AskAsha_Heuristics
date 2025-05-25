@@ -20,7 +20,10 @@ interface BentoGridItemProps {
   description?: string | React.ReactNode;
   header?: React.ReactNode;
   icon?: React.ReactNode;
+  wide?: boolean;
+  backgroundColor?: string; // Add this new property
 }
+
 
 const BentoGrid: React.FC<BentoGridProps> = ({ children }) => {
   return (
@@ -35,9 +38,14 @@ const BentoGridItem: React.FC<BentoGridItemProps> = ({
   description,
   header,
   icon,
+  wide,
+  backgroundColor,
 }) => {
   return (
-    <div className="bento-grid-item">
+    <div 
+      className={`bento-grid-item ${wide ? 'bento-grid-item-wide' : ''}`}
+      style={{ backgroundColor }}
+    >
       {header}
       <div className="bento-content">
         {icon}
@@ -47,6 +55,8 @@ const BentoGridItem: React.FC<BentoGridItemProps> = ({
     </div>
   );
 };
+
+
 
 const SkeletonOne: React.FC = () => {
   const variants = {
@@ -143,31 +153,18 @@ const SkeletonFour: React.FC = () => {
   return (
     <motion.div initial="initial" animate="animate" whileHover="hover" className="skeleton-four">
       <motion.div variants={first} className="profile-card">
-        <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          className="avatar"
-        />
-        <p className="profile-text">Just code in Vanilla Javascript</p>
-        <p className="profile-tag delusional">Delusional</p>
+        
+        <p className="profile-text">I found 4 new jobs in Mumbai</p>
+        <p className="profile-tag delusional">ML Engineer</p>
       </motion.div>
       <motion.div className="profile-card center">
-        <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          className="avatar"
-        />
-        <p className="profile-text">Tailwind CSS is cool, you know</p>
-        <p className="profile-tag sensible">Sensible</p>
+    
+        <p className="profile-text">Amazon has a new opening for SWE role</p>
+        <p className="profile-tag sensible">SWE-II</p>
       </motion.div>
       <motion.div variants={second} className="profile-card">
-        <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          className="avatar"
-        />
-        <p className="profile-text">I love angular, RSC, and Redux.</p>
-        <p className="profile-tag helpless">Helpless</p>
+        <p className="profile-text">Based on your resume, here are 3 role suggestions</p>
+        <p className="profile-tag helpless">Skills</p>
       </motion.div>
     </motion.div>
   );
@@ -194,17 +191,11 @@ const SkeletonFive: React.FC = () => {
   return (
     <motion.div initial="initial" whileHover="animate" className="skeleton-five">
       <motion.div variants={variants} className="chat-message">
-        <img
-          src="https://pbs.twimg.com/profile_images/1417752099488636931/cs2R59eW_400x400.jpg"
-          alt="avatar"
-          className="avatar"
-        />
-        <p>There are a lot of cool frameworks out there like React, Angular,
-          Vue, Svelte that can make your life ....</p>
+       
+        <p>Ready to master data science? I've mapped out a comprehensive learning journey for you.</p>
       </motion.div>
-      <motion.div variants={variantsSecond} className="chat-response">
-        <p>Use PHP.</p>
-        <div className="gradient-circle"></div>
+      <motion.div  className="chat-response">
+        <p>Thank you!</p>
       </motion.div>
     </motion.div>
   );
@@ -212,32 +203,32 @@ const SkeletonFive: React.FC = () => {
 
 const items = [
   {
-    title: "AI Content Generation",
-    description: <span>Experience the power of AI in generating unique content.</span>,
+    title: "Career Coach",
+    description: <span>Confused or curious? AskAsha has your back with tailored guidance and support</span>,
     header: <SkeletonOne />,
     icon: <IconClipboardCopy className="icon" />,
   },
   {
-    title: "Automated Proofreading",
-    description: <span>Let AI handle the proofreading of your documents.</span>,
+    title: "Interview Assistant",
+    description: <span>Practice with AI, get tips, and feel ready for any question that comes your way.</span>,
     header: <SkeletonTwo />,
     icon: <IconFileBroken className="icon" />,
   },
   {
-    title: "Contextual Suggestions",
-    description: <span>Get AI-powered suggestions based on your writing context.</span>,
+    title: "Event Search",
+    description: <span>From workshops to networking events — stay updated and attend with confidence</span>,
     header: <SkeletonThree />,
     icon: <IconSignature className="icon" />,
   },
   {
-    title: "Sentiment Analysis",
-    description: <span>Understand the sentiment of your text with AI analysis.</span>,
+    title: "Personlised Job Hunt",
+    description: <span>Let AskAsha recommend roles that align with your career goals and skills.</span>,
     header: <SkeletonFour />,
     icon: <IconTableColumn className="icon" />,
   },
   {
-    title: "Text Summarization",
-    description: <span>Summarize your lengthy documents with AI technology.</span>,
+    title: "My Roadmap",
+    description: <span>Visualize your path, set goals, and track your professional growth with ease.</span>,
     header: <SkeletonFive />,
     icon: <IconBoxAlignRightFilled className="icon" />,
   },
@@ -254,6 +245,7 @@ export const BentoGridDemo: React.FC = () => {
           description={item.description}
           header={item.header}
           icon={item.icon}
+          wide={i === 3} // Make the fourth item (index 3) wide
         />
       ))}
     </BentoGrid>

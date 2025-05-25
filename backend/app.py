@@ -23,6 +23,7 @@ import json
 import mimetypes
 import io
 from pathlib import Path
+from flask import send_file
 
 # Import your internal logic
 from agent import run_agent  # Your run_agent logic
@@ -520,20 +521,47 @@ def create_profile():
     except Exception as e:
         print(f"Error creating profile: {str(e)}")
         return jsonify({'error': str(e), 'status': 'error'}), 500
-
+    
 @app.route('/api/update-profile/<uid>', methods=['PUT'])
 def update_profile(uid):
     try:
+        # Print received data for debugging
+        print(f"Received update request for UID: {uid}")
+        print(f"Request data: {request.json}")
+
         data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
         result = db.users.update_one(
             {'uid': uid},
             {'$set': data}
         )
+        
         if result.modified_count:
-            return jsonify({'message': 'Profile updated successfully'})
-        return jsonify({'error': 'User not found'}), 404
+            updated_user = db.users.find_one({'uid': uid})
+            # Convert MongoDB document to JSON-serializable format
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully',
+                'data': json.loads(json_util.dumps(updated_user))
+            })
+        elif result.matched_count:
+            return jsonify({
+                'success': True,
+                'message': 'No changes made - values are the same'
+            })
+        return jsonify({
+            'success': False,
+            'error': 'User not found'
+        }), 404
+        
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error updating profile: {str(e)}")  # For debugging
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
     
 @app.route('/api/profile/<uid>', methods=['GET'])
 def get_profile(uid):
@@ -556,6 +584,44 @@ def delete_profile(uid):
         return jsonify({'error': 'User not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/resume/<resume_id>', methods=['GET'])
+def get_resume(resume_id):
+    try:
+        # Find the resume document by ID
+        resume = collection.find_one({"_id": ObjectId(resume_id)})
+        
+        if not resume:
+            return jsonify({"error": "Resume not found"}), 404
+        
+        # Assuming the PDF is stored as a base64 string in 'pdf_data' field
+        pdf_string = resume.get('pdf_data')
+        
+        if not pdf_string:
+            return jsonify({"error": "PDF data not found in resume"}), 404
+        
+        # Convert the string back to binary
+        try:
+            # If stored as base64
+            pdf_binary = base64.b64decode(pdf_string)
+        except Exception:
+            # If stored as plain text or other format, use direct conversion
+            pdf_binary = pdf_string.encode('utf-8')
+        
+        # Create a file-like object
+        pdf_io = io.BytesIO(pdf_binary)
+        pdf_io.seek(0)
+        
+        # Return the PDF as a downloadable file
+        return send_file(
+            pdf_io,
+            mimetype='application/pdf',
+            as_attachment=False,
+            download_name='resume.pdf'
+        )
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 # -------------- Chat via run_agent (HerKey Chatbot) -------------- #
 @app.route('/api/chat', methods=['POST'])

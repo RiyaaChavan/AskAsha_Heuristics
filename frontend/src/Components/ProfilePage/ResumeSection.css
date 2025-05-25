@@ -1,0 +1,329 @@
+/* Resume Container */
+.resume-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+/* Resume Header */
+.resume-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.resume-title-container {
+  display: flex;
+  align-items: center;
+}
+
+.resume-title-icon {
+  color: #87c05a;
+  margin-right: 0.75rem;
+}
+
+.icon-medium {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.resume-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #934f73;
+}
+
+.resume-updated-badge {
+  display: flex;
+  align-items: center;
+  color: #87c05a;
+  background-color: rgba(135, 192, 90, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+}
+
+.resume-calendar-icon {
+  height: 1rem;
+  width: 1rem;
+  margin-right: 0.25rem;
+}
+
+/* Resume Divider */
+.resume-divider {
+  border-bottom: 2px solid #87c05a;
+  width: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Resume View Mode */
+.resume-view-mode {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .resume-view-mode {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.resume-preview-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+}
+
+.resume-preview-content {
+  text-align: center;
+}
+
+.resume-preview-icon-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.resume-preview-icon {
+  height: 3rem;
+  width: 3rem;
+  color: #9ca3af;
+}
+
+.resume-preview-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.resume-filename {
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.resume-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.resume-view-button {
+  width: 100%;
+  padding: 0.75rem 0;
+  background-color: #934f73;
+  color: white;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+}
+
+.resume-view-button:hover {
+  background-color: #834f73;
+}
+
+.resume-update-button {
+  width: 100%;
+  padding: 0.75rem 0;
+  border: 1px solid #934f73;
+  color: #934f73;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+}
+
+.resume-update-button:hover {
+  background-color: #faf5f8;
+}
+
+/* Resume Edit Mode */
+.resume-edit-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.resume-upload-container {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+}
+
+/* File Selected View */
+.file-selected-container {
+  text-align: center;
+}
+
+.file-selected-icon-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.file-selected-icon {
+  height: 3rem;
+  width: 3rem;
+  color: #87c05a;
+}
+
+.file-selected-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.file-selected-name {
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.file-remove-button {
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.file-remove-icon {
+  height: 1rem;
+  width: 1rem;
+  margin-right: 0.25rem;
+}
+
+/* Upload Prompt View */
+.upload-prompt-container {
+  text-align: center;
+}
+
+.upload-icon-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.upload-icon {
+  height: 3rem;
+  width: 3rem;
+  color: #9ca3af;
+}
+
+.upload-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.upload-instructions {
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.browse-button {
+  padding: 0.5rem 1rem;
+  background-color: #87c05a;
+  color: white;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.browse-button:hover {
+  background-color: #76a94a;
+}
+
+/* Edit Actions */
+.edit-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.cancel-button {
+  flex: 1;
+  padding: 0.75rem 0;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+  background-color: #f9fafb;
+}
+
+.save-button {
+  flex: 1;
+  padding: 0.75rem 0;
+  background-color: #87c05a;
+  color: white;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-button:hover {
+  background-color: #76a94a;
+}
+
+.save-button-disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.save-button-disabled:hover {
+  background-color: #d1d5db;
+}
+
+.save-success-icon {
+  height: 1rem;
+  width: 1rem;
+  margin-right: 0.5rem;
+}
+
+.disabled-button {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e5e5e5;
+  color: #888;
+}
+
+.error-message {
+  color: #d32f2f;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.upload-prompt {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+}
+
+.resume-error-message {
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
