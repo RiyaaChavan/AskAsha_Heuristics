@@ -21,10 +21,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ input, setInput, sendMessage }) =
       }
     );
 
-    recognitionRef.current = recognition;
-
-    return () => {
-      if (recognitionRef.current) {
+    recognitionRef.current = recognition;    return () => {
+      if (recognitionRef.current && recognitionRef.current.abort) {
         recognitionRef.current.abort();
       }
     };

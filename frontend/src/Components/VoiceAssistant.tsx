@@ -44,11 +44,9 @@ const VoiceAssistant: React.FC = () => {
       setIsSupported(true);
     } else {
       setIsSupported(false);
-    }
-
-    // Cleanup function
+    }    // Cleanup function
     return () => {
-      if (recognitionRef.current) {
+      if (recognitionRef.current && recognitionRef.current.abort) {
         recognitionRef.current.abort();
       }
     };
