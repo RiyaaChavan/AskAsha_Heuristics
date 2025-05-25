@@ -1,6 +1,7 @@
 import requests
 from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
+from response_templates import get_greeting, get_job_guidance_response,get_job_search_response
 from dotenv import load_dotenv
 import os
 import json

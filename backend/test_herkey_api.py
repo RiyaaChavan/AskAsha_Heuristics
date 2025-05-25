@@ -20,16 +20,16 @@ def test_herkey_session():
             print(f"Session response: {data}")
             if 'body' in data and 'session_id' in data['body']:
                 token = data['body']['session_id']
-                print(f"✅ Successfully got session token: {token[:20]}...")
+                print(f"Successfully got session token: {token[:20]}...")
                 return token
             else:
-                print("❌ Invalid session response format")
+                print("Invalid session response format")
                 return None
         else:
-            print(f"❌ Session API failed: {response.text}")
+            print(f"Session API failed: {response.text}")
             return None
     except Exception as e:
-        print(f"❌ Session API error: {str(e)}")
+        print(f"Session API error: {str(e)}")
         return None
 
 def test_herkey_jobs_api(token):
