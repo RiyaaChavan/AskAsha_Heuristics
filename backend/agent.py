@@ -737,7 +737,7 @@ def format_response(query_type: str, query: str, result, topic=None) -> dict:
         # If we have search terms, make the response more specific
         if search_terms and search_terms != "Women In Tech":
             search_query = brighttalk_events.get("search_query", search_terms)
-            response_text = f"I found some events related to '{search_query}'! Here are both Herkey and BrightTALK events that might interest you."
+            response_text = f"I found some events related to '{search_query}'! Here are events that might interest you."
         return {
             "text": response_text,
             "canvasType": "sessions",
