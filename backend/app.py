@@ -654,10 +654,10 @@ def send_message():
                         # Re-ask the same question without advancing stage
                         return jsonify({"message": "Sorry, I didn't quite get that. Please provide your experience for the mock interview."})
                     
-                    detected_lang = detect(user_message)
-                    if detected_lang != 'en':
-                            # Don't update session if not English
-                            return jsonify({"message": "Please enter your experience in English for the mock interview."})
+                    # detected_lang = detect(user_message)
+                    # if detected_lang != 'en':
+                    #         # Don't update session if not English
+                    #         return jsonify({"message": "Please enter your experience in English for the mock interview."})
                    
                 except Exception as e:
                     print(f"Profanity check error in ask_experience: {str(e)}")
@@ -675,10 +675,10 @@ def send_message():
                         # Re-ask the same question without advancing stage
                         return jsonify({"message": "Sorry, I didn't quite get that. Please provide your skills for the mock interview."})
                     
-                    detected_lang = detect(user_message)
-                    if detected_lang != 'en':
-                            # Don't update session if not English
-                            return jsonify({"message": "Please enter your skills in English for the mock interview."})
+                    # detected_lang = detect(user_message)
+                    # if detected_lang != 'en':
+                    #         # Don't update session if not English
+                    #         return jsonify({"message": "Please enter your skills in English for the mock interview."})
                     
                 except Exception as e:
                     print(f"Profanity check error in ask_skills: {str(e)}")
