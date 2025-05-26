@@ -90,6 +90,7 @@
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-sizing: border-box;
+  bottom: 20px;
 }
 
 .header-main-interview {
