@@ -120,7 +120,8 @@ def verify_and_enhance_roadmap_links(roadmap_items: List[Dict[str, Any]]) -> Lis
         'biginterview.com', 'leetcode.com', 'pramp.com', 'careeronestop.org',
         'thebalancecareers.com'
     ]
-      # Map of common keywords to specific sections within platforms
+    
+    # Map of common keywords to specific sections within platforms
     specific_paths = {
         # LinkedIn Learning paths
         'programming': '/learning/topics/software-development',
@@ -133,13 +134,6 @@ def verify_and_enhance_roadmap_links(roadmap_items: List[Dict[str, Any]]) -> Lis
         'data science': '/learning/topics/data-science',
         'interview': '/learning/topics/job-interviews',
         'resume': '/learning/topics/resume-writing',
-        'communication': '/learning/topics/communication',
-        'negotiation': '/learning/topics/negotiation',
-        'presentation': '/learning/topics/presentation-skills',
-        'soft skills': '/learning/topics/soft-skills',
-        'career development': '/learning/topics/career-development',
-        'time management': '/learning/topics/time-management',
-        'project planning': '/learning/topics/project-planning',
         
         # Coursera paths
         'data science coursera': '/professional-certificates/ibm-data-science',
@@ -148,28 +142,11 @@ def verify_and_enhance_roadmap_links(roadmap_items: List[Dict[str, Any]]) -> Lis
         'business coursera': '/specializations/business-foundations',
         'leadership coursera': '/specializations/leadership-development',
         'project management coursera': '/professional-certificates/google-project-management',
-        'digital marketing coursera': '/specializations/digital-marketing',
-        'ux design coursera': '/professional-certificates/google-ux-design',
-        'data analytics coursera': '/professional-certificates/google-data-analytics',
-        'business intelligence coursera': '/specializations/business-intelligence',
-        'agile coursera': '/specializations/agile-development',
-        'cybersecurity coursera': '/professional-certificates/google-cybersecurity',
-        'cloud computing coursera': '/specializations/cloud-computing',
-        'web development coursera': '/specializations/web-design',
-        'business analytics coursera': '/specializations/business-analytics',
         
         # EdX paths
         'computer science edx': '/course/subject/computer-science',
         'business edx': '/course/subject/business-management',
         'data science edx': '/course/subject/data-analysis-statistics',
-        'project management edx': '/course/subject/project-management',
-        'leadership edx': '/course/subject/leadership',
-        'marketing edx': '/course/subject/marketing',
-        'finance edx': '/course/subject/finance',
-        'communication edx': '/course/subject/communication',
-        'design edx': '/course/subject/design',
-        'entrepreneurship edx': '/course/subject/entrepreneurship',
-        'ethics edx': '/course/subject/ethics',
         
         # freeCodeCamp paths
         'web development': '/learn/responsive-web-design/',
@@ -178,26 +155,15 @@ def verify_and_enhance_roadmap_links(roadmap_items: List[Dict[str, Any]]) -> Lis
         'data visualization': '/learn/data-visualization/',
         'api backend': '/learn/back-end-development-and-apis/',
         'python freecodecamp': '/learn/scientific-computing-with-python/',
-        'information security': '/learn/information-security/',
-        'machine learning freecodecamp': '/learn/machine-learning-with-python/',
-        'quality assurance': '/learn/quality-assurance/',
-        'data analysis freecodecamp': '/learn/data-analysis-with-python/',
         
         # MDN paths
         'html': '/en-US/docs/Learn/HTML',
         'css': '/en-US/docs/Learn/CSS',
         'javascript mdn': '/en-US/docs/Learn/JavaScript',
-        'web apis': '/en-US/docs/Web/API',
-        'accessibility': '/en-US/docs/Web/Accessibility',
-        'http': '/en-US/docs/Web/HTTP',
         
         # Interview resources
         'technical interview': '/learn/interview-prep',
         'coding interview': '/explore/interview/preparation',
-        'interview questions': '/resources/interview-questions',
-        'system design interview': '/topics/system-design-interview',
-        'behavioral interview': '/career-advice/interviewing/common-behavioral-interview-questions',
-        'interview preparation': '/career-advice/interviewing/how-to-prepare-for-an-interview',
     }
     
     for item in roadmap_items:
@@ -212,64 +178,32 @@ def verify_and_enhance_roadmap_links(roadmap_items: List[Dict[str, Any]]) -> Lis
         try:
             parsed_url = urlparse(link)
             domain = parsed_url.netloc
-              # Check if this is a domain we can enhance
+            
+            # Check if this is a domain we can enhance
             if any(trusted_domain in domain for trusted_domain in trusted_domains):
                 # Try to enhance the link based on the title or content
                 title_lower = item.get('title', '').lower()
-                description_lower = item.get('description', '').lower()
+                description_lower = item.get('description', '').lower()[:100]  # Just check the beginning
                 
-                # Extract key topics from title and description
-                combined_text = f"{title_lower} {description_lower}"
-                
-                # Look for specific topics that might have dedicated resources
-                topics = []
-                
-                # Check for programming languages and frameworks
-                tech_keywords = ["python", "javascript", "java", "nodejs", "react", "angular", "vue", 
-                               "html", "css", "sql", "php", "ruby", "c++", "c#", "swift", "kotlin",
-                               "machine learning", "ai", "data science", "cloud", "devops", "cybersecurity",
-                               "blockchain", "web development", "mobile development", "ui", "ux"]
-                
-                # Check for business and soft skills
-                business_keywords = ["leadership", "management", "marketing", "finance", "accounting", 
-                                   "sales", "entrepreneurship", "communication", "presentation", 
-                                   "negotiation", "project management", "agile", "scrum", "design thinking",
-                                   "business analysis", "strategy", "human resources", "public speaking"]
-                
-                # Find all matching keywords in the text
-                for keyword in tech_keywords + business_keywords:
-                    if keyword in combined_text:
-                        topics.append(keyword)
-                
-                # Sort topics by length (longer phrases are more specific)
-                topics.sort(key=len, reverse=True)
-                
-                # Use the most specific topic if available
-                matched_keyword = False
-                
-                # First try exact matches from our specific paths dictionary
+                # Check if we can make the link more specific
                 for keyword, specific_path in specific_paths.items():
-                    if keyword in combined_text:
+                    if keyword in title_lower or keyword in description_lower:
                         # Check which domain this specific path applies to
                         if keyword.endswith('coursera') and 'coursera.org' in domain:
                             new_link = f"https://www.coursera.org{specific_path}"
                             item['link'] = new_link
-                            matched_keyword = True
                             break
                         elif keyword.endswith('edx') and 'edx.org' in domain:
                             new_link = f"https://www.edx.org{specific_path}"
                             item['link'] = new_link
-                            matched_keyword = True
-                            break                        
+                            break
                         elif keyword.endswith('freecodecamp') and 'freecodecamp.org' in domain:
                             new_link = f"https://www.freecodecamp.org{specific_path}"
                             item['link'] = new_link
-                            matched_keyword = True
                             break
                         elif keyword.endswith('mdn') and 'developer.mozilla.org' in domain:
                             new_link = f"https://developer.mozilla.org{specific_path}"
                             item['link'] = new_link
-                            matched_keyword = True
                             break
                         # Generic matching for any domain
                         elif not keyword.endswith(('coursera', 'edx', 'freecodecamp', 'mdn')):
@@ -281,63 +215,21 @@ def verify_and_enhance_roadmap_links(roadmap_items: List[Dict[str, Any]]) -> Lis
                                         new_link = f"https://www.linkedin.com{specific_path}"
                                         item['link'] = new_link
                                         domain_match = True
-                                        matched_keyword = True
                                         break
                                     elif trusted_domain == 'freecodecamp.org' and specific_path.startswith('/learn'):
                                         new_link = f"https://www.freecodecamp.org{specific_path}"
                                         item['link'] = new_link
                                         domain_match = True
-                                        matched_keyword = True
                                         break
                                     elif trusted_domain == 'leetcode.com' and specific_path.startswith('/explore'):
                                         new_link = f"https://leetcode.com{specific_path}"
                                         item['link'] = new_link
                                         domain_match = True
-                                        matched_keyword = True
                                         break
-                                    elif trusted_domain == 'hbr.org':
-                                        # Find relevant Harvard Business Review topic
-                                        for topic in topics:
-                                            if topic == 'leadership':
-                                                new_link = "https://hbr.org/topic/leadership"
-                                                item['link'] = new_link
-                                                matched_keyword = True
-                                                break
-                                            elif topic == 'management':
-                                                new_link = "https://hbr.org/topic/managing-people"
-                                                item['link'] = new_link
-                                                matched_keyword = True
-                                                break
-                                            elif topic == 'communication':
-                                                new_link = "https://hbr.org/topic/communication"
-                                                item['link'] = new_link
-                                                matched_keyword = True
-                                                break
-                                            elif topic == 'negotiation':
-                                                new_link = "https://hbr.org/topic/negotiations"
-                                                item['link'] = new_link
-                                                matched_keyword = True
-                                                break
                             if domain_match:
                                 break
-                
-                # If no specific keyword match was found, try to use extracted topics to create better links
-                if not matched_keyword and topics:
-                    most_specific_topic = topics[0]  # Get the longest/most specific topic
-                    
-                    if 'coursera.org' in domain:
-                        item['link'] = f"https://www.coursera.org/search?query={most_specific_topic.replace(' ', '%20')}"
-                    elif 'udemy.com' in domain:
-                        item['link'] = f"https://www.udemy.com/courses/search/?q={most_specific_topic.replace(' ', '%20')}"
-                    elif 'linkedin.com' in domain:
-                        item['link'] = f"https://www.linkedin.com/learning/search?keywords={most_specific_topic.replace(' ', '%20')}"
-                    elif 'edx.org' in domain:
-                        item['link'] = f"https://www.edx.org/search?q={most_specific_topic.replace(' ', '%20')}"
-                    elif 'freecodecamp.org' in domain:
-                        item['link'] = f"https://www.freecodecamp.org/news/search/?query={most_specific_topic.replace(' ', '%20')}"
-                    elif 'themuse.com' in domain:
-                        item['link'] = f"https://www.themuse.com/advice/search?term={most_specific_topic.replace(' ', '%20')}"
-              # Verify the link actually exists
+            
+            # Verify the link actually exists
             try:
                 # Set a short timeout and use a HEAD request to be efficient
                 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
@@ -345,71 +237,21 @@ def verify_and_enhance_roadmap_links(roadmap_items: List[Dict[str, Any]]) -> Lis
                 
                 # If the link is not accessible, try common alternatives
                 if response.status_code >= 400:
-                    # Check if we have topics to build a more specific fallback
-                    if topics:
-                        most_specific_topic = topics[0].replace(' ', '%20')
-                        
-                        # Create domain-specific fallbacks using the most relevant topic
-                        if 'linkedin.com' in domain:
-                            item['link'] = f"https://www.linkedin.com/learning/search?keywords={most_specific_topic}"
-                        elif 'coursera.org' in domain:
-                            item['link'] = f"https://www.coursera.org/search?query={most_specific_topic}"
-                        elif 'edx.org' in domain:
-                            item['link'] = f"https://www.edx.org/search?q={most_specific_topic}"
-                        elif 'udemy.com' in domain:
-                            item['link'] = f"https://www.udemy.com/courses/search/?q={most_specific_topic}"
-                        elif 'freecodecamp.org' in domain:
-                            item['link'] = f"https://www.freecodecamp.org/news/search/?query={most_specific_topic}"
-                        elif 'github.com' in domain:
-                            item['link'] = f"https://github.com/topics/{most_specific_topic}"
-                        elif 'developer.mozilla.org' in domain:
-                            item['link'] = f"https://developer.mozilla.org/en-US/search?q={most_specific_topic}"
-                        elif 'w3schools.com' in domain:
-                            item['link'] = f"https://www.w3schools.com/search/search.php?q={most_specific_topic}"
-                        elif 'hbr.org' in domain:
-                            item['link'] = f"https://hbr.org/search?term={most_specific_topic}"
-                        elif 'themuse.com' in domain:
-                            item['link'] = f"https://www.themuse.com/advice/search?term={most_specific_topic}"
-                        elif 'indeed.com' in domain:
-                            item['link'] = f"https://www.indeed.com/career-advice/search?q={most_specific_topic}"
-                        else:
-                            # Domain root fallback for most sites
-                            domain_root = f"{parsed_url.scheme}://{domain}"
-                            item['link'] = domain_root
-                    else:
-                        # Special cases for specific domains without topics
-                        if 'linkedin.com' in domain:
-                            title_words = title_lower.split()
-                            if any(word in ["career", "job", "professional"] for word in title_words):
-                                item['link'] = "https://www.linkedin.com/learning/topics/career-development"
-                            elif any(word in ["leadership", "manage", "team"] for word in title_words):
-                                item['link'] = "https://www.linkedin.com/learning/topics/leadership"
-                            elif any(word in ["technical", "code", "programming"] for word in title_words):
-                                item['link'] = "https://www.linkedin.com/learning/topics/software-development"
-                            else:
-                                item['link'] = "https://www.linkedin.com/learning"
-                        elif 'coursera.org' in domain:
-                            item['link'] = "https://www.coursera.org/courses"
-                        else:
-                            # Default to domain homepage
-                            domain_root = f"{parsed_url.scheme}://{domain}"
-                            item['link'] = domain_root
-            
-            except (requests.RequestException, ConnectionError):
-                # If verification fails, build a specific fallback using title/description
-                title_keywords = title_lower.split()
-                
-                # Try to create a relevant search URL based on the domain and title
-                if 'linkedin.com' in domain and len(title_keywords) > 0:
-                    search_term = title_keywords[0].replace(' ', '%20')
-                    item['link'] = f"https://www.linkedin.com/learning/search?keywords={search_term}"
-                elif 'coursera.org' in domain and len(title_keywords) > 0:
-                    search_term = title_keywords[0].replace(' ', '%20')
-                    item['link'] = f"https://www.coursera.org/search?query={search_term}"
-                else:
-                    # Default to domain homepage
+                    # Domain root fallback for most sites
                     domain_root = f"{parsed_url.scheme}://{domain}"
                     item['link'] = domain_root
+                    
+                    # Special cases for specific domains
+                    if 'linkedin.com' in domain:
+                        item['link'] = "https://www.linkedin.com/learning"
+                    elif 'coursera.org' in domain:
+                        item['link'] = "https://www.coursera.org"
+                    # Add more specific domain fallbacks as needed
+            
+            except (requests.RequestException, ConnectionError):
+                # If verification fails, fall back to domain homepage
+                domain_root = f"{parsed_url.scheme}://{domain}"
+                item['link'] = domain_root
         
         except Exception as e:
             print(f"Error processing link {link}: {str(e)}")
