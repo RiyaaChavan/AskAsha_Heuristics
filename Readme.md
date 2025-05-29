@@ -87,7 +87,7 @@ npm run dev
 
 ```bash
 # Clone backend repository
-git clone -b pushing https://github.com/RiyaaChavan/AskAsha_Heuristics.git
+git clone -b riya https://github.com/RiyaaChavan/AskAsha_Heuristics.git
 cd backend
 
 # Create virtual environment
@@ -98,14 +98,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Configure backend environment variables (.env)
-MONGODB_URI=mongodb+srv://your_username:your_password@cluster.mongodb.net/askasha
-OPENAI_API_KEY=your_openai_key
-COHERE_API_KEY=your_cohere_key
 
 # Start services
 # Node.js server
 npm install
-npm start
+npm run dev
 
 # Flask server
 cd backend
