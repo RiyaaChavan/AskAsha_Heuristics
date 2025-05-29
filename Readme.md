@@ -68,14 +68,13 @@ Its mission is to empower women by providing:
 
 ```bash
 # Clone frontend repository
-git clone -b pushing https://github.com/RiyaaChavan/AskAsha_Heuristics.git
+git clone -b riya https://github.com/RiyaaChavan/AskAsha_Heuristics.git
 cd frontend
 
 # Install dependencies
 npm install
 
 # Configure environment variables (.env)
-VITE_API_URL=http://localhost:8000/api
 
 # Start the development server
 npm run dev
