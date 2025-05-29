@@ -98,11 +98,6 @@ pip install -r requirements.txt
 
 # Configure backend environment variables (.env)
 
-# Start services
-# Node.js server
-npm install
-npm run dev
-
 # Flask server
 cd backend
 python app.py
