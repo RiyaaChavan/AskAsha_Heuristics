@@ -77,6 +77,7 @@ CORS(app,
          "https://ask-asha-heuristics-git-pushing-riyaas-projects.vercel.app",
          "https://ask-asha-heuristics.vercel.app",
          "https://ask-asha-heuristics-git-pushing2-riyaas-projects.vercel.app",
+         "https://askashabot.vercel.app",
          # Add Render URL from environment variable if available
          os.getenv("FRONTEND_URL", "")
      ],
