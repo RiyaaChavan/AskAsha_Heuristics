@@ -1,12 +1,6 @@
 # AskAsha Chatbot
-Empowering Women’s Careers on the HerKey Platform 🌟
 
 # ![Architecture Diagram](https://github.com/user-attachments/assets/325b76f7-8f1a-4215-8023-d2bdca68e3cd)
-
----
-
-**AskAsha** is a next-generation AI-powered virtual assistant, purpose-built to empower women at every stage of their career journey through the **HerKey** platform.  
-Designed with **empathy**, **inclusivity**, and **innovation**, AskAsha bridges the gaps women often face in accessing career growth resources, mentorship, and community support.
 
 ---
 
@@ -20,8 +14,8 @@ Designed with **empathy**, **inclusivity**, and **innovation**, AskAsha bridges 
 
 ## 🌟 Project Overview
 
-AskAsha is an AI-powered virtual assistant aimed at enhancing user engagement on the HerKey platform.  
-Its mission is to empower women by providing:
+AskAsha is an AI-powered virtual assistant aimed at enhancing user engagement on the HerKey , Linkedin , Glassdoor platform.  
+It provides tools like:
 - Career guidance (coaching, roadmaps, mock interviews)
 - Job & event discovery (real-time listings, community events)
 - Accessibility (resume uploads)
@@ -33,7 +27,7 @@ Its mission is to empower women by providing:
 
 | Feature | Description |
 |:--------|:------------|
-| **Job Listings** | Searchable interface that fetches live, relevant job listings via HerKey API. |
+| **Job Listings** | Searchable interface that fetches live, relevant job listings |
 | **Events & Programs** | Curated discovery of women-focused events using RAG. |
 | **Interview Assistant** | Mock interview sessions with real-time Q&A and personalized feedback. |
 | **Roadmap Generator** | AI-driven progressive learning plans for career skills. |
